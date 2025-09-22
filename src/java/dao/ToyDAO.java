@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import model.Review;
-import static org.apache.http.conn.util.DnsUtils.normalize;
 
 public class ToyDAO implements IToyDAO {
 

@@ -25,13 +25,13 @@ public class GoogleLoginServlet extends HttpServlet {
 
         if (code == null || code.isEmpty()) {
             // Chưa đăng nhập → redirect đến Google
-//            String oauthURL = "https://accounts.google.com/o/oauth2/auth"
-//                    + "?client_id=" + GoogleConstants.CLIENT_ID
-//                    + "&redirect_uri=" + GoogleConstants.REDIRECT_URI
-//                    + "&response_type=code"
-//                    + "&scope=email%20profile"
-//                    + "&prompt=select_account";
-        //    response.sendRedirect(oauthURL);
+            String oauthURL = "https://accounts.google.com/o/oauth2/auth"
+                    + "?client_id=" + GoogleConstants.CLIENT_ID
+                    + "&redirect_uri=" + GoogleConstants.REDIRECT_URI
+                    + "&response_type=code"
+                    + "&scope=email%20profile"
+                    + "&prompt=select_account";
+            response.sendRedirect(oauthURL);
             return;
         }
 

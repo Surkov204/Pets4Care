@@ -154,7 +154,7 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h3>🏪 Thông tin liên hệ</h3>
-                    <p>📍 Địa chỉ: Môn PRJ</p>
+                    <p>📍 Địa chỉ: Môn SWP</p>
                     <p>📞 Điện thoại: 090 900 900</p>
                     <p>📧 Email: support@petcity.vn</p>
                 </div>

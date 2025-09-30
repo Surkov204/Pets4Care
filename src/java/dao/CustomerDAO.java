@@ -194,5 +194,57 @@ public boolean updatePassword(int customerId, String newPassword) {
         return false;  // Nếu có lỗi, trả về false
     }
 }
+
+// Đăng ký customer tạm thời với status "pending"
+public boolean registerTempCustomer(Customer customer) {
+    String hashedPassword = PasswordUtil.hashPassword(customer.getPassword());
+    String sql = "INSERT INTO Customer (name, phone, email, password, address_Customer, status) VALUES (?, ?, ?, ?, ?, ?)";
+    
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setString(1, customer.getName());
+        ps.setString(2, customer.getPhone());
+        ps.setString(3, customer.getEmail());
+        ps.setString(4, hashedPassword);
+        ps.setString(5, customer.getAddressCustomer());
+        ps.setString(6, "pending");
+        
+        int rowsInserted = ps.executeUpdate();
+        return rowsInserted > 0;
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
+    }
+}
+
+// Xóa customer tạm thời nếu đăng ký thất bại
+public boolean deleteTempCustomer(String email) {
+    String sql = "DELETE FROM Customer WHERE email = ? AND status = 'pending'";
+    
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setString(1, email);
+        int rowsDeleted = ps.executeUpdate();
+        return rowsDeleted > 0;
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
+    }
+}
+
+// Kích hoạt tài khoản sau khi verify OTP thành công
+public boolean activateCustomer(String email) {
+    String sql = "UPDATE Customer SET status = 'active' WHERE email = ? AND status = 'pending'";
+    
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setString(1, email);
+        int rowsUpdated = ps.executeUpdate();
+        return rowsUpdated > 0;
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
+    }
+}
     
 }

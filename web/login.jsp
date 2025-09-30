@@ -422,6 +422,19 @@
             font-size: 0.92rem;
         }
 
+        .success-message {
+            text-align: center;
+            color: #38a169;
+            margin-top: 1.2rem;
+            font-weight: 600;
+            padding: 0.9rem;
+            background: linear-gradient(135deg, #f0fff4, #c6f6d5);
+            border-radius: var(--border-radius-small);
+            border-left: 4px solid #38a169;
+            animation: fadeInUp 0.5s ease-in-out;
+            font-size: 0.92rem;
+        }
+
         .back-home {
             position: fixed;
             top: 1.5rem;
@@ -647,6 +660,18 @@
         <c:if test="${not empty error}">
             <div class="error-message">
                 <i class="fas fa-exclamation-triangle"></i> ${error}
+            </div>
+        </c:if>
+        
+        <c:if test="${param.registerSuccess == 'true'}">
+            <div class="success-message">
+                <i class="fas fa-check-circle"></i> Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.
+            </div>
+        </c:if>
+        
+        <c:if test="${not empty message_register}">
+            <div class="success-message">
+                <i class="fas fa-check-circle"></i> ${message_register}
             </div>
         </c:if>
     </div>

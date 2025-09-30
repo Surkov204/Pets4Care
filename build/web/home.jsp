@@ -1,7 +1,7 @@
 <%@page import="model.Customer"%>
 <%@page import="model.CartItem"%>
 <%@page import="java.util.Map"%>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page pageEncoding="UTF-8" contentType="text/html; charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%
     Customer currentUser = (Customer) session.getAttribute("currentUser");
@@ -29,6 +29,7 @@
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700;800&family=Baloo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
         <link rel="stylesheet" href="css/homeStyle.css" />
         <style>
             .slideshow {
@@ -130,7 +131,7 @@
                 <div>
                     <% if (currentUser == null) { %>
                     <a href="login.jsp" class="text-sm hover:underline">👤 Đăng Ký | Đăng Nhập</a>
-                    <% } else {%>
+                    <% } else { %>
                     <div class="relative inline-block text-left">
                         <button type="button" id="userToggleBtn"
                                 class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
@@ -141,6 +142,13 @@
                                   d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
+                        <style>
+                            /* Ensure Vietnamese/Unicode characters render properly in greeting */
+                            #userToggleBtn, #userToggleBtn b {
+                                font-family: 'Noto Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+                                font-variant-ligatures: contextual;
+                            }
+                        </style>
                         <div class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden z-50"
                              id="userMenu">
                             <div class="py-1">
@@ -151,7 +159,7 @@
                             </div>
                         </div>
                     </div>
-                    <% }%>
+                    <% } %>
                 </div>
                 <div class="cart-fixed">
                     <a href="<%= request.getContextPath()%>/cart/cart.jsp">
@@ -207,9 +215,9 @@
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
-                <li><a href="search?categoryId=1">SHOP CÚN CƯNG</a></li>
-                <li><a href="search?categoryId=2">SHOP MÈO CƯNG</a></li>
-                <li><a href="search?categoryId=3">SHOP VẬT NUÔI KHÁC</a></li>
+                <li><a href="search?categoryId=1">ĐẶT LỊCH KHÁM</a></li>
+                <li><a href="search?categoryId=2">HỒ SƠ BÁC SĨ</a></li>
+                <li><a href="search?categoryId=3">DỊCH VỤ SPA</a></li>
                 <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
                 <li><a href="meo-vat.jsp">MẸO VẶT</a></li>
                 <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
@@ -283,6 +291,16 @@
                         <div class="category-icon">💎</div>
                         <h3>Trang sức</h3>
                         <p>Làm đẹp cho thú cưng</p>
+                    </div>
+                    <div class="category-card" onclick="location.href = 'search?categoryId=13'">
+                        <div class="category-icon">🩺</div>
+                        <h3>Thăm khám sức khỏe</h3>
+                        <p>Dịch vụ kiểm tra & theo dõi thú cưng</p>
+                    </div>
+                    <div class="category-card" onclick="location.href = 'search?categoryId=14'">
+                        <div class="category-icon">💆</div>
+                        <h3>Spa</h3>
+                        <p>Chăm sóc & làm đẹp toàn diện</p>
                     </div>
                 </div>
             </div>
@@ -401,7 +419,7 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h3>🏪 Thông tin liên hệ</h3>
-                    <p>📍 Địa chỉ: Môn PRJ</p>
+                    <p>📍 Địa chỉ: Môn SWP</p>
                     <p>📞 Điện thoại: 090 900 900</p>
                     <p>📧 Email: support@petcity.vn</p>
                 </div>
@@ -422,7 +440,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>© 2025 Petcity. Bản quyền thuộc về Tiến. ❤️ Made with love for pets</p>
+                <p>© 2025 Petcity. Bản quyền thuộc về G5. ❤️ Made with love for pets</p>
             </div>
         </footer>
 

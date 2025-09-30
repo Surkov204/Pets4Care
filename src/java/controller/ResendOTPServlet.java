@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Random;
+import model.Customer;
 import utils.EmailUtils;
 
 @WebServlet("/resendotp")
@@ -20,9 +21,16 @@ public class ResendOTPServlet extends HttpServlet {
         String email = (String) session.getAttribute("otpEmail");
         
         if (email == null) {
-            session.setAttribute("message_forgotpass", "Phiên làm việc đã hết hạn");
-            session.setAttribute("messageType", "error");
-            response.sendRedirect("forgot-password.jsp");
+            String otpType = (String) session.getAttribute("otpType");
+            if ("register".equals(otpType)) {
+                session.setAttribute("message_register", "Phiên làm việc đã hết hạn. Vui lòng đăng ký lại.");
+                session.setAttribute("messageType", "error");
+                response.sendRedirect("register.jsp");
+            } else {
+                session.setAttribute("message_forgotpass", "Phiên làm việc đã hết hạn");
+                session.setAttribute("messageType", "error");
+                response.sendRedirect("forgot-password.jsp");
+            }
             return;
         }
         
@@ -35,11 +43,15 @@ public class ResendOTPServlet extends HttpServlet {
             customerDAO.saveOTP(email, newOTP);
             
             // Gửi email chứa OTP mới
-            boolean emailSent = EmailUtils.sendOTPEmail(
-                email, 
-                newOTP,
-                customerDAO.getCustomerByEmail(email).getName()
-            );
+            String otpType = (String) session.getAttribute("otpType");
+            Customer customer = customerDAO.getCustomerByEmail(email);
+            boolean emailSent;
+            
+            if ("register".equals(otpType)) {
+                emailSent = EmailUtils.sendRegisterOTPEmail(email, newOTP, customer.getName());
+            } else {
+                emailSent = EmailUtils.sendOTPEmail(email, newOTP, customer.getName());
+            }
             
             if (emailSent) {
                 session.setAttribute("message_verify", "Đã gửi lại mã OTP mới đến email của bạn");

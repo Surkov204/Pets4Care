@@ -40,6 +40,7 @@ public class ForgotPasswordServlet extends HttpServlet {
 
             if (emailSent) {
                 session.setAttribute("otpEmail", email);
+                session.setAttribute("otpType", "reset"); // Đánh dấu đây là OTP cho reset password
                 session.setAttribute("message_forgotpass", "Mã xác nhận đã được gửi đến email của bạn. Mã có hiệu lực trong 5 phút.");
                 session.setAttribute("messageType", "success");
                 response.sendRedirect("verify-otp.jsp");

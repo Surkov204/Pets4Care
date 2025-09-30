@@ -115,6 +115,31 @@ public class EmailUtils {
         }
     }
 
+    // ====================== GỬI EMAIL OTP ĐĂNG KÝ ======================
+    public static boolean sendRegisterOTPEmail(String recipientEmail, String otp, String customerName) {
+        try {
+            String htmlContent = buildRegisterOTPEmailContent(customerName, otp);
+
+            Message message = new MimeMessage(getMailSession());
+            message.setFrom(new InternetAddress(SENDER_EMAIL, "Petcity", "UTF-8"));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipientEmail));
+
+            // Encode subject để giữ Unicode + emoji
+            String subject = MimeUtility.encodeText("🐾 Mã OTP xác nhận đăng ký Petcity", "UTF-8", "B");
+            message.setSubject(subject);
+
+            message.setContent(htmlContent, "text/html; charset=UTF-8");
+
+            Transport.send(message);
+            System.out.println("✅ Email OTP đăng ký đã gửi đến: " + recipientEmail);
+            return true;
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi gửi email OTP đăng ký: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // ====================== TẠO NỘI DUNG OTP HTML ======================
     private static String buildOTPEmailContent(String customerName, String otp) {
         return "<div style='font-family:Arial,sans-serif; max-width:600px; margin:auto; border:1px solid #e1e1e1; border-radius:8px; padding:20px;'>"
@@ -126,7 +151,18 @@ public class EmailUtils {
                 + "<hr style='border:none; border-top:1px solid #e1e1e1; margin:20px 0;'>"
                 + "<p style='color:#888; font-size:12px;'>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>"
                 + "</div>";
-    
-    
-}
+    }
+
+    // ====================== TẠO NỘI DUNG OTP ĐĂNG KÝ HTML ======================
+    private static String buildRegisterOTPEmailContent(String customerName, String otp) {
+        return "<div style='font-family:Arial,sans-serif; max-width:600px; margin:auto; border:1px solid #e1e1e1; border-radius:8px; padding:20px;'>"
+                + "<h2 style='color:#6FD5DD;'>🐾 Petcity - Chào mừng bạn đến với Petcity!</h2>"
+                + "<p>Xin chào <strong>" + customerName + "</strong>,</p>"
+                + "<p>Cảm ơn bạn đã đăng ký tài khoản tại Petcity. Để hoàn tất quá trình đăng ký, vui lòng xác nhận email của bạn.</p>"
+                + "<p>Mã OTP xác nhận của bạn là: <strong style='font-size:24px; color:#E74C3C;'>" + otp + "</strong></p>"
+                + "<p>Mã có hiệu lực trong <strong>5 phút</strong>. Vui lòng không chia sẻ mã này với ai.</p>"
+                + "<hr style='border:none; border-top:1px solid #e1e1e1; margin:20px 0;'>"
+                + "<p style='color:#888; font-size:12px;'>Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.</p>"
+                + "</div>";
+    }
 }

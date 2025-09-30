@@ -5,8 +5,11 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import model.Customer;
 import service.UserService;
+import dao.CustomerDAO;
+import utils.EmailUtils;
 
 import java.io.IOException;
 
@@ -39,16 +42,40 @@ public class RegisterServlet extends HttpServlet {
                 return;
             }
 
-            // Tạo và đăng ký customer
-            Customer customer = new Customer();
-            customer.setName(name);
-            customer.setPhone(phone);
-            customer.setEmail(email);
-            customer.setPassword(password);
-            customer.setAddressCustomer(address);
-
-            if (userService.registerCustomer(customer)) {
-                response.sendRedirect("login.jsp?registerSuccess=true");
+            // Tạo customer tạm thời với status "pending" để lưu vào database
+            Customer tempCustomer = new Customer();
+            tempCustomer.setName(name);
+            tempCustomer.setPhone(phone);
+            tempCustomer.setEmail(email);
+            tempCustomer.setPassword(password);
+            tempCustomer.setAddressCustomer(address);
+            tempCustomer.setStatus("pending"); // Trạng thái chờ xác thực
+            
+            // Lưu customer tạm thời vào database
+            CustomerDAO customerDAO = new CustomerDAO();
+            if (customerDAO.registerTempCustomer(tempCustomer)) {
+                // Tạo mã OTP 6 số ngẫu nhiên
+                String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+                
+                // Lưu OTP vào database
+                customerDAO.saveOTP(email, otp);
+                
+                // Gửi email chứa OTP
+                boolean emailSent = EmailUtils.sendRegisterOTPEmail(email, otp, name);
+                
+                if (emailSent) {
+                    HttpSession session = request.getSession();
+                    session.setAttribute("otpEmail", email);
+                    session.setAttribute("otpType", "register"); // Đánh dấu đây là OTP cho đăng ký
+                    session.setAttribute("message_forgotpass", "Mã xác nhận đã được gửi đến email của bạn. Mã có hiệu lực trong 5 phút.");
+                    session.setAttribute("messageType", "success");
+                    response.sendRedirect("verify-otp.jsp");
+                } else {
+                    // Xóa customer tạm thời nếu gửi email thất bại
+                    customerDAO.deleteTempCustomer(email);
+                    request.setAttribute("error", "Đã có lỗi khi gửi email. Vui lòng thử lại sau.");
+                    forwardWithAttributes(request, response, name, phone, email, address);
+                }
             } else {
                 request.setAttribute("error", "Đăng ký thất bại do lỗi hệ thống");
                 forwardWithAttributes(request, response, name, phone, email, address);

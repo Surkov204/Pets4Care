@@ -14,11 +14,28 @@ import utils.PasswordUtil;
 
 public class UserDAO {
 
+    public Customer findByEmail(String email) {
+        String sql = "SELECT * FROM Customer WHERE email = ?";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, email);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapCustomerFromResultSet(rs);
+                }
+            }
+        } catch (SQLException ex) {
+            System.err.println("FindByEmail error: " + ex.getMessage());
+        }
+        return null;
+    }
+
     public Customer loginCustomer(String email, String inputPassword) {
         String sql = "SELECT * FROM Customer WHERE email = ?";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, email);
 
@@ -37,18 +54,17 @@ public class UserDAO {
         return null;
     }
 
-
-
     public boolean registerCustomer(Customer customer) {
         try (Connection con = DBConnection.getConnection()) {
             // Không mã hóa password
             String sql = "INSERT INTO Customer (name, phone, email, password, address_Customer) VALUES (?, ?, ?, ?, ?)";
             PreparedStatement ps = con.prepareStatement(sql);
-            ps.setString(1, customer.getName());
+            // Dùng setNString cho các trường có thể chứa Unicode
+            ps.setNString(1, customer.getName());
             ps.setString(2, customer.getPhone());
             ps.setString(3, customer.getEmail());
             ps.setString(4, customer.getPassword()); // Lưu password plain text
-            ps.setString(5, customer.getAddressCustomer());
+            ps.setNString(5, customer.getAddressCustomer());
 
             int rows = ps.executeUpdate();
             return rows > 0;
@@ -57,7 +73,6 @@ public class UserDAO {
         }
         return false;
     }
-
 
     public Customer findOrCreateByGoogle(GoogleUser user) {
         try (Connection con = DBConnection.getConnection()) {
@@ -69,20 +84,19 @@ public class UserDAO {
             if (rs.next()) {
                 return new Customer(
                         rs.getInt("customer_id"),
-                        rs.getString("name"),
+                        rs.getNString("name"),
                         rs.getString("phone"),
                         rs.getString("email"),
                         rs.getString("password"),
                         rs.getString("google_id"),
-                        rs.getString("address_Customer"),
+                        rs.getNString("address_Customer"),
                         rs.getString("status")
                 );
             }
 
-            // Chưa tồn tại → tạo mới
             ps = con.prepareStatement(
                     "INSERT INTO Customer (name, email, google_id) VALUES (?, ?, ?)");
-            ps.setString(1, user.getName());
+            ps.setNString(1, user.getName());
             ps.setString(2, user.getEmail());
             ps.setString(3, user.getId());
             ps.executeUpdate();
@@ -179,12 +193,11 @@ public class UserDAO {
 
     public boolean checkEmailExists(String email) {
         String sql = "SELECT COUNT(*) FROM Customer WHERE email = ?";
-        
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setString(1, email);
-            
+
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt(1) > 0;
@@ -209,12 +222,11 @@ public class UserDAO {
         }
         return false;
     }
-    
+
     public boolean resetPassword(String email, String newPassword) {
         String sql = "UPDATE Customer SET password = ? WHERE email = ?";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, newPassword); // Không mã hóa
             ps.setString(2, email);
@@ -229,14 +241,13 @@ public class UserDAO {
     private Customer mapCustomerFromResultSet(ResultSet rs) throws SQLException {
         Customer customer = new Customer();
         customer.setCustomerId(rs.getInt("customer_id"));
-        customer.setName(rs.getString("name"));
+        customer.setName(rs.getNString("name"));
         customer.setEmail(rs.getString("email"));
         customer.setPassword(rs.getString("password"));
-        customer.setAddressCustomer(rs.getString("address_Customer"));
+        customer.setAddressCustomer(rs.getNString("address_Customer"));
         customer.setPhone(rs.getString("phone"));
         customer.setStatus(rs.getString("status"));
         return customer;
     }
 
-    
 }

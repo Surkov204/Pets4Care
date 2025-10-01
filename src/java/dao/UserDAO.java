@@ -14,6 +14,24 @@ import utils.PasswordUtil;
 
 public class UserDAO {
 
+    public Customer findByEmail(String email) {
+        String sql = "SELECT * FROM Customer WHERE email = ?";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, email);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapCustomerFromResultSet(rs);
+                }
+            }
+        } catch (SQLException ex) {
+            System.err.println("FindByEmail error: " + ex.getMessage());
+        }
+        return null;
+    }
+
     public Customer loginCustomer(String email, String inputPassword) {
         String sql = "SELECT * FROM Customer WHERE email = ?";
 

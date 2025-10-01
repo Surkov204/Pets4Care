@@ -3,6 +3,7 @@ package service;
 import dao.UserDAO;
 import model.Customer;
 import model.GoogleUser;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class UserService implements IUserService {
 
@@ -10,7 +11,28 @@ public class UserService implements IUserService {
 
     @Override
     public Customer loginCustomer(String email, String password) {
-        return userDao.loginCustomer(email, password);
+        Customer customer = userDao.findByEmail(email);
+        if (customer != null) {
+            String stored = customer.getPassword();
+
+            try {
+                if (stored != null && stored.startsWith("$2")) {
+                    if (BCrypt.checkpw(password, stored)) {
+                        return customer;
+                    }
+                } else {
+                    if (password.equals(stored)) {
+                        String hashed = BCrypt.hashpw(password, BCrypt.gensalt(12));
+                        userDao.resetPassword(customer.getEmail(), hashed);
+                        customer.setPassword(hashed);
+                        return customer;
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Password check error: " + e.getMessage());
+            }
+        }
+        return null;
     }
 
     @Override
@@ -22,15 +44,20 @@ public class UserService implements IUserService {
         if (checkPhoneExists(customer.getPhone())) {
             throw new IllegalArgumentException("Số điện thoại đã tồn tại");
         }
+
+        String hashed = BCrypt.hashpw(customer.getPassword(), BCrypt.gensalt(12));
+        customer.setPassword(hashed);
+
         return userDao.registerCustomer(customer);
     }
 
     @Override
     public boolean resetPassword(String email, String newPassword) {
-        return userDao.resetPassword(email, newPassword);
+
+        String hased = BCrypt.hashpw(newPassword, BCrypt.gensalt(12));
+        return userDao.resetPassword(email, hased);
     }
-    
-    
+
     @Override
     public Customer loginWithGoogle(GoogleUser user) {
         return userDao.findOrCreateByGoogle(user);
@@ -46,4 +73,3 @@ public class UserService implements IUserService {
         return userDao.checkPhoneExists(phone);
     }
 }
-

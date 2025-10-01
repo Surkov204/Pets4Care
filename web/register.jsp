@@ -145,17 +145,17 @@ input:focus {
     <h2 class="register-title">🐶 Đăng Ký Thành Viên</h2>
     <form name="registerForm" onsubmit="return validateForm()" action="register" method="post">
         <label>Họ và tên:</label>
-        <input type="text" name="name" oninput="checkNameInput()" required />
+        <input type="text" name="name" oninput="checkNameInput()" value="${nameValue}" required />
         <span id="nameError" class="error"></span>
 
         <label>Số điện thoại:</label>
-        <input type="text" name="phone" required />
+        <input type="text" name="phone" value="${phoneValue}" required />
         <c:if test="${not empty phoneError}">
             <p class="error-message">${phoneError}</p>
         </c:if>
 
         <label>Email:</label>
-        <input type="email" name="email" required />
+        <input type="email" name="email" value="${emailValue}" required />
         <c:if test="${not empty emailError}">
             <p class="error-message">${emailError}</p>
         </c:if>
@@ -164,7 +164,7 @@ input:focus {
         <input type="password" name="password" required />
 
         <label>Địa chỉ:</label>
-        <input type="text" name="address" required />
+        <input type="text" name="address" value="${addressValue}" required />
 
         <button type="submit" class="cute-btn">Đăng ký</button>
     </form>
@@ -172,8 +172,21 @@ input:focus {
     <c:if test="${not empty error}">
         <p class="text-center mt-3 text-red-500 font-semibold">${error}</p>
     </c:if>
+    
+    <c:if test="${not empty message_register}">
+        <div class="alert alert-${messageType}" style="padding: 12px; border-radius: 8px; margin-bottom: 1rem; font-weight: 500; background-color: ${messageType == 'success' ? '#d4edda' : '#f8d7da'}; color: ${messageType == 'success' ? '#155724' : '#721c24'}; border: 1px solid ${messageType == 'success' ? '#c3e6cb' : '#f5c6cb'};">
+            ${message_register}
+        </div>
+    </c:if>
+    
+    <c:if test="${param.error == 'max_attempt'}">
+        <div class="alert alert-error" style="padding: 12px; border-radius: 8px; margin-bottom: 1rem; font-weight: 500; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
+            Bạn đã nhập sai OTP quá 3 lần. Vui lòng đăng ký lại.
+        </div>
+    </c:if>
 
     <p class="text-center mt-4">Đã có tài khoản? <a href="login.jsp" class="text-pink-500 font-bold hover:underline">Đăng nhập</a></p>
 </div>
 </body>
 </html>
+<!--thêm verify email-->

@@ -1,0 +1,3 @@
+[submodule "web/images"]
+	path = web/images
+	url = https://github.com/Surkov204/Pet4Cares_PIC.git

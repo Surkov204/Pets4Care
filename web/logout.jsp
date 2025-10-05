@@ -10,5 +10,5 @@
     justLoggedOut.setPath("/");
     response.addCookie(justLoggedOut);
 
-    response.sendRedirect("login");
+    response.sendRedirect("login.jsp");
 %>

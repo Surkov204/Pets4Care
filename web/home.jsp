@@ -32,6 +32,29 @@
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
         <link rel="stylesheet" href="css/homeStyle.css" />
         <style>
+            /* Animation cho thông báo */
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOutRight {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+            
             .slideshow {
                 position: relative;
                 width: 800px;
@@ -99,9 +122,59 @@
 
     </head>
     <body>
+        <!-- Thông báo đăng nhập thành công -->
+        <%
+            String loginSuccess = (String) session.getAttribute("loginSuccess");
+            if (loginSuccess != null) {
+        %>
+        <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: linear-gradient(135deg, #38a169, #48bb78); color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 300px; animation: slideInRight 0.5s ease-out;">
+            <i class="fas fa-check-circle"></i> <%= loginSuccess %>
+        </div>
+        <script>
+            // Tự động ẩn thông báo sau 3 giây
+            setTimeout(function() {
+                const notification = document.querySelector('div[style*="position: fixed"]');
+                if (notification) {
+                    notification.style.animation = 'slideOutRight 0.5s ease-out';
+                    setTimeout(() => notification.remove(), 500);
+                }
+            }, 3000);
+        </script>
+        <%
+                // Xóa thông báo khỏi session sau khi hiển thị
+                session.removeAttribute("loginSuccess");
+            }
+        %>
+        
         <!-- Top Bar -->
         <div class="top-bar">
-            <div class="left">🐾 PETCITY - SIÊU THỊ THÚ CƯNG ONLINE 🐾</div>
+            <div class="left">
+                🐾 PETCITY - SIÊU THỊ THÚ CƯNG ONLINE 🐾
+                <%
+                    // Kiểm tra nếu staff đã đăng nhập
+                    model.Staff loggedInStaff = (model.Staff) session.getAttribute("staff");
+                    if (loggedInStaff != null) {
+                %>
+                <a href="<%= request.getContextPath()%>/staff/bookings?action=view" 
+                   style="margin-left: 20px; 
+                          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                          color: white; 
+                          padding: 10px 30px; 
+                          border-radius: 20px; 
+                          text-decoration: none; 
+                          font-size: 14px; 
+                          font-weight: 600; 
+                          transition: all 0.3s ease; 
+                          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+                          display: inline-block;
+                          text-align: center;
+                          min-width: 120px;">
+                    Quản lý
+                </a>
+                <%
+                    }
+                %>
+            </div>
             <div class="right">
                 <div>✨ CẦN LÀ CÓ - MÒ LÀ THẤY ✨</div>
                 <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>

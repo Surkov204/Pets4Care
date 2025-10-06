@@ -16,53 +16,60 @@
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/GoogleUser.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/Customer.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/OrderItem.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IToyDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ISupplierDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/SupplierDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ToyCategoryDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IReviewDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ToyDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IOrderDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/CustomerDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/OrderDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ReviewDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ICustomerDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/UserDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IToyCategoryDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ResendOTPServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/HomeController.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/AutoLoginServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/UpdateUserServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/CartServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ResetPasswordServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ToyDetailServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/SearchSuggestServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/VerifyOTPServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ProductDetailServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ForgotPasswordServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/LoginServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/RegisterServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/SearchServlet.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/GoogleLoginServlet.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/filter/AutoLoginFilter.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/utils/PasswordUtil.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/utils/GoogleUtils.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/utils/GoogleConstants.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/utils/DBConnection.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/utils/EmailUtils.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/ToyCategoryService.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/IToyCategoryService.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/ToyService.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/IReviewService.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/SupplierService.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/ReviewService.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/IToyService.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/ISupplierService.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/UserService.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/IUserService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/WEB-INF/web.xml</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/home.jsp</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/redirect.jsp</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/register.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/AutoLoginServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ProductDetailServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/LoginServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ResendOTPServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/HomeController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/UpdateUserServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ResetPasswordServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/SearchSuggestServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/VerifyOTPServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/SearchServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ToyDetailServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ChangePasswordServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/CartServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ForgotPasswordServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/GoogleLoginServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/RegisterServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IReviewDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/OrderDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ISupplierDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IOrderDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ReviewDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IToyCategoryDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ToyDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/UserDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/CustomerDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ICustomerDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ToyCategoryDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IToyDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/SupplierDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/ToyService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/UserService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/IToyCategoryService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/IToyService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/IUserService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/ISupplierService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/ToyCategoryService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/SupplierService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/IReviewService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/ReviewService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/dashboard.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/viewOrder.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/orderDetail.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/chatCustomer.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/css/staff.css</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/css/homeStyle.css</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/login.jsp</file>
         </group>
     </open-files>
 </project-private>

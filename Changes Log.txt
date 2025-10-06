@@ -1,9 +1,0 @@
-10/5/2025 - Ver 1.0.1
-
--Thêm chức năng View Bookings dành cho Staff
--Thêm chức năng View Detail Bookings (Xem chi tiết) dành cho Staff
--Thêm chức năng View Customers info cho Staff
--Thêm chức năng View Detail Customers info (Xem chi tiết) cho Staff
--Thêm chức năng View Products dành cho Staff
--Thêm chức năng View Detail Products (Xem chi tiết) dành cho Staff
--Sửa PET_SHOP_database.bak

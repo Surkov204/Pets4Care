@@ -263,12 +263,12 @@
         <nav>
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
+                <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
+                <li><a href="dat-lich-kham.jsp">ĐẶT LỊCH KHÁM</a></li>
+                <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
+                <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
-                <li><a href="search?categoryId=1">ĐẶT LỊCH KHÁM</a></li>
-                <li><a href="search?categoryId=2">HỒ SƠ BÁC SĨ</a></li>
-                <li><a href="search?categoryId=3">DỊCH VỤ SPA</a></li>
                 <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
-                <li><a href="meo-vat.jsp">MẸO VẶT</a></li>
                 <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
             </ul>
         </nav>

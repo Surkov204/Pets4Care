@@ -624,11 +624,23 @@
         <div id="admin-form" class="form-container">
             <form action="admin-login" method="post">
                 <div class="form-group">
-                    <label for="admin-username" class="form-label">
-                        <i class="fas fa-user-tie"></i> Tên đăng nhập
+                    <label for="admin-account-type" class="form-label">
+                        <i class="fas fa-user-tag"></i> Loại tài khoản
                     </label>
-                    <input type="text" name="username" id="admin-username" class="form-input" 
-                           required placeholder="Nhập tên đăng nhập quản trị">
+                    <select name="accountType" id="admin-account-type" class="form-input" required style="cursor: pointer;">
+                        <option value="">-- Chọn loại tài khoản --</option>
+                        <option value="admin">Quản trị viên</option>
+                        <option value="staff">Nhân viên</option>
+                        <option value="doctor">Bác sĩ thú y</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="admin-email" class="form-label">
+                        <i class="fas fa-envelope"></i> Email
+                    </label>
+                    <input type="email" name="email" id="admin-email" class="form-input" 
+                           required placeholder="Nhập email của bạn">
                 </div>
                 
                 <div class="form-group">
@@ -636,11 +648,11 @@
                         <i class="fas fa-key"></i> Mật khẩu
                     </label>
                     <input type="password" name="password" id="admin-password" class="form-input" 
-                           required placeholder="Nhập mật khẩu quản trị">
+                           required placeholder="Nhập mật khẩu">
                 </div>
                 
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-shield-alt"></i> Đăng nhập quản trị
+                    <i class="fas fa-shield-alt"></i> Đăng nhập
                 </button>
             </form>
         </div>
@@ -694,7 +706,14 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            showTab('customer');
+            // Kiểm tra parameter để chọn tab
+            const urlParams = new URLSearchParams(window.location.search);
+            const tab = urlParams.get('tab');
+            if (tab === 'admin') {
+                showTab('admin');
+            } else {
+                showTab('customer');
+            }
             
             // Add more floating pets dynamically
             const pets = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵'];

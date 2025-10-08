@@ -32,6 +32,29 @@
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
         <link rel="stylesheet" href="css/homeStyle.css" />
         <style>
+            /* Animation cho thông báo */
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOutRight {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+            
             .slideshow {
                 position: relative;
                 width: 800px;
@@ -99,9 +122,35 @@
 
     </head>
     <body>
+        <!-- Thông báo đăng nhập thành công -->
+        <%
+            String loginSuccess = (String) session.getAttribute("loginSuccess");
+            if (loginSuccess != null) {
+        %>
+        <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: linear-gradient(135deg, #38a169, #48bb78); color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 300px; animation: slideInRight 0.5s ease-out;">
+            <i class="fas fa-check-circle"></i> <%= loginSuccess %>
+        </div>
+        <script>
+            // Tự động ẩn thông báo sau 3 giây
+            setTimeout(function() {
+                const notification = document.querySelector('div[style*="position: fixed"]');
+                if (notification) {
+                    notification.style.animation = 'slideOutRight 0.5s ease-out';
+                    setTimeout(() => notification.remove(), 500);
+                }
+            }, 3000);
+        </script>
+        <%
+                // Xóa thông báo khỏi session sau khi hiển thị
+                session.removeAttribute("loginSuccess");
+            }
+        %>
+        
         <!-- Top Bar -->
         <div class="top-bar">
-            <div class="left">🐾 PETCITY - SIÊU THỊ THÚ CƯNG ONLINE 🐾</div>
+            <div class="left">
+                🐾 PETCITY - SIÊU THỊ THÚ CƯNG ONLINE 🐾
+            </div>
             <div class="right">
                 <div>✨ CẦN LÀ CÓ - MÒ LÀ THẤY ✨</div>
                 <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
@@ -152,9 +201,9 @@
                         <div class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden z-50"
                              id="userMenu">
                             <div class="py-1">
-                                <a href="user/user-info.jsp"
+                                <a href="<%= request.getContextPath()%>/user/user-info.jsp"
                                    class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100">👤 Thông tin tài khoản</a>
-                                <a href="logout.jsp"
+                                <a href="<%= request.getContextPath()%>/logout.jsp"
                                    class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100">🚪 Đăng xuất</a>
                             </div>
                         </div>
@@ -214,12 +263,12 @@
         <nav>
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
+                <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
+                <li><a href="dat-lich-kham.jsp">ĐẶT LỊCH KHÁM</a></li>
+                <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
+                <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
-                <li><a href="search?categoryId=1">ĐẶT LỊCH KHÁM</a></li>
-                <li><a href="search?categoryId=2">HỒ SƠ BÁC SĨ</a></li>
-                <li><a href="search?categoryId=3">DỊCH VỤ SPA</a></li>
                 <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
-                <li><a href="meo-vat.jsp">MẸO VẶT</a></li>
                 <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
             </ul>
         </nav>

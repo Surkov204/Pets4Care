@@ -97,12 +97,12 @@
         <nav>
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
+                <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
+                <li><a href="dat-lich-kham.jsp">ĐẶT LỊCH KHÁM</a></li>
+                <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
+                <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp" style="background: rgba(255, 255, 255, 0.2);">GIỚI THIỆU</a></li>
-                <li><a href="search?categoryId=1">ĐẶT LỊCH KHÁM</a></li>
-                <li><a href="search?categoryId=2">HỒ SƠ BÁC SĨ</a></li>
-                <li><a href="search?categoryId=3">DỊCH VỤ SPA</a></li>
                 <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
-                <li><a href="meo-vat.jsp">MẸO VẶT</a></li>
                 <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
             </ul>
         </nav>
@@ -110,40 +110,40 @@
         <!-- Main Content -->
         <main class="main-content px-6 py-10 bg-white rounded shadow mt-4 max-w-6xl mx-auto" style="margin: 2rem auto; background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow-light);">
             <h2 class="text-4xl font-bold mb-8 text-center animate-pulse" style="color: var(--primary); font-family: 'Baloo 2', cursive;">
-                🌟 Chào mừng đến với Petcity! 🌟
+                🌟 Nền tảng quản lý sản phẩm & dịch vụ chăm sóc thú cưng 🌟
             </h2>
 
             <div class="grid lg:grid-cols-2 gap-10 items-center">
                 <img src="images/gt.jpg" class="rounded-xl shadow-xl w-full object-cover hover:scale-105 transition-transform duration-500" alt="Giới thiệu thú cưng" style="border-radius: var(--border-radius); box-shadow: var(--shadow-hover);"/>
                 <div class="space-y-5 leading-relaxed" style="color: var(--text);">
-                    <p><strong style="color: var(--primary);">Petcity</strong> là chuỗi siêu thị thú cưng hàng đầu tại Việt Nam, nơi bạn có thể tìm thấy mọi thứ cho thú cưng thân yêu của mình từ thức ăn, đồ chơi đến các dịch vụ chăm sóc hiện đại.</p>
-                    <p>Chúng tôi hoạt động với sứ mệnh mang lại cuộc sống tốt đẹp hơn cho thú cưng và trải nghiệm tiện lợi cho người nuôi. Với sự tận tâm và chuyên nghiệp, Petcity là lựa chọn hàng đầu cho mọi người yêu động vật.</p>
-                    <p>Từ năm 2020, chúng tôi đã phục vụ hơn <span style="color: var(--accent); font-weight: 700;">500.000 khách hàng</span> và không ngừng mở rộng trên toàn quốc. Sự hài lòng của bạn là động lực để chúng tôi phát triển mỗi ngày.</p>
+                    <p><strong style="color: var(--primary);">Petcity</strong> là hệ thống quản lý tập trung cho cửa hàng thú cưng: từ danh mục sản phẩm (thức ăn, phụ kiện, đồ chơi) đến các dịch vụ chăm sóc (tắm spa, cắt tỉa, khám thú y, đặt lịch).</p>
+                    <p>Nền tảng hỗ trợ quản lý tồn kho, giá bán, khuyến mãi; đồng thời cho phép khách hàng đặt dịch vụ trực tuyến, theo dõi lịch hẹn, và cập nhật hồ sơ thú cưng ngay trên website.</p>
+                    <p>Mục tiêu của chúng tôi là giúp chủ cửa hàng vận hành hiệu quả, và người nuôi thú cưng có trải nghiệm mua sắm – đặt dịch vụ nhanh chóng, minh bạch và an toàn.</p>
                 </div>
             </div>
 
             <div class="mt-16 grid md:grid-cols-3 gap-8 text-center">
                 <div class="p-6 rounded-xl shadow hover:shadow-lg transition duration-300" style="background: var(--card-bg-alt); border-radius: var(--border-radius); box-shadow: var(--shadow-light);">
-                    <i class="fas fa-dog text-5xl mb-4" style="color: var(--accent);"></i>
-                    <h3 class="text-xl font-bold mb-2" style="color: var(--primary);">Sản phẩm chất lượng</h3>
-                    <p style="color: var(--text);">Chúng tôi chỉ cung cấp sản phẩm an toàn và được kiểm định bởi chuyên gia thú y.</p>
+                    <i class="fas fa-boxes text-5xl mb-4" style="color: var(--accent);"></i>
+                    <h3 class="text-xl font-bold mb-2" style="color: var(--primary);">Quản lý sản phẩm</h3>
+                    <p style="color: var(--text);">Theo dõi tồn kho, giá, thuộc tính và danh mục; cập nhật nhanh chương trình khuyến mãi.</p>
                 </div>
                 <div class="p-6 rounded-xl shadow hover:shadow-lg transition duration-300" style="background: var(--card-bg-alt); border-radius: var(--border-radius); box-shadow: var(--shadow-light);">
-                    <i class="fas fa-heart text-5xl mb-4" style="color: var(--accent-pink);"></i>
-                    <h3 class="text-xl font-bold mb-2" style="color: var(--primary);">Yêu thương thú cưng</h3>
-                    <p style="color: var(--text);">Đội ngũ của chúng tôi luôn đặt quyền lợi và cảm xúc của thú cưng lên hàng đầu.</p>
+                    <i class="fas fa-spa text-5xl mb-4" style="color: var(--accent-pink);"></i>
+                    <h3 class="text-xl font-bold mb-2" style="color: var(--primary);">Dịch vụ chăm sóc</h3>
+                    <p style="color: var(--text);">Đặt lịch spa/cắt tỉa/khám thú y trực tuyến, tự động nhắc hẹn và quản lý lịch nhân sự.</p>
                 </div>
                 <div class="p-6 rounded-xl shadow hover:shadow-lg transition duration-300" style="background: var(--card-bg-alt); border-radius: var(--border-radius); box-shadow: var(--shadow-light);">
-                    <i class="fas fa-shipping-fast text-5xl mb-4" style="color: var(--primary);"></i>
-                    <h3 class="text-xl font-bold mb-2" style="color: var(--primary);">Giao hàng nhanh chóng</h3>
-                    <p style="color: var(--text);">Hệ thống giao hàng toàn quốc giúp bạn nhận hàng trong thời gian sớm nhất.</p>
+                    <i class="fas fa-paw text-5xl mb-4" style="color: var(--primary);"></i>
+                    <h3 class="text-xl font-bold mb-2" style="color: var(--primary);">Hồ sơ thú cưng</h3>
+                    <p style="color: var(--text);">Lưu trữ thông tin thú cưng, lịch sử khám – dịch vụ – sản phẩm đã dùng, và hình ảnh.</p>
                 </div>
             </div>
 
             <section class="text-center mt-20">
                 <h3 class="text-2xl font-bold mb-4" style="color: var(--accent); font-family: 'Baloo 2', cursive;">🎯 Sứ mệnh của chúng tôi</h3>
                 <p class="max-w-3xl mx-auto leading-loose" style="color: var(--text);">
-                    Petcity không chỉ là nơi mua sắm, mà còn là ngôi nhà của hàng triệu thú cưng và chủ nuôi tại Việt Nam. Chúng tôi mong muốn xây dựng cộng đồng yêu thú cưng văn minh, nơi mà mỗi thú cưng đều được yêu thương, chăm sóc đầy đủ và hạnh phúc.
+                    Xây dựng một nền tảng quản lý toàn diện cho hệ sinh thái thú cưng: giúp cửa hàng vận hành thông minh, khách hàng đặt dịch vụ dễ dàng, và thú cưng luôn nhận được sự chăm sóc tốt nhất.
                 </p>
             </section>
         </main>

@@ -247,7 +247,107 @@ public class UserDAO {
         customer.setAddressCustomer(rs.getNString("address_Customer"));
         customer.setPhone(rs.getString("phone"));
         customer.setStatus(rs.getString("status"));
+        customer.setGoogleId(rs.getString("google_id"));
         return customer;
+    }
+
+    // Phương thức để lấy tất cả khách hàng với phân trang
+    public List<Customer> getAllCustomers(int offset, int limit) {
+        List<Customer> customers = new ArrayList<>();
+        String sql = "SELECT * FROM Customer ORDER BY customer_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, offset);
+            ps.setInt(2, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    customers.add(mapCustomerFromResultSet(rs));
+                }
+            }
+        } catch (SQLException ex) {
+            System.err.println("Get all customers error: " + ex.getMessage());
+        }
+        return customers;
+    }
+
+    // Phương thức để đếm tổng số khách hàng
+    public int countAllCustomers() {
+        String sql = "SELECT COUNT(*) FROM Customer";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException ex) {
+            System.err.println("Count customers error: " + ex.getMessage());
+        }
+        return 0;
+    }
+
+    // Phương thức để tìm khách hàng theo ID
+    public Customer findById(int customerId) {
+        String sql = "SELECT * FROM Customer WHERE customer_id = ?";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapCustomerFromResultSet(rs);
+                }
+            }
+        } catch (SQLException ex) {
+            System.err.println("Find by ID error: " + ex.getMessage());
+        }
+        return null;
+    }
+
+    // Phương thức để tìm kiếm khách hàng
+    public List<Customer> searchCustomers(String keyword, int offset, int limit) {
+        List<Customer> customers = new ArrayList<>();
+        String sql = "SELECT * FROM Customer WHERE name LIKE ? OR email LIKE ? OR phone LIKE ? ORDER BY customer_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            String searchPattern = "%" + keyword + "%";
+            ps.setString(1, searchPattern);
+            ps.setString(2, searchPattern);
+            ps.setString(3, searchPattern);
+            ps.setInt(4, offset);
+            ps.setInt(5, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    customers.add(mapCustomerFromResultSet(rs));
+                }
+            }
+        } catch (SQLException ex) {
+            System.err.println("Search customers error: " + ex.getMessage());
+        }
+        return customers;
+    }
+
+    // Phương thức để đếm kết quả tìm kiếm
+    public int countSearchCustomers(String keyword) {
+        String sql = "SELECT COUNT(*) FROM Customer WHERE name LIKE ? OR email LIKE ? OR phone LIKE ?";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            String searchPattern = "%" + keyword + "%";
+            ps.setString(1, searchPattern);
+            ps.setString(2, searchPattern);
+            ps.setString(3, searchPattern);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException ex) {
+            System.err.println("Count search customers error: " + ex.getMessage());
+        }
+        return 0;
     }
 
 }

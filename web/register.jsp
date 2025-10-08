@@ -166,6 +166,14 @@ input:focus {
         <label>Địa chỉ:</label>
         <input type="text" name="address" value="${addressValue}" required />
 
+        <label>Loại tài khoản:</label>
+        <select name="accountType" style="font-family: inherit; border-radius: 12px; border: 1px solid #ffd6e2; padding: 10px; width: 100%; background: #fff8fb; margin-bottom: 1rem; transition: border 0.18s;">
+            <option value="customer">Khách hàng</option>
+            <option value="doctor">Bác sĩ thú y</option>
+            <option value="staff">Nhân viên</option>
+            <option value="admin">Quản trị viên</option>
+        </select>
+
         <button type="submit" class="cute-btn">Đăng ký</button>
     </form>
 

@@ -39,6 +39,7 @@
 <li><a href="${pageContext.request.contextPath}/staff/chatCustomer.jsp"><i class="fas fa-comments"></i> Chat with Customer</a></li>
 <li><a href="${pageContext.request.contextPath}/staff/customer-list.jsp"><i class="fas fa-user"></i> Customer Profile</a></li>
 <li><a href="${pageContext.request.contextPath}/staff/index.jsp"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
+<li><a href="staff-profile.jsp"><i class="fas fa-id-card"></i> Staff Profile</a></li>
         </ul>
     </aside>
 

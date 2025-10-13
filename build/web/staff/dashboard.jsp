@@ -33,12 +33,12 @@
     <!-- Sidebar -->
     <aside class="staff-sidebar">
         <ul>
-            <li><a href="viewOrder"><i class="fas fa-receipt"></i> View Orders</a></li>
-            <li><a href="updateBooking"><i class="fas fa-edit"></i> Update Booking</a></li>
-            <li><a href="viewServiceBooking"><i class="fas fa-list"></i> Services Booking</a></li>
-            <li><a href="chatCustomer"><i class="fas fa-comments"></i> Chat with Customer</a></li>
-            <li><a href="viewCustomerProfile"><i class="fas fa-user"></i> Customer Profile</a></li>
-            <li><a href="workSchedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
+<li><a href="${pageContext.request.contextPath}/staff/viewOrder.jsp"><i class="fas fa-receipt"></i> View Orders</a></li>
+<li><a href="${pageContext.request.contextPath}/staff/booking-list.jsp"><i class="fas fa-edit"></i> Update Booking</a></li>
+<li><a href="${pageContext.request.contextPath}/staff/booking-stats.jsp"><i class="fas fa-list"></i> Services Booking</a></li>
+<li><a href="${pageContext.request.contextPath}/staff/chatCustomer.jsp"><i class="fas fa-comments"></i> Chat with Customer</a></li>
+<li><a href="${pageContext.request.contextPath}/staff/customer-list.jsp"><i class="fas fa-user"></i> Customer Profile</a></li>
+<li><a href="${pageContext.request.contextPath}/staff/index.jsp"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
         </ul>
     </aside>
 

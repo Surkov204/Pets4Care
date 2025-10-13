@@ -81,6 +81,23 @@
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/forgot-password.jsp</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/doctor.jsp</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/gioi-thieu.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IBookingDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/images/pets/placeholder.svg</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ProductDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/staff_home.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/dashboard.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StaffCustomerServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StaffHomeServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/Staff.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StaffLoginServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/filter/StaffAuthFilter.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StaffProductServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StaffLogoutServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/booking-list.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/booking-detail.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/booking-stats.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/index.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/customer-detail.jsp</file>
         </group>
     </open-files>
 </project-private>

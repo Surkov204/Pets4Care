@@ -17,14 +17,26 @@ public class DBConnection {
     public static Connection getConnection(){
         Connection con = null;
         try{
+            System.out.println("=== BẮT ĐẦU KẾT NỐI DATABASE ===");
+            System.out.println("Driver: " + driverName);
+            System.out.println("URL: " + dbURL);
+            System.out.println("User: " + userDB);
+            
             Class.forName(driverName);
+            System.out.println("Driver loaded successfully");
+            
             con = DriverManager.getConnection(dbURL,userDB,passDB);
+            System.out.println("Database connection successful");
             return con;
         }
          catch(Exception ex){
+             System.err.println("=== LỖI KẾT NỐI DATABASE ===");
+             System.err.println("Error message: " + ex.getMessage());
+             System.err.println("Error type: " + ex.getClass().getSimpleName());
              Logger.getLogger(DBConnection.class.getName()).log(Level.SEVERE,null,ex);
-             
+             ex.printStackTrace();
          }
+        System.err.println("Returning null connection");
         return null;
     }
     

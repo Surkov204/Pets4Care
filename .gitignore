@@ -1,0 +1,11 @@
+# Build/IDE artifacts
+/build/
+/dist/
+/nbproject/private/
+/web/WEB-INF/classes/
+/web/WEB-INF/lib/
+
+# Java
+*.class
+*.war
+*.log

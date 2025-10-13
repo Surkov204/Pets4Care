@@ -10,12 +10,14 @@ import model.Customer;
 import utils.DBConnection;
 import java.sql.*;
 import utils.PasswordUtil;
+import java.util.logging.Logger;
 
 /**
  *
  * @author ASUS
  */
 public class CustomerDAO implements ICustomerDAO {
+    private static final Logger logger = Logger.getLogger(CustomerDAO.class.getName());
 
     @Override
     public List<Customer> getAllCustomers() {
@@ -197,21 +199,49 @@ public boolean updatePassword(int customerId, String newPassword) {
 
 // Đăng ký customer tạm thời với status "pending"
 public boolean registerTempCustomer(Customer customer) {
-    String hashedPassword = PasswordUtil.hashPassword(customer.getPassword());
-    String sql = "INSERT INTO Customer (name, phone, email, password, address_Customer, status) VALUES (?, ?, ?, ?, ?, ?)";
+    logger.info("=== BẮT ĐẦU REGISTER TEMP CUSTOMER ===");
+    logger.info("Customer name: " + customer.getName());
+    logger.info("Customer email: " + customer.getEmail());
+    logger.info("Customer phone: " + customer.getPhone());
+    logger.info("Customer address: " + customer.getAddressCustomer());
     
-    try (Connection conn = DBConnection.getConnection();
-         PreparedStatement ps = conn.prepareStatement(sql)) {
-        ps.setString(1, customer.getName());
-        ps.setString(2, customer.getPhone());
-        ps.setString(3, customer.getEmail());
-        ps.setString(4, hashedPassword);
-        ps.setString(5, customer.getAddressCustomer());
-        ps.setString(6, "pending");
+    String hashedPassword = PasswordUtil.hashPassword(customer.getPassword());
+    logger.info("Password hashed successfully");
+    
+    String sql = "INSERT INTO Customer (name, phone, email, password, address_Customer, status) VALUES (?, ?, ?, ?, ?, ?)";
+    logger.info("SQL query: " + sql);
+    
+    try (Connection conn = DBConnection.getConnection()) {
+        if (conn == null) {
+            logger.severe("KẾT NỐI DATABASE THẤT BẠI - Connection is null");
+            return false;
+        }
+        logger.info("Kết nối database thành công");
         
-        int rowsInserted = ps.executeUpdate();
-        return rowsInserted > 0;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, customer.getName());
+            ps.setString(2, customer.getPhone());
+            ps.setString(3, customer.getEmail());
+            ps.setString(4, hashedPassword);
+            ps.setString(5, customer.getAddressCustomer());
+            ps.setString(6, "pending");
+            
+            logger.info("PreparedStatement parameters set successfully");
+            int rowsInserted = ps.executeUpdate();
+            logger.info("Rows inserted: " + rowsInserted);
+            
+            boolean result = rowsInserted > 0;
+            logger.info("Register temp customer result: " + result);
+            return result;
+        }
     } catch (SQLException e) {
+        logger.severe("SQL EXCEPTION trong registerTempCustomer: " + e.getMessage());
+        logger.severe("SQL State: " + e.getSQLState());
+        logger.severe("Error Code: " + e.getErrorCode());
+        e.printStackTrace();
+        return false;
+    } catch (Exception e) {
+        logger.severe("GENERAL EXCEPTION trong registerTempCustomer: " + e.getMessage());
         e.printStackTrace();
         return false;
     }

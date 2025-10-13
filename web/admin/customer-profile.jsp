@@ -2,15 +2,19 @@
 <%@ page import="model.Customer" %>
 
 <%
-    // Lấy thông tin khách hàng từ session
-    Customer customer = (Customer) session.getAttribute("customer");
+    // Nếu database chưa có, tạm thời tạo customer mẫu
+    Customer customer = new Customer();
+    customer.setCustomerId(1);
+    customer.setName("Nguyễn Văn A");
+    customer.setEmail("vana@example.com");
+    customer.setPhone("0123456789");
+    customer.setAddressCustomer("123, Ngũ Hành Sơn, Đà Nẵng");
+    customer.setStatus("Đang hoạt động");
 
-    // Nếu chưa đăng nhập, chuyển về trang đăng nhập
-    if (customer == null) {
-        response.sendRedirect("../login.jsp");
-        return;
-    }
+    // Gắn vào session để mô phỏng đăng nhập thành công
+    session.setAttribute("customer", customer);
 %>
+
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -90,3 +94,4 @@
 
 </body>
 </html>
+    

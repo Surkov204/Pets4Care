@@ -155,7 +155,7 @@ public class LoginServlet extends HttpServlet {
                 return "staff/dashboard.jsp";
             case "staff":
             case "nhân viên":
-                return "staff/bookings";
+                return "staff/dashboard.jsp";
             case "doctor":
             case "bác sĩ thú y":
                 return "staff/bookings";

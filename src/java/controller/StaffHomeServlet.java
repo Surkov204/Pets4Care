@@ -47,7 +47,7 @@ public class StaffHomeServlet extends HttpServlet {
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
 
-        request.getRequestDispatcher("staff/staff_home.jsp").forward(request, response);
+        request.getRequestDispatcher("staff/dashboard.jsp").forward(request, response);
     }
 }
 

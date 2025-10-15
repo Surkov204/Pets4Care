@@ -15,17 +15,7 @@
         <url-pattern>/toydetailservlet</url-pattern>
     </servlet-mapping>
 
-    <!-- Định nghĩa filter cho Staff Authentication -->
-    <filter>
-        <filter-name>StaffAuthFilter</filter-name>
-        <filter-class>filter.StaffAuthFilter</filter-class>
-    </filter>
 
-    <!-- Ánh xạ filter đến URL /staff/* -->
-    <filter-mapping>
-        <filter-name>StaffAuthFilter</filter-name>
-        <url-pattern>/staff/*</url-pattern>
-    </filter-mapping>
 
     <welcome-file-list>
         <welcome-file>home</welcome-file>

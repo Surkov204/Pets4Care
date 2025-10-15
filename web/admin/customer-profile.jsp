@@ -15,7 +15,6 @@
     session.setAttribute("customer", customer);
 %>
 
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>

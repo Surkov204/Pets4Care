@@ -194,64 +194,9 @@
             font-weight: 500;
         }
 
-        .tab-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            gap: 0.5rem;
-            background: var(--card-bg-alt);
-            padding: 0.5rem;
-            border-radius: var(--border-radius-small);
-        }
-
-        .tab-button {
-            padding: 0.7rem 1.3rem;
-            border-radius: var(--border-radius-small);
-            cursor: pointer;
-            transition: var(--transition);
-            font-weight: 600;
-            border: none;
-            background: transparent;
-            color: var(--text);
-            font-family: 'Quicksand', sans-serif;
-            position: relative;
-            overflow: hidden;
-            font-size: 0.95rem;
-        }
-
-        .tab-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .tab-button:hover::before {
-            left: 100%;
-        }
-
-        .tab-button:hover {
-            background: rgba(111, 213, 221, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .tab-button.active {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            box-shadow: var(--shadow-button);
-        }
-
         .form-container {
-            display: none;
-            animation: fadeInUp 0.4s ease-out;
-        }
-
-        .form-container.active {
             display: block;
+            animation: fadeInUp 0.4s ease-out;
         }
 
         .form-group {
@@ -507,10 +452,6 @@
                 font-size: 1.5rem;
             }
             
-            .tab-container {
-                flex-direction: column;
-            }
-            
             .floating-pet {
                 font-size: 1.3rem;
                 opacity: 0.3;
@@ -572,20 +513,11 @@
             <h1 class="login-title">
                 <span>🐾</span> Chào mừng trở lại
             </h1>
-            <p class="login-subtitle">Đăng nhập để tiếp tục mua sắm cho thú cưng yêu quý</p>
+            <p class="login-subtitle">Đăng nhập để tiếp tục sử dụng dịch vụ</p>
         </div>
 
-        <div class="tab-container">
-            <button id="tab-customer" class="tab-button active" onclick="showTab('customer')">
-                <i class="fas fa-user"></i> Khách hàng
-            </button>
-            <button id="tab-admin" class="tab-button" onclick="showTab('admin')">
-                <i class="fas fa-user-shield"></i> Quản trị viên
-            </button>
-        </div>
-
-        <!-- Customer Login Form -->
-        <div id="customer-form" class="form-container active">
+        <!-- Unified Login Form -->
+        <div class="form-container active">
             <form action="login" method="post">
                 <div class="form-group">
                     <label for="email" class="form-label">
@@ -616,43 +548,6 @@
                 
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-sign-in-alt"></i> Đăng nhập
-                </button>
-            </form>
-        </div>
-
-        <!-- Admin Login Form -->
-        <div id="admin-form" class="form-container">
-            <form action="admin-login" method="post">
-                <div class="form-group">
-                    <label for="admin-account-type" class="form-label">
-                        <i class="fas fa-user-tag"></i> Loại tài khoản
-                    </label>
-                    <select name="accountType" id="admin-account-type" class="form-input" required style="cursor: pointer;">
-                        <option value="">-- Chọn loại tài khoản --</option>
-                        <option value="admin">Quản trị viên</option>
-                        <option value="staff">Nhân viên</option>
-                        <option value="doctor">Bác sĩ thú y</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="admin-email" class="form-label">
-                        <i class="fas fa-envelope"></i> Email
-                    </label>
-                    <input type="email" name="email" id="admin-email" class="form-input" 
-                           required placeholder="Nhập email của bạn">
-                </div>
-                
-                <div class="form-group">
-                    <label for="admin-password" class="form-label">
-                        <i class="fas fa-key"></i> Mật khẩu
-                    </label>
-                    <input type="password" name="password" id="admin-password" class="form-input" 
-                           required placeholder="Nhập mật khẩu">
-                </div>
-                
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-shield-alt"></i> Đăng nhập
                 </button>
             </form>
         </div>
@@ -689,31 +584,8 @@
     </div>
 
     <script>
-        function showTab(tabName) {
-            // Hide all forms and remove active class from all tabs
-            document.querySelectorAll('.form-container').forEach(form => {
-                form.classList.remove('active');
-            });
-            
-            document.querySelectorAll('.tab-button').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Show selected form and activate corresponding tab
-            document.getElementById(tabName + '-form').classList.add('active');
-            document.getElementById('tab-' + tabName).classList.add('active');
-        }
-
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            // Kiểm tra parameter để chọn tab
-            const urlParams = new URLSearchParams(window.location.search);
-            const tab = urlParams.get('tab');
-            if (tab === 'admin') {
-                showTab('admin');
-            } else {
-                showTab('customer');
-            }
             
             // Add more floating pets dynamically
             const pets = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵'];

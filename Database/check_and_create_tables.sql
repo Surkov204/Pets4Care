@@ -73,5 +73,45 @@ BEGIN
     ')
 END
 
+-- Tạo bảng Staff
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Staff')
+BEGIN
+    CREATE TABLE Staff (
+        staff_id INT IDENTITY(1,1) PRIMARY KEY,
+        name NVARCHAR(100) NOT NULL,
+        email NVARCHAR(100) UNIQUE NOT NULL,
+        phone NVARCHAR(20),
+        password NVARCHAR(255) NOT NULL,
+        position NVARCHAR(50) NOT NULL, -- admin, staff, doctor
+        created_at DATETIME DEFAULT GETDATE(),
+        status NVARCHAR(20) DEFAULT 'active'
+    );
+    PRINT 'Staff table created successfully';
+END
+ELSE
+    PRINT 'Staff table already exists';
+
+-- Thêm dữ liệu mẫu cho Staff
+IF NOT EXISTS (SELECT * FROM Staff WHERE email = 'admin@pets4care.com')
+BEGIN
+    INSERT INTO Staff (name, email, phone, password, position) 
+    VALUES ('Admin', 'admin@pets4care.com', '0123456789', 'admin123', 'admin');
+    PRINT 'Admin account created';
+END
+
+IF NOT EXISTS (SELECT * FROM Staff WHERE email = 'staff@pets4care.com')
+BEGIN
+    INSERT INTO Staff (name, email, phone, password, position) 
+    VALUES ('Staff', 'staff@pets4care.com', '0123456788', 'staff123', 'staff');
+    PRINT 'Staff account created';
+END
+
+IF NOT EXISTS (SELECT * FROM Staff WHERE email = 'doctor@pets4care.com')
+BEGIN
+    INSERT INTO Staff (name, email, phone, password, position) 
+    VALUES ('Doctor', 'doctor@pets4care.com', '0123456787', 'doctor123', 'doctor');
+    PRINT 'Doctor account created';
+END
+
 
 

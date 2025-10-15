@@ -1,6 +1,5 @@
 package controller;
 
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
@@ -36,7 +35,7 @@ public class GoogleLoginServlet extends HttpServlet {
 		}
 
 		// Đã đăng nhập → lấy thông tin user từ Google
-		String accessToken = GoogleUtils.getToken(code);
+		String accessToken    = GoogleUtils.getToken(code);
 		GoogleUser googleUser = GoogleUtils.getUserInfo(accessToken);
 
 		Customer customer = userService.loginWithGoogle(googleUser);

@@ -97,6 +97,16 @@
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/admin/customer-orders.jsp</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/admin/includes/footer.jsp</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/admin/includes/header.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/chi-tiet-bac-si.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/booking-list.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/booking-detail.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/booking-stats.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/customer-list.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/customer-detail.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/product-detail.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/orderDetail.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/doctor/doctor-dashboard.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/LogoutServlet.java</file>
         </group>
     </open-files>
 </project-private>

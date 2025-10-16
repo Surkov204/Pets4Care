@@ -5,15 +5,19 @@
 package dao;
 
 import java.util.List;
-import model.ToyCategory;
+import java.util.Map;
+import model.ProductCategory;
 
 /**
  *
  * @author ASUS
  */
-public interface IToyCategoryDAO {
-     ToyCategory getCategoryById(int id);
+public interface IProductCategoryDAO {
+     ProductCategory getCategoryById(int id);
      
-     List<ToyCategory> getAllCategories();
+     List<ProductCategory> getAllCategories();
+     
+     Map<Integer, String> getAllCategoriesMap();
 
 }
+

@@ -1,20 +1,20 @@
 package model;
 
 public class CartItem {
-    private Toy toy;
+    private Product product;
     private int quantity;
 
-    public CartItem(Toy toy, int quantity) {
-        this.toy = toy;
+    public CartItem(Product product, int quantity) {
+        this.product = product;
         this.quantity = quantity;
     }
 
-    public Toy getToy() {
-        return toy;
+    public Product getProduct() {
+        return product;
     }
 
-    public void setToy(Toy toy) {
-        this.toy = toy;
+    public void setProduct(Product product) {
+        this.product = product;
     }
 
     public int getQuantity() {
@@ -26,6 +26,6 @@ public class CartItem {
     }
 
     public double getTotalPrice() {
-        return toy.getPrice() * quantity;
+        return product.getPrice() * quantity;
     }
 }

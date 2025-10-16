@@ -4,27 +4,28 @@
  */
 package service;
 
-import dao.IToyCategoryDAO;
-import dao.ToyCategoryDAO;
+import dao.IProductCategoryDAO;
+import dao.ProductCategoryDAO;
 import java.util.List;
-import model.ToyCategory;
+import model.ProductCategory;
 
 /**
  *
  * @author ASUS
  */
-public class ToyCategoryService implements IToyCategoryService {
-    private IToyCategoryDAO categoryDAO = new ToyCategoryDAO();
+public class ProductCategoryService implements IProductCategoryService {
+    private IProductCategoryDAO categoryDAO = new ProductCategoryDAO();
 
     @Override
-    public ToyCategory getCategoryById(int id) {
+    public ProductCategory getCategoryById(int id) {
         return categoryDAO.getCategoryById(id);
     }
 
     @Override
-    public List<ToyCategory> getAllCategories() {
+    public List<ProductCategory> getAllCategories() {
         return categoryDAO.getAllCategories();
     }
     
     
 }
+

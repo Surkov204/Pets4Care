@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
-import service.ToyService;
+import service.ProductService;
 
 /**
  *
@@ -22,7 +22,7 @@ import service.ToyService;
 @WebServlet(name = "SearchSuggestServlet", urlPatterns = {"/search-suggest"})
 public class SearchSuggestServlet extends HttpServlet {
 
-    private ToyService toyService = new ToyService();
+    private ProductService productService = new ProductService();
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -63,7 +63,7 @@ public class SearchSuggestServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String query = request.getParameter("q");
-        List<String> suggestions = toyService.searchToyNames(query);
+        List<String> suggestions = productService.searchProductNames(query);
 
         response.setContentType("application/json");
         response.getWriter().print(new Gson().toJson(suggestions));

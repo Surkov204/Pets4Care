@@ -19,28 +19,28 @@
 <body class="bg-gray-100 p-6">
     <div class="max-w-3xl mx-auto bg-white shadow-md rounded-lg p-6">
         <h2 class="text-2xl font-bold text-orange-600 mb-4">🛠️ Chỉnh sửa sản phẩm</h2>
-        <p class="text-sm text-gray-500 mb-2">DEBUG TOY ID: ${toy.toyId}</p>
+        <p class="text-sm text-gray-500 mb-2">DEBUG PRODUCT ID: ${product.productId}</p>
 
         <form action="<%=request.getContextPath()%>/admin/toys" method="post" enctype="multipart/form-data" class="space-y-4">
             <input type="hidden" name="action" value="edit">
-            <input type="hidden" name="toyId" value="${toy.toyId}">
+            <input type="hidden" name="productId" value="${product.productId}">
 
             <div>
                 <label class="block font-semibold mb-1">Tên sản phẩm</label>
                 <input type="text" name="name" required class="w-full border border-gray-300 rounded px-3 py-2"
-                       value="${toy.name}">
+                       value="${product.name}">
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block font-semibold mb-1">Giá</label>
                     <input type="number" step="0.01" name="price" required class="w-full border px-3 py-2 rounded"
-                           value="${toy.price}">
+                           value="${product.price}">
                 </div>
                 <div>
                     <label class="block font-semibold mb-1">Số lượng kho</label>
                     <input type="number" name="stock" required class="w-full border px-3 py-2 rounded"
-                           value="${toy.stockQuantity}">
+                           value="${product.stockQuantity}">
                 </div>
             </div>
 
@@ -50,7 +50,7 @@
                     <select name="categoryId" class="form-select w-full p-2 border rounded mb-4" required>
                         <c:forEach var="cat" items="${categories}">
                             <option value="${cat.categoryId}" 
-                                    <c:if test="${cat.categoryId == toy.categoryId}">selected</c:if>>
+                                    <c:if test="${cat.categoryId == product.categoryId}">selected</c:if>>
                                 ${cat.name}
                             </option>
                         </c:forEach>
@@ -62,7 +62,7 @@
                     <select name="supplierId" class="form-select w-full p-2 border rounded" required>
                         <c:forEach var="sup" items="${suppliers}">
                             <option value="${sup.supplierId}" 
-                                    <c:if test="${sup.supplierId == toy.supplierId}">selected</c:if>>
+                                    <c:if test="${sup.supplierId == product.supplierId}">selected</c:if>>
                                 ${sup.nameCompany}
                             </option>
                         </c:forEach>
@@ -72,7 +72,7 @@
 
             <div>
                 <label class="block font-semibold mb-1">Mô tả</label>
-                <textarea name="description" rows="3" class="w-full border px-3 py-2 rounded resize-none">${toy.description}</textarea>
+                <textarea name="description" rows="3" class="w-full border px-3 py-2 rounded resize-none">${product.description}</textarea>
             </div>
 
             <div>

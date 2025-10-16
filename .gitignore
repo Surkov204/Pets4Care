@@ -10,3 +10,9 @@
 *.war
 *.log
 "*.bak" 
+build/ 
+dist/ 
+*.war 
+*.class 
+*.bak 
+.env 

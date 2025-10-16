@@ -115,24 +115,24 @@
             <% } else { %>
             <div class="space-y-6">
                 <% for (CartItem item : cart.values()) {
-                        double subtotal = item.getQuantity() * item.getToy().getPrice();
+                        double subtotal = item.getQuantity() * item.getProduct().getPrice();
                         total += subtotal;
-                        int toyId = item.getToy().getToyId();
+                        int productId = item.getProduct().getProductId();
                 %>
-                <div class="flex items-center justify-between border-b pb-4" id="row-<%= toyId%>">
+                <div class="flex items-center justify-between border-b pb-4" id="row-<%= productId%>">
                     <div class="flex items-center space-x-4">
-                        <img src="<%= request.getContextPath() + "/images/toy_" + toyId + ".jpg"%>" class="w-24 h-24 object-cover rounded shadow">
+                        <img src="<%= request.getContextPath() + "/images/toy_" + productId + ".jpg"%>" class="w-24 h-24 object-cover rounded shadow">
                         <div>
-                            <div class="font-semibold text-lg"><%= item.getToy().getName()%></div>
-                            <div class="text-sm text-gray-500">Mã SP: <%= toyId%></div>
-                            <div class="text-xs text-green-600">📦 Còn <%= item.getToy().getStockQuantity()%> sản phẩm</div>
+                            <div class="font-semibold text-lg"><%= item.getProduct().getName()%></div>
+                            <div class="text-sm text-gray-500">Mã SP: <%= productId%></div>
+                            <div class="text-xs text-green-600">📦 Còn <%= item.getProduct().getStockQuantity()%> sản phẩm</div>
                         </div>
                     </div>
-                    <div class="w-20 text-right font-semibold text-blue-600"><%= String.format("%.0f", item.getToy().getPrice())%>₫</div>
-                    <input type="number" min="1" max="<%= item.getToy().getStockQuantity()%>" value="<%= item.getQuantity()%>" 
-                           data-toy-id="<%= toyId%>" class="quantity-input w-16 text-center border rounded py-1 px-2">
-                    <div class="w-24 text-right font-bold text-green-600" id="item-total-<%= toyId%>"><%= String.format("%.0f", subtotal)%>₫</div>
-                    <button onclick="removeItem(<%= toyId%>)" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                    <div class="w-20 text-right font-semibold text-blue-600"><%= String.format("%.0f", item.getProduct().getPrice())%>₫</div>
+                    <input type="number" min="1" max="<%= item.getProduct().getStockQuantity()%>" value="<%= item.getQuantity()%>" 
+                           data-product-id="<%= productId%>" class="quantity-input w-16 text-center border rounded py-1 px-2">
+                    <div class="w-24 text-right font-bold text-green-600" id="item-total-<%= productId%>"><%= String.format("%.0f", subtotal)%>₫</div>
+                    <button onclick="removeItem(<%= productId%>)" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
                 </div>
                 <% }%>
 
@@ -276,13 +276,13 @@
 
 
         <script>
-            function removeItem(toyId) {
+            function removeItem(productId) {
                 if (confirm('🗑️ Bạn có chắc chắn muốn xóa sản phẩm này?')) {
                     $.post('<%= request.getContextPath()%>/cartservlet', {
                         action: 'remove',
-                        id: toyId
+                        id: productId
                     }, function () {
-                        $('#row-' + toyId).fadeOut(300, function () {
+                        $('#row-' + productId).fadeOut(300, function () {
                             $(this).remove();
                             updateCartTotal();
                         });
@@ -302,16 +302,16 @@
                 const debounceTimers = {};
                 $('.quantity-input').on('input', function () {
                     const $input = $(this);
-                    const toyId = $input.data('toy-id');
+                    const productId = $input.data('product-id');
                     const quantity = $input.val();
-                    clearTimeout(debounceTimers[toyId]);
-                    debounceTimers[toyId] = setTimeout(() => {
+                    clearTimeout(debounceTimers[productId]);
+                    debounceTimers[productId] = setTimeout(() => {
                         $.ajax({
                             url: '<%= request.getContextPath()%>/cartservlet',
                             type: 'POST',
                             data: {
                                 action: 'update',
-                                toyId: toyId,
+                                productId: productId,
                                 quantity: quantity
                             },
                             dataType: 'json',
@@ -320,7 +320,7 @@
                                     alert(res.error);
                                     location.reload();
                                 } else {
-                                    $('#item-total-' + toyId).text(res['item_' + toyId] + '₫');
+                                    $('#item-total-' + productId).text(res['item_' + productId] + '₫');
                                     $('#cart-total').text(res.total + '₫');
                                 }
                             }

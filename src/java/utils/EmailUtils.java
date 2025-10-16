@@ -1,7 +1,7 @@
 package utils;
 
 import dao.OrderDAO;
-import dao.ToyDAO;
+import dao.ProductDAO;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import java.util.List;
@@ -37,7 +37,7 @@ public class EmailUtils {
     public static void sendOrderConfirmation(String recipientEmail, int orderId) {
         try {
             OrderDAO orderDAO = new OrderDAO();
-            ToyDAO toyDAO = new ToyDAO();
+            ProductDAO productDAO = new ProductDAO();
             Order order = orderDAO.getOrderById(orderId);
             List<OrderDetail> details = orderDAO.getOrderDetailsByOrderId(orderId);
 
@@ -58,9 +58,9 @@ public class EmailUtils {
                     .append("</thead><tbody>");
 
             for (OrderDetail d : details) {
-                String toyName = toyDAO.getToyNameById(d.getToyId());
+                String productName = productDAO.getProductNameById(d.getProductId());
                 content.append("<tr>")
-                        .append("<td>").append(toyName).append("</td>")
+                        .append("<td>").append(productName).append("</td>")
                         .append("<td>").append(d.getQuantity()).append("</td>")
                         .append("<td>").append(String.format("%.2f", d.getUnitPrice())).append(" đ</td>")
                         .append("</tr>");

@@ -8,14 +8,14 @@ package model;
  *
  * @author ASUS
  */
-public class ToyCategory {
+public class ProductCategory {
     private int categoryId;
     private String name;
 
-    public ToyCategory() {
+    public ProductCategory() {
     }
 
-    public ToyCategory(int categoryId, String name) {
+    public ProductCategory(int categoryId, String name) {
         this.categoryId = categoryId;
         this.name = name;
     }
@@ -37,3 +37,4 @@ public class ToyCategory {
     }
     
 }
+

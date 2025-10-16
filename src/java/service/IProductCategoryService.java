@@ -5,15 +5,16 @@
 package service;
 
 import java.util.List;
-import model.ToyCategory;
+import model.ProductCategory;
 
 /**
  *
  * @author ASUS
  */
-public interface IToyCategoryService {
-    ToyCategory getCategoryById(int id);
+public interface IProductCategoryService {
+    ProductCategory getCategoryById(int id);
     
-    List<ToyCategory> getAllCategories();
+    List<ProductCategory> getAllCategories();
 
 }
+

@@ -8,7 +8,7 @@ import model.CartItem;
 import model.Customer;
 import model.GoogleUser;
 import model.Order;
-import model.Toy;
+import model.Product;
 import utils.DBConnection;
 import utils.PasswordUtil;
 
@@ -138,8 +138,8 @@ public class UserDAO {
     public List<CartItem> getOrderDetails(int orderId) {
         List<CartItem> items = new ArrayList<>();
 
-        String sql = "SELECT od.toy_id, od.quantity, od.unit_price, t.name, t.description "
-                + "FROM Order_Detail od JOIN Toy t ON od.toy_id = t.toy_id "
+        String sql = "SELECT od.product_id, od.quantity, od.unit_price, p.name, p.description "
+                + "FROM Order_Detail od JOIN Products p ON od.product_id = p.product_id "
                 + "WHERE od.order_id = ?";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -148,13 +148,13 @@ public class UserDAO {
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                Toy toy = new Toy();
-                toy.setToyId(rs.getInt("toy_id"));
-                toy.setName(rs.getString("name"));
-                toy.setDescription(rs.getString("description"));
-                toy.setPrice(rs.getDouble("unit_price"));
+                Product product = new Product();
+                product.setProductId(rs.getInt("product_id"));
+                product.setName(rs.getString("name"));
+                product.setDescription(rs.getString("description"));
+                product.setPrice(rs.getDouble("unit_price"));
 
-                CartItem item = new CartItem(toy, rs.getInt("quantity"));
+                CartItem item = new CartItem(product, rs.getInt("quantity"));
                 items.add(item);
             }
 

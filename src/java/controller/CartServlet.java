@@ -1,12 +1,12 @@
 package controller;
 
 import com.google.gson.Gson;
-import dao.ToyDAO;
+import dao.ProductDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import model.CartItem;
-import model.Toy;
+import model.Product;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -20,7 +20,7 @@ public class CartServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String action = request.getParameter("action");
-        String toyIdRaw = request.getParameter("id");
+        String productIdRaw = request.getParameter("id");
         String qtyRaw = request.getParameter("quantity");
         HttpSession session = request.getSession();
 
@@ -46,8 +46,8 @@ public class CartServlet extends HttpServlet {
             double total = 0;
             if (cart != null) {
                 for (CartItem item : cart.values()) {
-                    if (item != null && item.getToy() != null) {
-                        total += item.getQuantity() * item.getToy().getPrice();
+                    if (item != null && item.getProduct() != null) {
+                        total += item.getQuantity() * item.getProduct().getPrice();
                     }
                 }
             }
@@ -64,13 +64,13 @@ public class CartServlet extends HttpServlet {
             if (cart != null && !cart.isEmpty()) {
                 for (Map.Entry<Integer, CartItem> entry : cart.entrySet()) {
                     CartItem item = entry.getValue();
-                    if (item != null && item.getToy() != null) {
-                        Toy toy = item.getToy();
-                        double itemTotal = item.getQuantity() * toy.getPrice();
+                    if (item != null && item.getProduct() != null) {
+                        Product product = item.getProduct();
+                        double itemTotal = item.getQuantity() * product.getPrice();
                         html.append("<div class='cart-item' style='display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #e9ecef;'>");
                         html.append("<div style='flex:1;'>");
-                        html.append("<strong style='color:#27ae60;'>").append(toy.getName()).append("</strong><br/>");
-                        html.append("<small>").append(String.format("%,.0f", toy.getPrice())).append("₫/cái</small>");
+                        html.append("<strong style='color:#27ae60;'>").append(product.getName()).append("</strong><br/>");
+                        html.append("<small>").append(String.format("%,.0f", product.getPrice())).append("₫/cái</small>");
                         html.append("</div>");
                         html.append("<div style='display:flex;align-items:center;gap:8px;margin:0 8px;'>");
 
@@ -105,12 +105,12 @@ public class CartServlet extends HttpServlet {
 
         // Xử lý xóa sản phẩm từ chatbox
         if ("remove_chat".equalsIgnoreCase(action)) {
-            if (toyIdRaw != null) {
+            if (productIdRaw != null) {
                 try {
-                    int toyId = Integer.parseInt(toyIdRaw);
+                    int productId = Integer.parseInt(productIdRaw);
                     Map<Integer, CartItem> cart = (Map<Integer, CartItem>) session.getAttribute("cart");
                     if (cart != null) {
-                        cart.remove(toyId);
+                        cart.remove(productId);
                         session.setAttribute("cart", cart);
                         response.setContentType("application/json; charset=UTF-8");
                         response.getWriter().write("{\"success\": true, \"message\": \"Đã xóa sản phẩm\"}");
@@ -131,22 +131,22 @@ public class CartServlet extends HttpServlet {
      
 
         // Kiểm tra tham số bắt buộc
-        if (action == null || toyIdRaw == null) {
+        if (action == null || productIdRaw == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thiếu tham số.");
             return;
         }
 
         try {
-            int toyId = Integer.parseInt(toyIdRaw);
+            int productId = Integer.parseInt(productIdRaw);
             int quantity = 1;
             if (qtyRaw != null) {
                 quantity = Integer.parseInt(qtyRaw);
             }
 
-            ToyDAO toyDAO = new ToyDAO();
-            Toy toy = toyDAO.getToyById(toyId);
+            ProductDAO productDAO = new ProductDAO();
+            Product product = productDAO.getProductById(productId);
 
-            if (toy == null) {
+            if (product == null) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND, "Không tìm thấy sản phẩm.");
                 return;
             }
@@ -156,16 +156,16 @@ public class CartServlet extends HttpServlet {
                 cart = new HashMap<>();
             }
 
-            int currentQty = cart.containsKey(toyId) ? cart.get(toyId).getQuantity() : 0;
+            int currentQty = cart.containsKey(productId) ? cart.get(productId).getQuantity() : 0;
             int newQty = currentQty + quantity;
 
-            boolean available = toyDAO.checkStockAvailability(toyId, newQty);
+            boolean available = productDAO.checkStockAvailability(productId, newQty);
 
             if (available) {
-                if (cart.containsKey(toyId)) {
-                    cart.get(toyId).setQuantity(newQty);
+                if (cart.containsKey(productId)) {
+                    cart.get(productId).setQuantity(newQty);
                 } else {
-                    cart.put(toyId, new CartItem(toy, quantity));
+                    cart.put(productId, new CartItem(product, quantity));
                 }
 
                 session.setAttribute("cart", cart);
@@ -193,32 +193,32 @@ public class CartServlet extends HttpServlet {
 
         // Xử lý thêm sản phẩm vào giỏ hàng
         if ("add".equalsIgnoreCase(action)) {
-            String toyIdRaw = request.getParameter("id");
+            String productIdRaw = request.getParameter("id");
             String qtyRaw = request.getParameter("quantity");
-            if (toyIdRaw == null) {
+            if (productIdRaw == null) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thiếu tham số.");
                 return;
             }
             try {
-                int toyId = Integer.parseInt(toyIdRaw);
+                int productId = Integer.parseInt(productIdRaw);
                 int quantity = 1;
                 if (qtyRaw != null) {
                     quantity = Integer.parseInt(qtyRaw);
                 }
-                ToyDAO toyDAO = new ToyDAO();
-                Toy toy = toyDAO.getToyById(toyId);
-                if (toy == null) {
+                ProductDAO productDAO = new ProductDAO();
+                Product product = productDAO.getProductById(productId);
+                if (product == null) {
                     response.sendError(HttpServletResponse.SC_NOT_FOUND, "Không tìm thấy sản phẩm.");
                     return;
                 }
-                int currentQty = cart.containsKey(toyId) ? cart.get(toyId).getQuantity() : 0;
+                int currentQty = cart.containsKey(productId) ? cart.get(productId).getQuantity() : 0;
                 int newQty = currentQty + quantity;
-                boolean available = toyDAO.checkStockAvailability(toyId, newQty);
+                boolean available = productDAO.checkStockAvailability(productId, newQty);
                 if (available) {
-                    if (cart.containsKey(toyId)) {
-                        cart.get(toyId).setQuantity(newQty);
+                    if (cart.containsKey(productId)) {
+                        cart.get(productId).setQuantity(newQty);
                     } else {
-                        cart.put(toyId, new CartItem(toy, quantity));
+                        cart.put(productId, new CartItem(product, quantity));
                     }
                     session.setAttribute("cart", cart);
                     response.setContentType("text/plain");
@@ -260,8 +260,8 @@ public class CartServlet extends HttpServlet {
         String idStr = request.getParameter("id");
         if (idStr != null) {
             try {
-                int toyId = Integer.parseInt(idStr);
-                cart.remove(toyId);
+                int productId = Integer.parseInt(idStr);
+                cart.remove(productId);
                 session.setAttribute("cart", cart);
                 session.setAttribute("total", calculateTotal(cart));
             } catch (NumberFormatException e) {
@@ -274,22 +274,22 @@ public class CartServlet extends HttpServlet {
 
     private void handleUpdateQuantity(HttpServletRequest request, HttpServletResponse response,
         HttpSession session, Map<Integer, CartItem> cart) throws ServletException, IOException {
-    String[] toyIds = request.getParameterValues("toyId");
+    String[] productIds = request.getParameterValues("productId");
     String[] quantities = request.getParameterValues("quantity");
 
-    if (toyIds == null || quantities == null || toyIds.length != quantities.length) {
+    if (productIds == null || quantities == null || productIds.length != quantities.length) {
         response.sendRedirect(request.getContextPath() + "/cart/cart.jsp");
         return;
     }
 
-    ToyDAO dao = new ToyDAO();
+    ProductDAO dao = new ProductDAO();
     boolean hasError = false;
     String errorMessage = null;
     Map<String, String> responseData = new HashMap<>();
 
-    for (int i = 0; i < toyIds.length; i++) {
+    for (int i = 0; i < productIds.length; i++) {
         try {
-            int id = Integer.parseInt(toyIds[i]);
+            int id = Integer.parseInt(productIds[i]);
             int qty = Integer.parseInt(quantities[i]);
 
             if (qty <= 0) {
@@ -308,7 +308,7 @@ public class CartServlet extends HttpServlet {
                 cart.get(id).setQuantity(qty);
                 // Tính toán lại giá trị cho sản phẩm vừa cập nhật
                 CartItem item = cart.get(id);
-                double itemTotal = item.getQuantity() * item.getToy().getPrice();
+                double itemTotal = item.getQuantity() * item.getProduct().getPrice();
                 responseData.put("item_" + id, String.format("%.2f", itemTotal));
             }
         } catch (NumberFormatException e) {
@@ -342,8 +342,8 @@ public class CartServlet extends HttpServlet {
         double total = 0;
         if (cart != null) {
             for (CartItem item : cart.values()) {
-                if (item != null && item.getToy() != null) {
-                    total += item.getQuantity() * item.getToy().getPrice();
+                if (item != null && item.getProduct() != null) {
+                    total += item.getQuantity() * item.getProduct().getPrice();
                 }
             }
         }

@@ -17,6 +17,12 @@ public interface ICustomerDAO {
 
     List<Customer> searchCustomers(String keyword);
     
+    Customer getCustomerById(int customerId);
+    
+    List<Customer> getCustomersByStatus(String status);
+    
+    boolean updateCustomer(Customer customer);
+    
     void updateStatus(int customerId, String status);
 
 }

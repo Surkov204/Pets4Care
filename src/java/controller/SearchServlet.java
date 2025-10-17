@@ -1,7 +1,7 @@
 package controller;
 
-import dao.ToyDAO;
-import model.Toy;
+import dao.ProductDAO;
+import model.Product;
 
 import java.io.IOException;
 import java.util.*;
@@ -15,11 +15,11 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet(name = "SearchServlet", urlPatterns = {"/search"})
 public class SearchServlet extends HttpServlet {
 
-    private ToyDAO toyDAO;
+    private ProductDAO productDAO;
 
     @Override
     public void init() throws ServletException {
-        toyDAO = new ToyDAO();
+        productDAO = new ProductDAO();
     }
 
     @Override
@@ -29,11 +29,11 @@ public class SearchServlet extends HttpServlet {
         String keyword = request.getParameter("keyword");
         String categoryIdParam = request.getParameter("categoryId");
 
-        List<Toy> searchResults = new ArrayList<>();
+        List<Product> searchResults = new ArrayList<>();
         int categoryId = -1;
         String categoryName = null;
 
-        Map<Integer, String> categoryMap = toyDAO.getAllCategoriesMap();
+        Map<Integer, String> categoryMap = productDAO.getAllCategoriesMap();
 
         // Ánh xạ từ khóa → categoryId
         Map<String, Integer> keywordToCategory = new HashMap<>();
@@ -53,7 +53,7 @@ public class SearchServlet extends HttpServlet {
         if (categoryIdParam != null && !categoryIdParam.isEmpty()) {
             try {
                 categoryId = Integer.parseInt(categoryIdParam);
-                searchResults = toyDAO.getToysByCategory(categoryId);
+                searchResults = productDAO.getProductsByCategory(categoryId);
                 categoryName = categoryMap.getOrDefault(categoryId, "Danh mục không xác định");
             } catch (NumberFormatException e) {
                 e.printStackTrace();
@@ -69,10 +69,10 @@ public class SearchServlet extends HttpServlet {
             }
 
             if (categoryId == -1) {
-                searchResults = toyDAO.searchToysByKeyword(inputKeyword);
+                searchResults = productDAO.searchProductsByKeyword(inputKeyword);
                 categoryName = "Tất cả sản phẩm";
             } else {
-                searchResults = toyDAO.searchToysByKeywordAndCategory(inputKeyword, categoryId);
+                searchResults = productDAO.searchProductsByKeywordAndCategory(inputKeyword, categoryId);
                 categoryName = categoryMap.getOrDefault(categoryId, "Danh mục không xác định");
             }
 

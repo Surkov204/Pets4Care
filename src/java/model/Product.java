@@ -1,48 +1,27 @@
 package model;
 
-import java.sql.Date;
-
 public class Product {
+
     private int productId;
     private String name;
-    private String productType;
     private double price;
+    private int categoryId;
     private int stockQuantity;
-    private Date expiryDate;
     private int supplierId;
     private String description;
-    private int categoryId;
-    private String material;
-    private String usage;
-    private String size;
-    
-    // Thuộc tính bổ sung để hiển thị
-    private String supplierName;
-    private String categoryName;
+    private int adminId;
     private String imageUrl;
 
-    // Constructor mặc định
-    public Product() {}
+    // Thuộc tính bổ sung để hiển thị (không có trong database)
+    private Supplier supplier;
+    private String supplierName;
+    private String categoryName;
 
-    // Constructor đầy đủ
-    public Product(int productId, String name, String productType, double price, int stockQuantity, 
-                   Date expiryDate, int supplierId, String description, int categoryId, 
-                   String material, String usage, String size) {
-        this.productId = productId;
-        this.name = name;
-        this.productType = productType;
-        this.price = price;
-        this.stockQuantity = stockQuantity;
-        this.expiryDate = expiryDate;
-        this.supplierId = supplierId;
-        this.description = description;
-        this.categoryId = categoryId;
-        this.material = material;
-        this.usage = usage;
-        this.size = size;
+    // Constructor mặc định
+    public Product() {
     }
 
-    // Getters and Setters
+    // Getter và Setter
     public int getProductId() {
         return productId;
     }
@@ -59,14 +38,6 @@ public class Product {
         this.name = name;
     }
 
-    public String getProductType() {
-        return productType;
-    }
-
-    public void setProductType(String productType) {
-        this.productType = productType;
-    }
-
     public double getPrice() {
         return price;
     }
@@ -75,20 +46,20 @@ public class Product {
         this.price = price;
     }
 
+    public int getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(int categoryId) {
+        this.categoryId = categoryId;
+    }
+
     public int getStockQuantity() {
         return stockQuantity;
     }
 
     public void setStockQuantity(int stockQuantity) {
         this.stockQuantity = stockQuantity;
-    }
-
-    public Date getExpiryDate() {
-        return expiryDate;
-    }
-
-    public void setExpiryDate(Date expiryDate) {
-        this.expiryDate = expiryDate;
     }
 
     public int getSupplierId() {
@@ -107,36 +78,20 @@ public class Product {
         this.description = description;
     }
 
-    public int getCategoryId() {
-        return categoryId;
+    public int getAdminId() {
+        return adminId;
     }
 
-    public void setCategoryId(int categoryId) {
-        this.categoryId = categoryId;
+    public void setAdminId(int adminId) {
+        this.adminId = adminId;
     }
 
-    public String getMaterial() {
-        return material;
+    public Supplier getSupplier() {
+        return supplier;
     }
 
-    public void setMaterial(String material) {
-        this.material = material;
-    }
-
-    public String getUsage() {
-        return usage;
-    }
-
-    public void setUsage(String usage) {
-        this.usage = usage;
-    }
-
-    public String getSize() {
-        return size;
-    }
-
-    public void setSize(String size) {
-        this.size = size;
+    public void setSupplier(Supplier supplier) {
+        this.supplier = supplier;
     }
 
     public String getSupplierName() {
@@ -161,17 +116,6 @@ public class Product {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
-    }
-
-    @Override
-    public String toString() {
-        return "Product{" +
-                "productId=" + productId +
-                ", name='" + name + '\'' +
-                ", productType='" + productType + '\'' +
-                ", price=" + price +
-                ", stockQuantity=" + stockQuantity +
-                '}';
     }
 }
 

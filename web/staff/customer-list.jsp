@@ -6,13 +6,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý khách hàng - Staff</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>🐾 Customer Profile | Pet4Care</title>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/staff.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         .customer-card {
             border-left: 4px solid #28a745;
             transition: all 0.3s ease;
+            margin-bottom: 1rem;
         }
         
         .customer-card:hover {
@@ -30,177 +31,268 @@
         .status-badge {
             font-size: 0.8em;
             padding: 0.4em 0.8em;
+            border-radius: 20px;
         }
         
         .status-active { background-color: #28a745; color: #fff; }
         .status-inactive { background-color: #dc3545; color: #fff; }
+
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            margin: 0.1rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.875rem;
+            display: inline-block;
+        }
+
+        .btn-action.view {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .btn-action:hover {
+            opacity: 0.8;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .customer-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #28a745;
+            transition: all 0.3s ease;
+        }
+
+        .customer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .customer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .customer-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .customer-info {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .customer-info strong {
+            color: #333;
+        }
+
+        .customer-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .search-btn {
+            padding: 0.75rem 1.5rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .search-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .pagination a {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #ddd;
+            text-decoration: none;
+            color: #666;
+            border-radius: 4px;
+        }
+
+        .pagination a:hover {
+            background-color: #f8f9fa;
+        }
+
+        .pagination .active a {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-                <div class="position-sticky pt-3">
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link" href="${pageContext.request.contextPath}/staff/bookings">
-                                <i class="fas fa-calendar-check"></i> Xem đặt lịch dịch vụ
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" href="${pageContext.request.contextPath}/staff/customers">
-                                <i class="fas fa-users"></i> Xem thông tin khách hàng
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="${pageContext.request.contextPath}/staff/products">
-                                <i class="fas fa-box"></i> Xem tất cả sản phẩm
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="${pageContext.request.contextPath}/staff-home">
-                                <i class="fas fa-home"></i> Quay lại trang home
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
 
-            <!-- Main content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">
-                        <i class="fas fa-users"></i> Quản lý khách hàng
-                    </h1>
-                    <div class="btn-toolbar mb-2 mb-md-0">
-                        <span class="badge bg-primary fs-6">
-                            Tổng: ${totalCustomers} khách hàng
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Alerts -->
-                <c:if test="${not empty success}">
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle"></i> ${success}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                </c:if>
-                
-                <c:if test="${not empty error}">
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-circle"></i> ${error}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                </c:if>
-
-                <!-- Search -->
-                <div class="filter-section">
-                    <form method="GET" action="${pageContext.request.contextPath}/staff/customers">
-                        <input type="hidden" name="action" value="search">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="input-group">
-                                    <input type="text" class="form-control" name="keyword" 
-                                           placeholder="Tìm kiếm theo tên, email, số điện thoại..." 
-                                           value="${keyword}">
-                                    <button class="btn btn-outline-primary" type="submit">
-                                        <i class="fas fa-search"></i> Tìm kiếm
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <a href="${pageContext.request.contextPath}/staff/customers" class="btn btn-outline-secondary">
-                                    <i class="fas fa-list"></i> Xem tất cả
-                                </a>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Customers List -->
-                <div class="row">
-                    <c:choose>
-                        <c:when test="${not empty customers}">
-                            <c:forEach var="customer" items="${customers}">
-                                <div class="col-md-6 col-lg-4 mb-4">
-                                    <div class="card customer-card h-100">
-                                        <div class="card-header d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0">
-                                                <i class="fas fa-user"></i> #${customer.customerId}
-                                            </h6>
-                                            <span class="badge status-badge status-${customer.status != null ? customer.status : 'active'}">
-                                                ${customer.status != null ? customer.status : 'active'}
-                                            </span>
-                                        </div>
-                                        <div class="card-body">
-                                            <h6 class="card-title">
-                                                <i class="fas fa-user-circle"></i> ${customer.name}
-                                            </h6>
-                                            <p class="card-text">
-                                                <strong><i class="fas fa-envelope"></i> Email:</strong> ${customer.email}<br>
-                                                <strong><i class="fas fa-phone"></i> SĐT:</strong> ${customer.phone}<br>
-                                                <c:if test="${not empty customer.addressCustomer}">
-                                                    <strong><i class="fas fa-map-marker-alt"></i> Địa chỉ:</strong> ${customer.addressCustomer}<br>
-                                                </c:if>
-                                                <c:if test="${not empty customer.googleId}">
-                                                    <strong><i class="fab fa-google"></i> Google ID:</strong> ${customer.googleId}<br>
-                                                </c:if>
-                                            </p>
-                                        </div>
-                                        <div class="card-footer">
-                                            <div class="btn-group w-100" role="group">
-                                                <a href="${pageContext.request.contextPath}/staff/customers?action=view&id=${customer.customerId}" 
-                                                   class="btn btn-outline-primary btn-sm">
-                                                    <i class="fas fa-eye"></i> Xem chi tiết
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </c:forEach>
-                        </c:when>
-                        <c:otherwise>
-                            <div class="col-12">
-                                <div class="text-center py-5">
-                                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                                    <h4 class="text-muted">Không có khách hàng nào</h4>
-                                    <p class="text-muted">Chưa có khách hàng nào được tìm thấy.</p>
-                                </div>
-                            </div>
-                        </c:otherwise>
-                    </c:choose>
-                </div>
-
-                <!-- Pagination -->
-                <c:if test="${totalPages > 1}">
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination justify-content-center">
-                            <c:if test="${currentPage > 1}">
-                                <li class="page-item">
-                                    <a class="page-link" href="?page=${currentPage - 1}<c:if test='${not empty keyword}'>&action=search&keyword=${keyword}</c:if>">Trước</a>
-                                </li>
-                            </c:if>
-                            
-                            <c:forEach begin="1" end="${totalPages}" var="i">
-                                <li class="page-item ${i == currentPage ? 'active' : ''}">
-                                    <a class="page-link" href="?page=${i}<c:if test='${not empty keyword}'>&action=search&keyword=${keyword}</c:if>">${i}</a>
-                                </li>
-                            </c:forEach>
-                            
-                            <c:if test="${currentPage < totalPages}">
-                                <li class="page-item">
-                                    <a class="page-link" href="?page=${currentPage + 1}<c:if test='${not empty keyword}'>&action=search&keyword=${keyword}</c:if>">Sau</a>
-                                </li>
-                            </c:if>
-                        </ul>
-                    </nav>
-                </c:if>
-            </main>
+<header class="staff-header">
+    <div class="logo-section">
+        <img src="${pageContext.request.contextPath}/images/logo.png" alt="Pet4Care">
+        <div>
+            <h1>Pet4Care</h1>
+            <p>Staff Dashboard</p>
         </div>
     </div>
+    <div class="user-section">
+        <div class="notif"><i class="fas fa-bell"></i></div>
+        <div class="chat"><i class="fas fa-comments"></i></div>
+        <div class="avatar">
+            <img src="${pageContext.request.contextPath}/images/staff-avatar.png" alt="Staff">
+            <span>${sessionScope.staff.name}</span>
+        </div>
+        <form action="logout" method="post">
+            <button class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
+        </form>
+    </div>
+</header>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<div class="staff-wrapper">
+    <!-- Sidebar -->
+    <aside class="staff-sidebar">
+        <ul>
+            <li><a href="${pageContext.request.contextPath}/staff/viewOrder"><i class="fas fa-receipt"></i> View Orders</a></li>
+            <li><a href="${pageContext.request.contextPath}/staff/work-schedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
+            <li><a href="${pageContext.request.contextPath}/staff/staff-profile"><i class="fas fa-user-circle"></i> Staff Profile</a></li>
+            <li><a href="${pageContext.request.contextPath}/staff/customer-list" class="active"><i class="fas fa-user"></i> Customer Profile</a></li>
+            <li><a href="${pageContext.request.contextPath}/staff/services-booking"><i class="fas fa-list"></i> Services Booking</a></li>
+            <li><a href="${pageContext.request.contextPath}/staff/chatCustomer"><i class="fas fa-comments"></i> Chat with Customer</a></li>
+            <li><a href="${pageContext.request.contextPath}/staff/products"><i class="fas fa-box"></i> View Product</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="staff-content">
+        <section class="recent-section">
+            <h2><i class="fas fa-users"></i> Customer Profile</h2>
+            <p style="color: var(--text-light); margin-bottom: 1rem;">Quản lý thông tin khách hàng 🐾</p>
+
+            <!-- Alerts -->
+            <c:if test="${not empty success}">
+                <div class="alert alert-success" style="background-color: #d4edda; color: #155724; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #c3e6cb;">
+                    <i class="fas fa-check-circle"></i> ${success}
+                </div>
+            </c:if>
+            
+            <c:if test="${not empty error}">
+                <div class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #f5c6cb;">
+                    <i class="fas fa-exclamation-circle"></i> ${error}
+                </div>
+            </c:if>
+
+            <!-- Search -->
+            <div class="filter-section">
+                <form method="GET" action="${pageContext.request.contextPath}/staff/customers">
+                    <input type="hidden" name="action" value="search">
+                    <div class="search-form">
+                        <input type="text" class="search-input" name="keyword" 
+                               placeholder="Tìm kiếm theo tên, email, số điện thoại..." 
+                               value="${keyword}">
+                        <button class="search-btn" type="submit">
+                            <i class="fas fa-search"></i> Tìm kiếm
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Customer ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:forEach var="customer" items="${customers}">
+                        <tr>
+                            <td>#${customer.customerId}</td>
+                            <td>${customer.name}</td>
+                            <td>${customer.email}</td>
+                            <td>${customer.phone}</td>
+                            <td>${customer.addressCustomer != null ? customer.addressCustomer : 'N/A'}</td>
+                            <td>
+                                <span class="status ${customer.status != null ? customer.status : 'active'}">
+                                    ${customer.status != null ? customer.status : 'active'}
+                                </span>
+                            </td>
+                            <td>
+                                <!-- Nút View đã được bỏ theo yêu cầu -->
+                            </td>
+                        </tr>
+                    </c:forEach>
+
+                    <c:if test="${empty customers}">
+                        <tr>
+                            <td colspan="7" style="text-align:center; color:var(--text-light); padding:1rem;">
+                                Không có khách hàng nào được tìm thấy 🐶
+                            </td>
+                        </tr>
+                    </c:if>
+                </tbody>
+            </table>
+        </section>
+    </main>
+</div>
+
+<footer class="staff-footer">
+    <p>© 2025 Pet4Care — Where Pets Feel Loved 🐶🐱</p>
+</footer>
+
 </body>
 </html>

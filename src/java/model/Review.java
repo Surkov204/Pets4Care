@@ -5,7 +5,7 @@ import java.sql.Timestamp;
 public class Review {
 
     private int    reviewId;
-    private int    toyId;
+    private int    productId;
     private int    customerId;
     private int    rating;          // 1-5
     private String comment;
@@ -18,8 +18,8 @@ public class Review {
     public int getReviewId()       { return reviewId;      }
     public void setReviewId(int id){ this.reviewId = id;   }
 
-    public int getToyId()          { return toyId;         }
-    public void setToyId(int toyId){ this.toyId = toyId;   }
+    public int getProductId()          { return productId;         }
+    public void setProductId(int productId){ this.productId = productId;   }
 
     public int getCustomerId()             { return customerId;          }
     public void setCustomerId(int customerId){ this.customerId = customerId; }

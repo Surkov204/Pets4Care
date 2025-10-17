@@ -4,8 +4,8 @@ import model.Review;
 import java.util.List;
 
 public interface IReviewDAO {
-    List<Review> listByToy(int toyId, int limit);
+    List<Review> listByProduct(int productId, int limit);
     void add(Review r);
-    boolean hasPurchasedAndCompleted(int customerId, int toyId);
+    boolean hasPurchasedAndCompleted(int customerId, int productId);
 
 }

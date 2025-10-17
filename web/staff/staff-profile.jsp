@@ -34,15 +34,13 @@
     <!-- Sidebar -->
     <aside class="staff-sidebar">
         <ul>
-            <li><a href="dashboard.jsp"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="viewOrder.jsp"><i class="fas fa-receipt"></i> View Orders</a></li>
-            <li><a href="booking-list.jsp"><i class="fas fa-edit"></i> Update Booking</a></li>
-            <li><a href="booking-stats.jsp"><i class="fas fa-list"></i> Services Booking</a></li>
-            <li><a href="chatCustomer.jsp"><i class="fas fa-comments"></i> Chat with Customer</a></li>
-            <li><a href="customer-list.jsp"><i class="fas fa-user"></i> Customer Profile</a></li>
-            <li><a href="index.jsp"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
-            <li><a href="staff-profile.jsp" class="active"><i class="fas fa-id-card"></i> Staff Profile</a></li>
-        </ul>
+            <li><a href="${pageContext.request.contextPath}/staff/viewOrder"><i class="fas fa-receipt"></i> View Orders</a></li>
+            <li><a href="${pageContext.request.contextPath}/staff/work-schedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
+            <li><a href="${pageContext.request.contextPath}/staff/staff-profile" class="active"><i class="fas fa-user-circle"></i> Staff Profile</a></li>
+            <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-users"></i> Customer Profile</a></li>
+            <li><a href="${pageContext.request.contextPath}/staff/services-booking"><i class="fas fa-list"></i> Services Booking</a></li>
+            <li><a href="${pageContext.request.contextPath}/staff/chatCustomer"><i class="fas fa-comments"></i> Chat with Customer</a></li>
+            <li><a href="${pageContext.request.contextPath}/staff/products"><i class="fas fa-box"></i> View Product</a></li>
     </aside>
 
     <!-- Main content -->

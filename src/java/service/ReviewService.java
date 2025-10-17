@@ -11,8 +11,8 @@ public class ReviewService implements IReviewService {
     private final IReviewDAO dao = new ReviewDAO();
 
     @Override
-    public List<Review> listByToy(int toyId, int limit) {
-        return dao.listByToy(toyId, limit);
+    public List<Review> listByProduct(int productId, int limit) {
+        return dao.listByProduct(productId, limit);
     }
 
     @Override
@@ -21,8 +21,8 @@ public class ReviewService implements IReviewService {
     }
     
     @Override
-    public boolean hasPurchasedAndCompleted(int customerId, int toyId) {
-        return dao.hasPurchasedAndCompleted(customerId, toyId);
+    public boolean hasPurchasedAndCompleted(int customerId, int productId) {
+        return dao.hasPurchasedAndCompleted(customerId, productId);
     }
 
     

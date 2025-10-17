@@ -7,6 +7,7 @@ public class Staff {
     private String phone;
     private String password;
     private String position; // vị trí công việc
+    private String scheduleNote; // ghi chú lịch làm việc
 
     // Constructors
     public Staff() {}
@@ -67,6 +68,14 @@ public class Staff {
 
     public void setPosition(String position) {
         this.position = position;
+    }
+    
+    public String getScheduleNote() {
+        return scheduleNote;
+    }
+    
+    public void setScheduleNote(String scheduleNote) {
+        this.scheduleNote = scheduleNote;
     }
 
     @Override

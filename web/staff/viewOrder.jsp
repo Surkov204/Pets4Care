@@ -57,28 +57,91 @@
         .btn-action:hover {
             opacity: 0.8;
         }
+        
+        /* Dropdown Menu Styles */
+        .avatar-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .avatar {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        
+        .avatar:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .avatar i {
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+            overflow: hidden;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+        }
+        
+        .dropdown-menu a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            color: #333;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        
+        .dropdown-menu a:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .dropdown-menu a i {
+            color: #6c757d;
+            width: 16px;
+        }
     </style>
 </head>
 <body>
 
 <header class="staff-header">
-    <div class="logo-section">
-        <img src="${pageContext.request.contextPath}/images/logo.png" alt="Pet4Care">
-        <div>
-            <h1>Pet4Care</h1>
-            <p>Staff Dashboard</p>
-        </div>
-    </div>
     <div class="user-section">
-        <div class="notif"><i class="fas fa-bell"></i></div>
-        <div class="chat"><i class="fas fa-comments"></i></div>
-        <div class="avatar">
-            <img src="${pageContext.request.contextPath}/images/staff-avatar.png" alt="Staff">
-            <span>${sessionScope.staff.name}</span>
+        <div class="avatar-dropdown">
+            <div class="avatar" onclick="toggleDropdown()">
+                <img src="${pageContext.request.contextPath}/images/staff-avatar.png" alt="Staff">
+                <span>${sessionScope.staff.name}</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <a href="${pageContext.request.contextPath}/home.jsp">
+                    <i class="fas fa-home"></i> Trang chủ
+                </a>
+                <a href="${pageContext.request.contextPath}/staff/edit-profile">
+                    <i class="fas fa-user-edit"></i> Chỉnh sửa thông tin
+                </a>
+                <a href="${pageContext.request.contextPath}/staff/logout">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </a>
+            </div>
         </div>
-        <form action="logout" method="post">
-            <button class="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
-        </form>
     </div>
 </header>
 
@@ -88,7 +151,6 @@
         <ul>
             <li><a href="${pageContext.request.contextPath}/staff/viewOrder" class="active"><i class="fas fa-receipt"></i> View Orders</a></li>
             <li><a href="${pageContext.request.contextPath}/staff/work-schedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
-            <li><a href="${pageContext.request.contextPath}/staff/staff-profile"><i class="fas fa-user-circle"></i> Staff Profile</a></li>
             <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-user"></i> Customer Profile</a></li>
             <li><a href="${pageContext.request.contextPath}/staff/services-booking"><i class="fas fa-list"></i> Services Booking</a></li>
             <li><a href="${pageContext.request.contextPath}/staff/chatCustomer"><i class="fas fa-comments"></i> Chat with Customer</a></li>
@@ -102,37 +164,28 @@
             <h2><i class="fas fa-receipt"></i> Orders List</h2>
             <p style="color: var(--text-light); margin-bottom: 1rem;">Danh sách đơn hàng của khách hàng gần đây 🐾</p>
 
-            <!-- Tìm kiếm đơn hàng -->
+            <!-- Bộ lọc đơn hàng -->
             <div class="search-section" style="background-color: #f8f9fa; border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem;">
                 <h3 style="margin-bottom: 1rem; color: var(--primary-color);">
-                    <i class="fas fa-search"></i> Tìm kiếm đơn hàng
+                    <i class="fas fa-filter"></i> Bộ lọc đơn hàng
                 </h3>
                 <form method="GET" action="${pageContext.request.contextPath}/staff/viewOrder" style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 200px;">
-                        <label for="orderId" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Order ID:</label>
-                        <input type="text" id="orderId" name="orderId" placeholder="Nhập Order ID..."
-                               value="${param.orderId}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px;">
-                    </div>
                     <div style="flex: 1; min-width: 200px;">
                         <label for="customerName" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Tên khách hàng:</label>
                         <input type="text" id="customerName" name="customerName" placeholder="Nhập tên khách hàng..."
                                value="${param.customerName}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px;">
                     </div>
                     <div style="flex: 1; min-width: 200px;">
-                        <label for="status" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Trạng thái:</label>
-                        <select id="status" name="status" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px;">
-                            <option value="">Tất cả trạng thái</option>
-                            <option value="pending" ${param.status == 'pending' ? 'selected' : ''}>Đang chờ</option>
-                            <option value="confirmed" ${param.status == 'confirmed' ? 'selected' : ''}>Đã xác nhận</option>
-                            <option value="processing" ${param.status == 'processing' ? 'selected' : ''}>Đang xử lý</option>
-                            <option value="shipped" ${param.status == 'shipped' ? 'selected' : ''}>Đã giao</option>
-                            <option value="delivered" ${param.status == 'delivered' ? 'selected' : ''}>Đã nhận</option>
-                            <option value="cancelled" ${param.status == 'cancelled' ? 'selected' : ''}>Đã hủy</option>
+                        <label for="paymentStatus" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Trạng thái thanh toán:</label>
+                        <select id="paymentStatus" name="paymentStatus" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px;">
+                            <option value="">Tất cả trạng thái thanh toán</option>
+                            <option value="PAID" ${param.paymentStatus == 'PAID' ? 'selected' : ''}>Đã thanh toán</option>
+                            <option value="UNPAID" ${param.paymentStatus == 'UNPAID' ? 'selected' : ''}>Chưa thanh toán</option>
                         </select>
                     </div>
                     <div>
                         <button type="submit" style="background-color: var(--primary-color); color: white; padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer;">
-                            <i class="fas fa-search"></i> Tìm kiếm
+                            <i class="fas fa-filter"></i> Lọc
                         </button>
                         <a href="${pageContext.request.contextPath}/staff/viewOrder"
                            style="background-color: #6c757d; color: white; padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; margin-left: 0.5rem;">
@@ -151,7 +204,7 @@
                         <th>Total Amount</th>
                         <th>Status</th>
                         <th>Payment Status</th>
-                        <th>Actions</th>
+                        <th>Ngày thanh toán</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -176,10 +229,14 @@
                                 </span>
                             </td>
                             <td>
-                                <a href="${pageContext.request.contextPath}/staff/orderDetail?id=${order.orderId}" 
-                                   class="btn-action view">
-                                   <i class="fas fa-eye"></i> View
-                                </a>
+                                <c:choose>
+                                    <c:when test="${order.paidAt != null}">
+                                        <fmt:formatDate value="${order.paidAt}" pattern="dd/MM/yyyy HH:mm"/>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span style="color: #6c757d; font-style: italic;">Chưa thanh toán</span>
+                                    </c:otherwise>
+                                </c:choose>
                             </td>
                         </tr>
                     </c:forEach>
@@ -193,6 +250,49 @@
                     </c:if>
                 </tbody>
             </table>
+
+            <!-- Phân trang -->
+            <c:if test="${totalPages > 1}">
+                <div class="pagination" style="display: flex; justify-content: center; align-items: center; margin-top: 2rem; gap: 0.5rem;">
+                    <!-- Nút Previous -->
+                    <c:if test="${currentPage > 1}">
+                        <a href="${pageContext.request.contextPath}/staff/viewOrder?page=${currentPage - 1}&customerName=${param.customerName}&paymentStatus=${param.paymentStatus}"
+                           style="padding: 0.5rem 1rem; background-color: var(--primary-color); color: white; text-decoration: none; border-radius: 5px;">
+                            <i class="fas fa-chevron-left"></i> Trước
+                        </a>
+                    </c:if>
+                    
+                    <!-- Các số trang -->
+                    <c:forEach begin="1" end="${totalPages}" var="pageNum">
+                        <c:choose>
+                            <c:when test="${pageNum == currentPage}">
+                                <span style="padding: 0.5rem 1rem; background-color: #6c757d; color: white; border-radius: 5px; font-weight: bold;">
+                                    ${pageNum}
+                                </span>
+                            </c:when>
+                            <c:otherwise>
+                                <a href="${pageContext.request.contextPath}/staff/viewOrder?page=${pageNum}&customerName=${param.customerName}&paymentStatus=${param.paymentStatus}"
+                                   style="padding: 0.5rem 1rem; background-color: #f8f9fa; color: var(--primary-color); text-decoration: none; border-radius: 5px; border: 1px solid #ddd;">
+                                    ${pageNum}
+                                </a>
+                            </c:otherwise>
+                        </c:choose>
+                    </c:forEach>
+                    
+                    <!-- Nút Next -->
+                    <c:if test="${currentPage < totalPages}">
+                        <a href="${pageContext.request.contextPath}/staff/viewOrder?page=${currentPage + 1}&customerName=${param.customerName}&paymentStatus=${param.paymentStatus}"
+                           style="padding: 0.5rem 1rem; background-color: var(--primary-color); color: white; text-decoration: none; border-radius: 5px;">
+                            Sau <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </c:if>
+                </div>
+                
+                <!-- Thông tin phân trang -->
+                <div style="text-align: center; margin-top: 1rem; color: var(--text-light);">
+                    Trang ${currentPage} / ${totalPages} - Tổng ${totalOrders} đơn hàng
+                </div>
+            </c:if>
         </section>
     </main>
 </div>
@@ -200,6 +300,23 @@
 <footer class="staff-footer">
     <p>© 2025 Pet4Care — Where Pets Feel Loved 🐶🐱</p>
 </footer>
+
+<script>
+function toggleDropdown() {
+    const dropdown = document.getElementById('dropdownMenu');
+    dropdown.classList.toggle('show');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('dropdownMenu');
+    const avatar = document.querySelector('.avatar');
+    
+    if (!avatar.contains(event.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+</script>
 
 </body>
 </html>

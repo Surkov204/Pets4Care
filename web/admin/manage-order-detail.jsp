@@ -47,7 +47,7 @@
                 <% if (items != null && !items.isEmpty()) {
                     for (OrderItem item : items) { %>
                         <tr class="hover:bg-gray-50">
-                            <td class="border px-4 py-2"><%= item.getToyName() %></td>
+                            <td class="border px-4 py-2"><%= item.getProductName() %></td>
                             <td class="border px-4 py-2 text-center"><%= item.getQuantity() %></td>
                             <td class="border px-4 py-2 text-right"><%= String.format("%,.0f", item.getUnitPrice()) %> đ</td>
                             <td class="border px-4 py-2 text-right"><%= String.format("%,.0f", item.getTotalPrice()) %> đ</td>

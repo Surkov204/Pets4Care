@@ -10,9 +10,9 @@
     double cartTotal = 0;
     if (cart != null) {
         for (CartItem item : cart.values()) {
-            if (item != null && item.getToy() != null) {
+            if (item != null && item.getProduct() != null) {
                 cartCount += item.getQuantity();
-                cartTotal += item.getQuantity() * item.getToy().getPrice();
+                cartTotal += item.getQuantity() * item.getProduct().getPrice();
             }
         }
     }

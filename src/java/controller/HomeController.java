@@ -3,9 +3,9 @@
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-import service.IToyService;
-import service.ToyService;
-import model.Toy;
+import service.IProductService;
+import service.ProductService;
+import model.Product;
 
 import java.io.IOException;
 import java.util.List;
@@ -14,13 +14,13 @@ import java.util.List;
 public class HomeController extends HttpServlet {
     // hello
 
-    private IToyService toyService;
+    private IProductService productService;
 
     private static final int PAGE_SIZE = 12;
 
     @Override
     public void init() throws ServletException {
-        toyService = new ToyService();
+        productService = new ProductService();
     }
 
     @Override
@@ -40,12 +40,12 @@ public class HomeController extends HttpServlet {
         }
 
         int offset = (page - 1) * PAGE_SIZE;
-        int totalToys = toyService.countAllToys();
-        int totalPages = (int) Math.ceil((double) totalToys / PAGE_SIZE);
+        int totalProducts = productService.countAllProducts();
+        int totalPages = (int) Math.ceil((double) totalProducts / PAGE_SIZE);
 
-        List<Toy> toys = toyService.getToysByPage(offset, PAGE_SIZE);
+        List<Product> products = productService.getProductsByPage(offset, PAGE_SIZE);
 
-        request.setAttribute("toys", toys);
+        request.setAttribute("products", products);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
 

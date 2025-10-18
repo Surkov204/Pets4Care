@@ -1,0 +1,6 @@
+Database tui sửa ỉa quá nên ae ráng restore từ file .bak về nữa nghe.
+
+Thay đổi:
+
+Thêm 2 dữ liệu cho status của bảng Bookings.
+Chỉnh sửa dữ liệu của bảng Staff.

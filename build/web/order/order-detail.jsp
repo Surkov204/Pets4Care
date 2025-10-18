@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
-<%@ page import="java.util.*, model.CartItem, model.Toy, model.Order, model.Customer, dao.UserDao" %>
+<%@ page import="java.util.*, model.CartItem, model.Product, model.Order, model.Customer, dao.UserDao" %>
 <%@ page session="true" %>
 <!DOCTYPE html>
 <html>
@@ -52,13 +52,13 @@
         <%
             double total = 0;
             for (CartItem item : items) {
-                double sub = item.getQuantity() * item.getToy().getPrice();
+                double sub = item.getQuantity() * item.getProduct().getPrice();
                 total += sub;
         %>
             <tr class="border-t hover:bg-gray-50">
-                <td class="px-4 py-2"><%= item.getToy().getName() %></td>
-                <td class="px-4 py-2 text-gray-600"><%= item.getToy().getDescription() %></td>
-                <td class="px-4 py-2"><%= String.format("%.0f", item.getToy().getPrice()) %> đ</td>
+                <td class="px-4 py-2"><%= item.getProduct().getName() %></td>
+                <td class="px-4 py-2 text-gray-600"><%= item.getProduct().getDescription() %></td>
+                <td class="px-4 py-2"><%= String.format("%.0f", item.getProduct().getPrice()) %> đ</td>
                 <td class="px-4 py-2"><%= item.getQuantity() %></td>
                 <td class="px-4 py-2 font-semibold"><%= String.format("%.0f", sub) %> đ</td>
             </tr>

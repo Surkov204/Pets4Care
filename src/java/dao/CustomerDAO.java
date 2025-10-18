@@ -78,6 +78,109 @@ public class CustomerDAO implements ICustomerDAO {
 
         return list;
     }
+
+    @Override
+    public Customer getCustomerById(int customerId) {
+        String sql = "SELECT * FROM Customer WHERE customer_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, customerId);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Customer(
+                            rs.getInt("customer_id"),
+                            rs.getString("name"),
+                            rs.getString("phone"),
+                            rs.getString("email"),
+                            rs.getString("password"),
+                            rs.getString("google_id"),
+                            rs.getString("address_Customer"),
+                            rs.getString("status")
+                    );
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+    
+    public String getCustomerNameById(int customerId) throws SQLException {
+        String sql = "SELECT name FROM Customer WHERE customer_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, customerId);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("name");
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    @Override
+    public List<Customer> getCustomersByStatus(String status) {
+        List<Customer> list = new ArrayList<>();
+        String sql = "SELECT * FROM Customer WHERE status = ?";
+
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, status);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Customer c = new Customer(
+                            rs.getInt("customer_id"),
+                            rs.getString("name"),
+                            rs.getString("phone"),
+                            rs.getString("email"),
+                            rs.getString("password"),
+                            rs.getString("google_id"),
+                            rs.getString("address_Customer"),
+                            rs.getString("status")
+                    );
+                    list.add(c);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    @Override
+    public boolean updateCustomer(Customer customer) {
+        String sql = "UPDATE Customer SET name = ?, phone = ?, email = ?, address_Customer = ?, status = ? WHERE customer_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, customer.getName());
+            ps.setString(2, customer.getPhone());
+            ps.setString(3, customer.getEmail());
+            ps.setString(4, customer.getAddressCustomer());
+            ps.setString(5, customer.getStatus());
+            ps.setInt(6, customer.getCustomerId());
+
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return false;
+    }
+
     @Override
     public void updateStatus(int customerId, String status) {
     String sql = "UPDATE Customer SET status = ? WHERE customer_id = ?";

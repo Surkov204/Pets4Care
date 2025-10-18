@@ -9,35 +9,35 @@ package model;
  * @author ASUS
  */
 public class OrderItem {
-    private int toyId;
-    private String toyName;
+    private int productId;
+    private String productName;
     private int quantity;
     private double unitPrice;
 
     public OrderItem() {
     }
 
-    public OrderItem(int toyId, String toyName, int quantity, double unitPrice) {
-        this.toyId = toyId;
-        this.toyName = toyName;
+    public OrderItem(int productId, String productName, int quantity, double unitPrice) {
+        this.productId = productId;
+        this.productName = productName;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
     }
 
-    public int getToyId() {
-        return toyId;
+    public int getProductId() {
+        return productId;
     }
 
-    public void setToyId(int toyId) {
-        this.toyId = toyId;
+    public void setProductId(int productId) {
+        this.productId = productId;
     }
 
-    public String getToyName() {
-        return toyName;
+    public String getProductName() {
+        return productName;
     }
 
-    public void setToyName(String toyName) {
-        this.toyName = toyName;
+    public void setProductName(String productName) {
+        this.productName = productName;
     }
 
     public int getQuantity() {

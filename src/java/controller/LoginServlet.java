@@ -139,13 +139,8 @@ public class LoginServlet extends HttpServlet {
         // Xử lý Remember Me
         handleRememberMe(response, email, rememberMe);
 
-        // Chuyển hướng dựa trên role/position
-        if (isAdminRole) {
-            response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp");
-            return;
-        }
-        String redirectUrl = determineStaffRedirectUrl(staff.getPosition());
-        response.sendRedirect(request.getContextPath() + "/" + redirectUrl);
+        // Chuyển hướng đến trang viewOrder cho tất cả staff
+        response.sendRedirect(request.getContextPath() + "/staff/viewOrder");
     }
 
     private String determineStaffRedirectUrl(String position) {

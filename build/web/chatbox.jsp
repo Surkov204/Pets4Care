@@ -747,8 +747,8 @@ function showToast(message) {
     }, 1500);
 }
 
-function addToCartFromChat(toyId, price) {
-    fetch('<%= request.getContextPath() %>/cartservlet?action=add&id=' + toyId)
+function addToCartFromChat(productId, price) {
+    fetch('<%= request.getContextPath() %>/cartservlet?action=add&id=' + productId)
         .then(res => {
             if (res.ok) {
                 showToast('🛒 Đã thêm vào giỏ hàng!');
@@ -813,12 +813,12 @@ function initializeCartSummary() {
     updateCartSummary();
 }
 
-function viewToyDetail(toyId) {
+function viewProductDetail(productId) {
     // Mở modal chi tiết sản phẩm
     document.getElementById('productDetailModal').style.display = 'block';
 
     // Gửi request tới server để lấy chi tiết sản phẩm (hoặc dùng dữ liệu đã có)
-    fetch('<%= request.getContextPath() %>/toy/toy-detail.jsp?toyId=' + toyId)
+    fetch('<%= request.getContextPath() %>/toy/toy-detail.jsp?productId=' + productId)
         .then(response => response.text())
         .then(data => {
             document.getElementById('productDetailContent').innerHTML = data;
@@ -828,8 +828,8 @@ function viewToyDetail(toyId) {
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('chat-view-btn')) {
         e.preventDefault();
-        var toyId = e.target.getAttribute('data-toy-id');
-        window.location.href = '<%= request.getContextPath() %>/toy/toy-detail.jsp?toyId=' + toyId;
+        var productId = e.target.getAttribute('data-product-id');
+        window.location.href = '<%= request.getContextPath() %>/toy/toy-detail.jsp?productId=' + productId;
         return;
     }
     if (e.target.id === 'closeProductModal') {
@@ -941,9 +941,9 @@ function refreshHeaderCart() {
 }
 
 // Xóa sản phẩm khỏi giỏ hàng từ chatbox
-function removeFromCart(toyId) {
+function removeFromCart(productId) {
     if (confirm('🗑️ Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?')) {
-        fetch('<%= request.getContextPath() %>/cartservlet?action=remove_chat&id=' + toyId, { method: 'POST' })
+        fetch('<%= request.getContextPath() %>/cartservlet?action=remove_chat&id=' + productId, { method: 'POST' })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -957,17 +957,17 @@ function removeFromCart(toyId) {
 }
 
 // Thay đổi số lượng sản phẩm từ chatbox
-function updateCartQuantity(toyId, change, btn) {
+function updateCartQuantity(productId, change, btn) {
     // Lấy số lượng hiện tại từ DOM
     const cartItem = btn.closest('.cart-item');
     const quantitySpan = cartItem.querySelector('.cart-qty');
     const currentQuantity = parseInt(quantitySpan.textContent);
     const newQuantity = currentQuantity + change;
     if (newQuantity <= 0) {
-        removeFromCart(toyId);
+        removeFromCart(productId);
         return;
     }
-    fetch('<%= request.getContextPath() %>/cartservlet?action=update_chat&id=' + toyId + '&quantity=' + newQuantity, { method: 'POST' })
+    fetch('<%= request.getContextPath() %>/cartservlet?action=update_chat&id=' + productId + '&quantity=' + newQuantity, { method: 'POST' })
     .then(res => res.json())
     .then(data => {
         if (data.success) {

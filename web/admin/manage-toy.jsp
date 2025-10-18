@@ -98,30 +98,30 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <c:forEach var="toy" items="${toys}">
+                        <c:forEach var="product" items="${products}">
                             <tr class="hover:bg-gray-50">
-                                <td class="border px-2 py-1">${toy.toyId}</td>
-                                <td class="border px-2 py-1">${toy.name}</td>
-                                <td class="border px-2 py-1">${toy.price}</td>
+                                <td class="border px-2 py-1">${product.productId}</td>
+                                <td class="border px-2 py-1">${product.name}</td>
+                                <td class="border px-2 py-1">${product.price}</td>
                                 <td class="border px-2 py-1">
                                     <c:forEach var="cat" items="${categories}">
-                                        <c:if test="${cat.categoryId == toy.categoryId}">
+                                        <c:if test="${cat.categoryId == product.categoryId}">
                                             ${cat.name}
                                         </c:if>
                                     </c:forEach>
                                 </td>
-                                <td class="border px-2 py-1">${toy.stockQuantity}</td>
-                                <td class="border px-2 py-1">${supplierMap[toy.supplierId]}</td>
-                                <td class="border px-2 py-1">${toy.description}</td>
+                                <td class="border px-2 py-1">${product.stockQuantity}</td>
+                                <td class="border px-2 py-1">${supplierMap[product.supplierId]}</td>
+                                <td class="border px-2 py-1">${product.description}</td>
                                 <td class="border px-2 py-1 space-x-2">
-                                    <a href="toys?action=edit&id=${toy.toyId}" class="text-blue-600 hover:underline">Sửa</a>
+                                    <a href="toys?action=edit&id=${product.productId}" class="text-blue-600 hover:underline">Sửa</a>
                                     |
-                                    <a href="toys?action=delete&id=${toy.toyId}" class="text-red-600 hover:underline"
+                                    <a href="toys?action=delete&id=${product.productId}" class="text-red-600 hover:underline"
                                        onclick="return confirm('Bạn có chắc muốn xoá sản phẩm này?')">Xoá</a>
                                 </td>
                             </tr>
                         </c:forEach>
-                        <c:if test="${empty toys}">
+                        <c:if test="${empty products}">
                             <tr>
                                 <td colspan="8" class="text-center text-gray-500 py-4">Không tìm thấy sản phẩm nào.</td>
                             </tr>

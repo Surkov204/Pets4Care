@@ -49,4 +49,7 @@ public interface IBookingDAO {
     
     // Lấy thống kê booking
     java.util.Map<String, Integer> getBookingStats();
+    
+    // Tự động hủy các booking có deposit đã quá hạn
+    int autoCancelExpiredDepositBookings();
 }

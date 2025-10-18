@@ -107,8 +107,8 @@ public class AdminLoginServlet extends HttpServlet {
                         
                         logger.info("Staff login successful: " + staff.getName() + " (" + staff.getPosition() + ")");
                         
-                        // Chuyển hướng về trang staff-home
-                        response.sendRedirect(request.getContextPath() + "/staff-home");
+                        // Chuyển hướng đến trang viewOrder
+                        response.sendRedirect(request.getContextPath() + "/staff/viewOrder");
                     } else {
                         logger.warning("Account type mismatch. Expected: " + accountType + ", Actual: " + staff.getPosition());
                         request.setAttribute("error", "Loại tài khoản không khớp với thông tin đăng nhập");

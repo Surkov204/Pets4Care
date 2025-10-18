@@ -32,6 +32,12 @@ public class ServicesBookingServlet extends HttpServlet {
         }
         
         try {
+            // Tự động hủy các booking có deposit đã quá hạn
+            int cancelledCount = bookingDAO.autoCancelExpiredDepositBookings();
+            if (cancelledCount > 0) {
+                request.setAttribute("info", "Đã tự động hủy " + cancelledCount + " đặt lịch có cọc đã quá hạn");
+            }
+            
             String action = request.getParameter("action");
             String keyword = request.getParameter("keyword");
             String status = request.getParameter("status");

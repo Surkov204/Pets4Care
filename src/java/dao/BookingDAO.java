@@ -589,5 +589,35 @@ public List<Booking> getAllBookings() {
 
     return booking;
 }
+
+    // =========================
+    // AUTO CANCEL EXPIRED DEPOSIT BOOKINGS
+    // =========================
+    public int autoCancelExpiredDepositBookings() {
+        String sql = """
+            UPDATE b 
+            SET b.status = 'cancelled'
+            FROM dbo.Booking b
+            INNER JOIN dbo.[Order] o ON b.order_id = o.order_id
+            WHERE b.status IN ('pending', 'confirmed')
+            AND o.payment_status = 'paid'
+            AND b.appointment_start < GETDATE()
+            """;
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected > 0) {
+                logger.info("Auto-cancelled " + rowsAffected + " expired deposit bookings");
+            }
+            return rowsAffected;
+            
+        } catch (SQLException e) {
+            logger.severe("Error auto-cancelling expired deposit bookings: " + e.getMessage());
+            e.printStackTrace();
+            return 0;
+        }
+    }
 }
 

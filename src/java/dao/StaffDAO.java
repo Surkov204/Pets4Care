@@ -103,6 +103,49 @@ public class StaffDAO {
         staff.setPhone(rs.getString("phone"));
         staff.setPassword(rs.getString("password"));
         staff.setPosition(rs.getString("position"));
+        staff.setScheduleNote(rs.getString("schedule_note"));
         return staff;
+    }
+    
+    public boolean updateStaff(Staff staff) {
+        String sql = "UPDATE Staff SET name = ?, email = ?, phone = ?, password = ?, schedule_note = ? WHERE staff_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setString(1, staff.getName());
+            ps.setString(2, staff.getEmail());
+            ps.setString(3, staff.getPhone());
+            ps.setString(4, staff.getPassword());
+            ps.setString(5, staff.getScheduleNote());
+            ps.setInt(6, staff.getStaffId());
+            
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            logger.severe("Error updating staff: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public Staff getStaffByEmail(String email) {
+        String sql = "SELECT * FROM Staff WHERE email = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapStaffFromResultSet(rs);
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error getting staff by email: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
     }
 }

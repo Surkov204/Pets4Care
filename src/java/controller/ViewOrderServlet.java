@@ -17,6 +17,7 @@ import java.util.List;
 @WebServlet("/staff/viewOrder")
 public class ViewOrderServlet extends HttpServlet {
     
+    
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
@@ -34,46 +35,38 @@ public class ViewOrderServlet extends HttpServlet {
         
         try {
             OrderDAO orderDAO = new OrderDAO();
-            CustomerDAO customerDAO = new CustomerDAO();
             
-            // Lấy tham số tìm kiếm
-            String orderIdStr = request.getParameter("orderId");
+            // Lấy tham số phân trang và filter
             String customerName = request.getParameter("customerName");
-            String status = request.getParameter("status");
+            String paymentStatus = request.getParameter("paymentStatus");
+            String pageStr = request.getParameter("page");
             
-            List<Order> orders = null;
-            
-            if (orderIdStr != null && !orderIdStr.trim().isEmpty()) {
-                // Tìm theo Order ID
+            int currentPage = 1;
+            if (pageStr != null && !pageStr.trim().isEmpty()) {
                 try {
-                    int orderId = Integer.parseInt(orderIdStr.trim());
-                    Order order = orderDAO.getOrderById(orderId);
-                    if (order != null) {
-                        orders = List.of(order);
-                    } else {
-                        orders = List.of();
-                    }
+                    currentPage = Integer.parseInt(pageStr.trim());
+                    if (currentPage < 1) currentPage = 1;
                 } catch (NumberFormatException e) {
-                    orders = List.of();
+                    currentPage = 1;
                 }
-            } else if (customerName != null && !customerName.trim().isEmpty()) {
-                // Tìm theo tên khách hàng
-                orders = orderDAO.searchOrders(customerName.trim());
-            } else if (status != null && !status.trim().isEmpty()) {
-                // Tìm theo trạng thái
-                orders = orderDAO.filterByStatus(status.trim());
-            } else {
-                // Lấy tất cả đơn hàng
-                orders = orderDAO.getAllOrders();
             }
             
-            // Thông tin khách hàng đã được lấy từ getAllOrders() với JOIN
-            // Không cần lấy lại từ CustomerDAO
+            int pageSize = 10; // 10 mục mỗi trang
+            int offset = (currentPage - 1) * pageSize;
+            
+            // Lấy danh sách đơn hàng với phân trang và filter
+            List<Order> orders = orderDAO.getOrdersWithPagination(customerName, paymentStatus, pageSize, offset);
+            
+            // Lấy tổng số đơn hàng để tính số trang
+            int totalOrders = orderDAO.getTotalOrdersCount(customerName, paymentStatus);
+            int totalPages = (int) Math.ceil((double) totalOrders / pageSize);
             
             request.setAttribute("orders", orders);
-            request.setAttribute("orderId", orderIdStr);
             request.setAttribute("customerName", customerName);
-            request.setAttribute("status", status);
+            request.setAttribute("paymentStatus", paymentStatus);
+            request.setAttribute("currentPage", currentPage);
+            request.setAttribute("totalPages", totalPages);
+            request.setAttribute("totalOrders", totalOrders);
             
             request.getRequestDispatcher("/staff/viewOrder.jsp").forward(request, response);
             

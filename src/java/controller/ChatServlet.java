@@ -33,17 +33,32 @@ public class ChatServlet extends HttpServlet {
                 handleGetMessages(request, response);
                 break;
             case "getsessions":
-                handleGetSessions(request, response);
+                handleGetSessions(request, response); // ✅ thêm dòng này
                 break;
             default:
                 response.setStatus(HttpServletResponse.SC_NO_CONTENT);
         }
     }
 
-    // ========================= [GET] Load messages =========================
+    private void handleGetSessions(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+
+        try (Connection conn = DBConnection.getConnection()) {
+            ChatDAO dao = new ChatDAO(conn);
+            List<Map<String, Object>> sessions = dao.getChatSessions(); // trả danh sách khách đã chat
+            new Gson().toJson(sessions, response.getWriter());
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.getWriter().write("[]");
+        }
+    }
+
+    // ========================= [GET] Get chat sessions (for staff) =========================
     private void handleGetMessages(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        response.setContentType("text/html;charset=UTF-8");
+        response.setContentType("application/json;charset=UTF-8");
+
         int customerId;
         try {
             customerId = Integer.parseInt(request.getParameter("customerId"));
@@ -61,35 +76,11 @@ public class ChatServlet extends HttpServlet {
             ChatDAO dao = new ChatDAO(conn);
             List<ChatMessage> messages = dao.getMessagesByCustomer(customerId);
 
-            try (PrintWriter out = response.getWriter()) {
-                for (ChatMessage msg : messages) {
-                    String cls = msg.getSenderType().equalsIgnoreCase("customer")
-                            ? "received"
-                            : "sent";
-                    out.printf("<div class='message %s'><div class='bubble'>%s</div></div>",
-                            cls, escapeHtml(msg.getMessage()));
-                }
-            }
+            // ✅ Trả JSON đúng cho fetch(...).then(res.json())
+            new Gson().toJson(messages, response.getWriter());
         } catch (Exception e) {
             e.printStackTrace();
             response.sendError(500, "Error loading messages: " + e.getMessage());
-        }
-    }
-
-    // ========================= [GET] Get chat sessions (for staff) =========================
-    private void handleGetSessions(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        response.setContentType("application/json;charset=UTF-8");
-
-        try (Connection conn = DBConnection.getConnection()) {
-            ChatDAO dao = new ChatDAO(conn);
-            List<Map<String, Object>> sessions = dao.getChatSessions();
-
-            new com.google.gson.Gson().toJson(sessions, response.getWriter());
-            System.out.println("✅ [ChatServlet] Đã gửi JSON danh sách chat sessions");
-        } catch (Exception e) {
-            e.printStackTrace();
-            response.getWriter().write("[]");
         }
     }
 
@@ -127,7 +118,6 @@ public class ChatServlet extends HttpServlet {
             e.printStackTrace();
             response.sendError(500, e.getMessage());
         }
-        
 
     }
 

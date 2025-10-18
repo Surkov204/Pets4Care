@@ -199,6 +199,7 @@
                 })
                 .catch(err => console.error("Send error:", err));
     }
+
     if (customerId > 0) {
         loadMessages();
         setInterval(loadMessages, 3000);

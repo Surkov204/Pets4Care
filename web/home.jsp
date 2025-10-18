@@ -607,6 +607,6 @@
         </script>
 
         <jsp:include page="chatbox.jsp"/>
-        <jsp:include page="chat-icon.jsp" />
+        <jsp:include page="customer-chat.jsp" />
     </body>
 </html>

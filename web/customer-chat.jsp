@@ -169,10 +169,31 @@
     function loadMessages() {
         if (customerId <= 0)
             return;
+
         fetch("<%=request.getContextPath()%>/chat?action=get&customerId=" + customerId)
-                .then(res => res.text())
-                .then(html => {
-                    chatBody.innerHTML = html;
+                .then(res => res.json()) // ✅ đổi từ .text() sang .json()
+                .then(messages => {
+                    chatBody.innerHTML = "";
+
+                    messages.forEach(m => {
+                        const div = document.createElement("div");
+                        div.classList.add("message");
+
+                        // Nếu người gửi là customer → tin nằm bên phải
+                        if (m.senderType.toLowerCase() === "customer") {
+                            div.classList.add("sent");
+                        } else {
+                            div.classList.add("received");
+                        }
+
+                        const bubble = document.createElement("div");
+                        bubble.classList.add("bubble");
+                        bubble.textContent = m.message;
+
+                        div.appendChild(bubble);
+                        chatBody.appendChild(div);
+                    });
+
                     chatBody.scrollTop = chatBody.scrollHeight;
                 })
                 .catch(err => console.error("Load chat error:", err));

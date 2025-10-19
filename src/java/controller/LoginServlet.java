@@ -140,7 +140,7 @@ public class LoginServlet extends HttpServlet {
         handleRememberMe(response, email, rememberMe);
 
         // Chuyển hướng đến trang viewOrder cho tất cả staff
-        response.sendRedirect(request.getContextPath() + "/staff/viewOrder");
+        response.sendRedirect(request.getContextPath() + "/staff/dashboard.jsp");
     }
 
     private String determineStaffRedirectUrl(String position) {

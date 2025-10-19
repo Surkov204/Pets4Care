@@ -218,7 +218,7 @@
             <aside class="staff-sidebar">
                 <ul>
                     <li><a href="${pageContext.request.contextPath}/staff/viewOrder"><i class="fas fa-receipt"></i> View Orders</a></li>
-                    <li><a href="${pageContext.request.contextPath}/staff/work-schedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
+                    <li><a href="${pageContext.request.contextPath}/staff/mySchedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/staff-profile"><i class="fas fa-user-circle"></i> Staff Profile</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-user"></i> Customer Profile</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/services-booking"><i class="fas fa-list"></i> Services Booking</a></li>
@@ -326,16 +326,52 @@
             function loadStaffChat() {
                 if (!currentCustomerId)
                     return;
+
                 fetch("../chat?action=get&customerId=" + currentCustomerId)
-                        .then(res => res.text())
-                        .then(html => {
-                            const messagesContainer = document.getElementById("messagesContainer");
-                            messagesContainer.innerHTML = html;
-                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        .then(res => res.json()) // ✅ đổi sang JSON
+                        .then(messages => {
+                            const container = document.getElementById("messagesContainer");
+                            container.innerHTML = "";
+
+                            if (messages.length === 0) {
+                                container.innerHTML = "<p style='color:#999;text-align:center;margin-top:50px;'>Chưa có tin nhắn nào</p>";
+                                return;
+                            }
+
+                            messages.forEach(m => {
+                                const msgDiv = document.createElement("div");
+                                msgDiv.classList.add("message-row");
+
+                                // ✅ staff gửi -> align phải; customer -> align trái
+                                msgDiv.style.display = "flex";
+                                msgDiv.style.justifyContent = (m.senderType.toLowerCase() === "staff") ? "flex-end" : "flex-start";
+                                msgDiv.style.marginBottom = "10px";
+
+                                const bubble = document.createElement("div");
+                                bubble.textContent = m.message;
+                                bubble.style.padding = "10px 15px";
+                                bubble.style.borderRadius = "18px";
+                                bubble.style.maxWidth = "70%";
+                                bubble.style.wordWrap = "break-word";
+
+                                if (m.senderType.toLowerCase() === "staff") {
+                                    bubble.style.background = "#1877f2";
+                                    bubble.style.color = "white";
+                                    bubble.style.borderRadius = "18px 18px 0 18px";
+                                } else {
+                                    bubble.style.background = "#e4e6ea";
+                                    bubble.style.color = "#111";
+                                    bubble.style.borderRadius = "18px 18px 18px 0";
+                                }
+
+                                msgDiv.appendChild(bubble);
+                                container.appendChild(msgDiv);
+                            });
+
+                            container.scrollTop = container.scrollHeight;
                         })
                         .catch(err => console.error("❌ loadStaffChat error:", err));
             }
-
             function sendStaffMessage() {
                 const msgInput = document.getElementById("messageInput");
                 const text = msgInput.value.trim();

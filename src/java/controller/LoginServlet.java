@@ -10,9 +10,11 @@ import jakarta.servlet.http.Cookie;
 import model.Customer;
 import model.Staff;
 import model.Admin;
+import model.Doctor;
 import service.UserService;
 import dao.StaffDAO;
 import dao.AdminDAO;
+import dao.DoctorDAO;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -23,6 +25,7 @@ public class LoginServlet extends HttpServlet {
     private UserService userService = new UserService();
     private StaffDAO staffDAO = new StaffDAO();
     private AdminDAO adminDAO = new AdminDAO();
+    private DoctorDAO doctorDAO = new DoctorDAO();
     private static final Logger logger = Logger.getLogger(LoginServlet.class.getName());
 
     @Override
@@ -53,7 +56,17 @@ public class LoginServlet extends HttpServlet {
                 }
             }
 
-            // Không phải Staff → kiểm tra Admin (bảng admin)
+            // Không phải Staff → kiểm tra Doctor (bảng Doctor)
+            boolean isDoctorAuthenticated = doctorDAO.authenticateDoctor(email.trim(), password.trim());
+            if (isDoctorAuthenticated) {
+                Doctor doctor = doctorDAO.findByEmail(email.trim());
+                if (doctor != null) {
+                    handleDoctorLogin(request, response, doctor, email, rememberMe);
+                    return;
+                }
+            }
+
+            // Không phải Doctor → kiểm tra Admin (bảng admin)
             Admin admin = adminDAO.loginByEmail(email.trim(), password.trim());
             if (admin == null) {
                 // fallback: cho phép dùng username trong trường email (nếu admin nhập username)
@@ -64,7 +77,7 @@ public class LoginServlet extends HttpServlet {
                 return;
             }
 
-            // Nếu không phải Staff/Admin, thử đăng nhập Customer
+            // Nếu không phải Staff/Doctor/Admin, thử đăng nhập Customer
             Customer customer = userService.loginCustomer(email.trim(), password.trim());
             if (customer != null) {
                 handleCustomerLogin(request, response, customer, email, password, rememberMe);
@@ -141,6 +154,27 @@ public class LoginServlet extends HttpServlet {
 
         // Chuyển hướng đến trang viewOrder cho tất cả staff
         response.sendRedirect(request.getContextPath() + "/staff/dashboard.jsp");
+    }
+
+    private void handleDoctorLogin(HttpServletRequest request, HttpServletResponse response, 
+                                 Doctor doctor, String email, String rememberMe) 
+                                 throws IOException {
+        
+        HttpSession session = request.getSession();
+        session.setAttribute("doctor", doctor);
+        session.setAttribute("role", "doctor");
+        session.setAttribute("doctorId", doctor.getDoctorId());
+        session.setAttribute("doctorName", doctor.getName());
+        session.setAttribute("doctorEmail", doctor.getEmail());
+        session.setAttribute("doctorSpecialization", doctor.getSpecialization());
+
+        logger.info("Doctor login successful: " + doctor.getName() + " (" + doctor.getSpecialization() + ")");
+
+        // Xử lý Remember Me
+        handleRememberMe(response, email, rememberMe);
+
+        // Chuyển hướng đến trang doctor dashboard
+        response.sendRedirect(request.getContextPath() + "/doctor/doctor-dashboard.jsp");
     }
 
     private String determineStaffRedirectUrl(String position) {

@@ -9,6 +9,15 @@ public class Shift {
     private int breakMinutes;
     private String location;
 
+    public boolean isRegistered() {
+        return registered;
+    }
+
+    public void setRegistered(boolean registered) {
+        this.registered = registered;
+    }
+    private boolean registered;
+
     public Shift() {}
 
     public Shift(int shiftID, String shiftCode, String shiftName, String startTime, String endTime, int breakMinutes, String location) {
@@ -19,6 +28,7 @@ public class Shift {
         this.endTime = endTime;
         this.breakMinutes = breakMinutes;
         this.location = location;
+        this.registered = false;
     }
 
     public int getShiftID() { return shiftID; }

@@ -12,23 +12,18 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
-import model.Review;
-import model.Supplier;
-import model.Product;
-import model.ProductCategory;
-import service.SupplierService;
-import service.ProductCategoryService;
-import service.ProductService;
+import model.Order;
+import service.IOrderService;
+import service.OrderService;
 
 /**
  *
  * @author ASUS
  */
-@WebServlet(name = "ProductDetailServlet", urlPatterns = {"/product-detail"})
-public class ProductDetailServlet extends HttpServlet {
-    private ProductService toyService = new ProductService();
-    private SupplierService supplierService = new SupplierService();
-    private ProductCategoryService categoryService = new ProductCategoryService();
+@WebServlet(name = "CustomerOrderServlet", urlPatterns = {"/admin/customer-orders"})
+public class CustomerOrderServlet extends HttpServlet {
+
+    private IOrderService orderService = new OrderService();
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -46,10 +41,10 @@ public class ProductDetailServlet extends HttpServlet {
             out.println("<!DOCTYPE html>");
             out.println("<html>");
             out.println("<head>");
-            out.println("<title>Servlet ProductDetailServlet</title>");
+            out.println("<title>Servlet CustomerOrderServlet</title>");
             out.println("</head>");
             out.println("<body>");
-            out.println("<h1>Servlet ProductDetailServlet at " + request.getContextPath() + "</h1>");
+            out.println("<h1>Servlet CustomerOrderServlet at " + request.getContextPath() + "</h1>");
             out.println("</body>");
             out.println("</html>");
         }
@@ -67,27 +62,12 @@ public class ProductDetailServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-         String idParam = request.getParameter("id");
-    if (idParam != null) {
-        try {
-            int toyId = Integer.parseInt(idParam);
-            Product toy = toyService.getProductById(toyId);
-            List<Review> reviews = toyService.getProductReviews(toyId);
-            ProductCategory category = categoryService.getCategoryById(toy.getCategoryId());
-            Supplier supplier = supplierService.getSupplierById(toy.getSupplierId());
+        int customerId = Integer.parseInt(request.getParameter("customerId"));
+    List<Order> orders = orderService.getOrdersByCustomerId(customerId);
 
-            request.setAttribute("toy", toy);
-            request.setAttribute("reviews", reviews);
-            request.setAttribute("supplier", supplier);  
-            request.setAttribute("category", category);
-
-            request.getRequestDispatcher("/product-detail.jsp").forward(request, response);
-        } catch (NumberFormatException e) {
-            response.sendRedirect("home.jsp");
-        }
-    } else {
-        response.sendRedirect("home.jsp");
-    }
+    request.setAttribute("orders", orders);
+    request.setAttribute("customerId", customerId);
+    request.getRequestDispatcher("/admin/customer-orders.jsp").forward(request, response);
     }
 
     /**

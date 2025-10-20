@@ -7,7 +7,7 @@
 
 <%
     Customer currentUser = (Customer) session.getAttribute("currentUser");
-    
+
     boolean canReview = true; // Đã đăng nhập thì luôn true
     // Lấy productId từ URL, kiểm tra cả tham số "productId" và "id"
     String productIdStr = request.getParameter("productId");
@@ -79,7 +79,7 @@
                     <div class="logo-subtext">thành phố thú cưng</div>
                 </div>
             </a> 
-            <form class="search-form" method="get" action="<%= request.getContextPath() %>/search">
+            <form class="search-form" method="get" action="<%= request.getContextPath()%>/search">
                 <input type="text" name="keyword" placeholder="Tìm kiếm...">
                 <button type="submit"><i class="fas fa-search"></i></button>
             </form>
@@ -122,13 +122,13 @@
         <nav>
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
-                <li><a href="<%= request.getContextPath()%>/gioi-thieu.jsp">GIỚI THIỆU</a></li>
-                <li><a href="<%= request.getContextPath()%>/search?categoryId=1">SHOP CÚN CƯNG</a></li>
-                <li><a href="<%= request.getContextPath()%>/search?categoryId=2">SHOP MÈO CƯNG</a></li>
-                <li><a href="<%= request.getContextPath()%>/search?categoryId=3">SHOP VẬT NUÔI KHÁC</a></li>
-                <li><a href="<%= request.getContextPath()%>/tin-tuc.jsp">TIN TỨC</a></li>
-                <li><a href="<%= request.getContextPath()%>/meo-vat.jsp">MẸO VẶT</a></li>
-                <li><a href="<%= request.getContextPath()%>/lien-he.jsp">LIÊN HỆ</a></li>
+                <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
+                <li><a href="health-check-booking">ĐẶT LỊCH KHÁM</a></li>
+                <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
+                <li><a href="doctor.jsp">BÁC SĨ</a></li>
+                <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
+                <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
+                <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
             </ul>
         </nav>
 

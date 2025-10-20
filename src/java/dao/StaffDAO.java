@@ -103,7 +103,7 @@ public class StaffDAO {
         staff.setPhone(rs.getString("phone"));
         staff.setPassword(rs.getString("password"));
         staff.setPosition(rs.getString("position"));
-        staff.setScheduleNote(rs.getString("schedule_note"));
+      //  staff.setScheduleNote(rs.getString("schedule_note"));
         return staff;
     }
     
@@ -117,7 +117,7 @@ public class StaffDAO {
             ps.setString(2, staff.getEmail());
             ps.setString(3, staff.getPhone());
             ps.setString(4, staff.getPassword());
-            ps.setString(5, staff.getScheduleNote());
+        //    ps.setString(5, staff.getScheduleNote());
             ps.setInt(6, staff.getStaffId());
             
             int rowsAffected = ps.executeUpdate();

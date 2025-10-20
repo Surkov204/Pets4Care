@@ -3,30 +3,17 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/D:/Projects/Pets4Care/web/css/staff.css</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/CartServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/dao/ProductDAO.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/StaffLoginServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/web/admin/dashboard.jsp</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/service/SupplierService.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/utils/DBConnection.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/dao/UserDAO.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/StaffCustomerServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/StaffLogoutServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/web/resetpassword.jsp</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/service/UserService.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/StaffHomeServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/utils/GoogleUtils.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/utils/EmailUtils.java</file>
-            <file>file:/D:/Projects/Pets4Care/nbproject/build-impl.xml</file>
-            <file>file:/D:/Projects/Pets4Care/web/staff/chatCustomer.jsp</file>
-            <file>file:/D:/Projects/Pets4Care/web/chi-tiet-bac-si.jsp</file>
-            <file>file:/D:/Projects/Pets4Care/web/searchResult.jsp</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/service/ReviewService1.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/ViewOrderServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/CustomerListServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/utils/GoogleConstants.java</file>
-            <file>file:/D:/Projects/Pets4Care/web/bac-si.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/images/pets/placeholder.svg</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/user/pet-info.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/WEB-INF/web.xml</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/PetInfoServlet.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/user/user-info.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/UpdatePetServlet.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/dao/BookingServiceDAO.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/dat-lich-kham.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/images/gt.png</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/HealthCheckBookingServlet.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/BookingServiceItem.java</file>
         </group>
     </open-files>
 </project-private>

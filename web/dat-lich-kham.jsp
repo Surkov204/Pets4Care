@@ -1,6 +1,14 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="model.Customer" %>
 <%@ page import="model.CartItem" %>
+<%@ page import="model.Pet" %>
+<%@ page import="model.PetServiceModel" %>
+<%@ page import="model.Booking" %>
+<%@ page import="model.BookingServiceItem" %>
+<%@ page import="java.util.*" %>
+<%@ page import="java.text.SimpleDateFormat" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%
     Customer currentUser = (Customer) session.getAttribute("currentUser");
     Map<Integer, CartItem> cart = (Map<Integer, CartItem>) session.getAttribute("cart");
@@ -15,48 +23,39 @@
             }
         }
     }
-%>
-<%@ page import="java.util.*" %>
-<%@ page import="java.text.SimpleDateFormat" %>
-
-<%
-    // Sample data - replace with actual database queries later
-    String petName = "Milu";
-    String species = "Chó";
-    String breed = "Poodle";
-    String gender = "Đực";
-    String ownerName = "Nguyễn Văn A";
-    String ownerPhone = "0123 456 789";
-    String petImage = "toy_1.jpg"; // Sample image
     
-    // Calculate age (sample date)
-    Calendar birthDate = Calendar.getInstance();
-    birthDate.set(2020, 5, 15); // June 15, 2020
-    Calendar now = Calendar.getInstance();
-    int age = now.get(Calendar.YEAR) - birthDate.get(Calendar.YEAR);
-    if (now.get(Calendar.DAY_OF_YEAR) < birthDate.get(Calendar.DAY_OF_YEAR)) {
-        age--;
+    // Get data from request attributes
+    List<PetServiceModel> healthCheckServices = (List<PetServiceModel>) request.getAttribute("healthCheckServices");
+    List<Booking> healthCheckBookings = (List<Booking>) request.getAttribute("healthCheckBookings");
+    Pet pet = (Pet) request.getAttribute("pet");
+    
+    // Default values if no data
+    if (healthCheckServices == null) healthCheckServices = new ArrayList<>();
+    if (healthCheckBookings == null) healthCheckBookings = new ArrayList<>();
+    
+    // Pet information
+    String petName = "Chưa có thông tin";
+    String species = "Chưa có thông tin";
+    String breed = "Chưa có thông tin";
+    String gender = "Chưa có thông tin";
+    String ownerName = "Chưa có thông tin";
+    String ownerPhone = "Chưa có thông tin";
+    String petImage = "pets/placeholder.svg";
+    int age = 0;
+    
+    if (pet != null) {
+        petName = pet.getPetName() != null ? pet.getPetName() : "Chưa có tên";
+        species = pet.getSpecies() != null ? pet.getSpecies() : "Chưa có thông tin";
+        breed = pet.getBreed() != null ? pet.getBreed() : "Chưa có thông tin";
+        gender = pet.getGender() != null ? (pet.getGender().equals("male") ? "Đực" : "Cái") : "Chưa có thông tin";
+        age = pet.getAge();
+        petImage = pet.getImagePath() != null ? pet.getImagePath() : "pets/placeholder.svg";
     }
     
-    // Health information
-    String weight = "8.2 kg";
-    String condition = "Bình thường";
-    String temperature = "38.5°C";
-    String pulse = "120 bpm";
-    String breathing = "20 nhịp/phút";
-    String symptoms = "Ăn ít hơn bình thường";
-    String doctorNotes = "Sức khỏe tổng thể tốt, cần theo dõi chế độ ăn";
-    
-    // Available time slots
-    List<String> availableSlots = Arrays.asList(
-        "08:00 - 09:00", "09:00 - 10:00", "10:00 - 11:00",
-        "14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00"
-    );
-    
-    // Available doctors
-    List<String> doctors = Arrays.asList(
-        "Bác sĩ Nguyễn Thị B", "Bác sĩ Trần Văn C", "Bác sĩ Lê Thị D"
-    );
+    if (currentUser != null) {
+        ownerName = currentUser.getName() != null ? currentUser.getName() : "Chưa có tên";
+        ownerPhone = currentUser.getPhone() != null ? currentUser.getPhone() : "Chưa có số điện thoại";
+    }
 %>
 
 <!DOCTYPE html>
@@ -322,7 +321,7 @@
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
                 <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
-                <li><a href="dat-lich-kham.jsp" style="background: rgba(255, 255, 255, 0.2);">ĐẶT LỊCH KHÁM</a></li>
+                <li><a href="<%= request.getContextPath()%>/health-check-booking" style="background: rgba(255, 255, 255, 0.2);">ĐẶT LỊCH KHÁM</a></li>
                 <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
                 <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
@@ -333,6 +332,25 @@
     </header>
 
     <div class="container">
+        <!-- Success/Error Messages -->
+        <% 
+            String successMessage = (String) session.getAttribute("successMessage");
+            String errorMessage = (String) session.getAttribute("errorMessage");
+            if (successMessage != null) {
+                session.removeAttribute("successMessage");
+        %>
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            <i class="fas fa-check-circle mr-2"></i><%= successMessage %>
+        </div>
+        <% } %>
+        <% if (errorMessage != null) {
+                session.removeAttribute("errorMessage");
+        %>
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <i class="fas fa-exclamation-triangle mr-2"></i><%= errorMessage %>
+        </div>
+        <% } %>
+        
         <!-- A. Thông tin chung về thú cưng -->
         <div class="card">
             <h2 class="section-title">
@@ -368,36 +386,47 @@
                 B. Thông tin sức khỏe hiện tại
             </h2>
             
+            <% if (pet != null) { %>
             <table class="info-table">
                 <tr>
                     <th>Cân nặng</th>
-                    <td><%= weight %> <span class="text-green-600 text-sm">(tăng 0.3kg so với lần trước)</span></td>
+                    <td>Chưa có thông tin <span class="text-gray-500 text-sm">(Cần cập nhật)</span></td>
                 </tr>
                 <tr>
                     <th>Tình trạng chung</th>
-                    <td><span class="status-badge status-normal"><%= condition %></span></td>
+                    <td><span class="status-badge status-normal">Cần khám định kỳ</span></td>
                 </tr>
                 <tr>
                     <th>Nhiệt độ</th>
-                    <td><%= temperature %></td>
+                    <td>Chưa có thông tin</td>
                 </tr>
                 <tr>
                     <th>Mạch</th>
-                    <td><%= pulse %></td>
+                    <td>Chưa có thông tin</td>
                 </tr>
                 <tr>
                     <th>Nhịp thở</th>
-                    <td><%= breathing %></td>
+                    <td>Chưa có thông tin</td>
                 </tr>
                 <tr>
                     <th>Triệu chứng</th>
-                    <td><%= symptoms %></td>
+                    <td>Chưa có triệu chứng nào được ghi nhận</td>
                 </tr>
                 <tr>
                     <th>Ghi chú bác sĩ</th>
-                    <td><%= doctorNotes %></td>
+                    <td>Chưa có ghi chú từ bác sĩ</td>
                 </tr>
             </table>
+            <% } else { %>
+            <div class="text-center py-8">
+                <i class="fas fa-paw text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">Chưa có thông tin thú cưng</h3>
+                <p class="text-gray-500 mb-4">Vui lòng cập nhật thông tin thú cưng để có thể đặt lịch khám</p>
+                <a href="user/pet-info.jsp" class="btn-primary">
+                    <i class="fas fa-plus mr-2"></i>Cập nhật thông tin thú cưng
+                </a>
+            </div>
+            <% } %>
         </div>
 
         <!-- C. Lịch sử khám & tiêm chủng -->
@@ -407,46 +436,57 @@
                 C. Lịch sử khám & tiêm chủng
             </h2>
             
+            <% if (!healthCheckBookings.isEmpty()) { %>
             <div class="history-timeline">
+                <% for (Booking booking : healthCheckBookings) { 
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+                    String statusClass = "";
+                    String statusText = "";
+                    switch (booking.getStatus()) {
+                        case "completed":
+                            statusClass = "status-normal";
+                            statusText = "Hoàn thành";
+                            break;
+                        case "confirmed":
+                            statusClass = "status-normal";
+                            statusText = "Đã xác nhận";
+                            break;
+                        case "pending":
+                            statusClass = "status-warning";
+                            statusText = "Đang chờ";
+                            break;
+                        case "cancelled":
+                            statusClass = "status-warning";
+                            statusText = "Đã hủy";
+                            break;
+                        default:
+                            statusClass = "status-warning";
+                            statusText = "Chưa xác định";
+                    }
+                %>
                 <div class="timeline-item">
                     <div class="timeline-content">
                         <div class="flex justify-between items-start">
                             <div>
-                                <h4 class="font-semibold text-lg">Khám tổng quát</h4>
-                                <p class="text-gray-600">05/10/2025</p>
+                                <h4 class="font-semibold text-lg">Khám sức khỏe</h4>
+                                <p class="text-gray-600"><%= dateFormat.format(booking.getAppointmentStart()) %></p>
+                                <% if (booking.getNote() != null && !booking.getNote().trim().isEmpty()) { %>
+                                <p class="mt-2"><%= booking.getNote() %></p>
+                                <% } %>
                             </div>
-                            <span class="status-badge status-normal">Hoàn thành</span>
+                            <span class="status-badge <%= statusClass %>"><%= statusText %></span>
                         </div>
-                        <p class="mt-2">Sức khỏe tốt, không có dấu hiệu bất thường</p>
                     </div>
                 </div>
-                
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-semibold text-lg">Tiêm phòng dại</h4>
-                                <p class="text-gray-600">20/09/2025</p>
-                            </div>
-                            <span class="status-badge status-normal">Hoàn thành</span>
-                        </div>
-                        <p class="mt-2">Tiêm phòng dại định kỳ, không có phản ứng phụ</p>
-                    </div>
-                </div>
-                
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-semibold text-lg">Khám tiêu hóa</h4>
-                                <p class="text-gray-600">12/08/2025</p>
-                            </div>
-                            <span class="status-badge status-warning">Theo dõi</span>
-                        </div>
-                        <p class="mt-2">Dấu hiệu nhẹ của viêm ruột, đã kê đơn thuốc</p>
-                    </div>
-                </div>
+                <% } %>
             </div>
+            <% } else { %>
+            <div class="text-center py-8">
+                <i class="fas fa-calendar-times text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">Chưa có lịch sử khám</h3>
+                <p class="text-gray-500">Thú cưng của bạn chưa có lịch sử khám nào được ghi nhận</p>
+            </div>
+            <% } %>
         </div>
 
         <!-- D. Lịch khám đã đặt -->
@@ -468,54 +508,66 @@
             </div>
             
             <div id="appointmentsList" style="display: none;">
+                <% if (!healthCheckBookings.isEmpty()) { %>
                 <div class="space-y-4">
-                    <!-- Upcoming Appointment -->
-                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                    <% for (Booking booking : healthCheckBookings) { 
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                        String statusClass = "";
+                        String statusText = "";
+                        String bgClass = "";
+                        
+                        switch (booking.getStatus()) {
+                            case "pending":
+                                statusClass = "status-warning";
+                                statusText = "Chờ xác nhận";
+                                bgClass = "bg-yellow-50 border-l-4 border-yellow-400";
+                                break;
+                            case "confirmed":
+                                statusClass = "status-normal";
+                                statusText = "Đã xác nhận";
+                                bgClass = "bg-green-50 border-l-4 border-green-400";
+                                break;
+                            case "cancelled":
+                                statusClass = "status-warning";
+                                statusText = "Đã hủy";
+                                bgClass = "bg-red-50 border-l-4 border-red-400";
+                                break;
+                            default:
+                                statusClass = "status-warning";
+                                statusText = "Chưa xác định";
+                                bgClass = "bg-gray-50 border-l-4 border-gray-400";
+                        }
+                    %>
+                    <div class="<%= bgClass %> p-4 rounded-r-lg">
                         <div class="flex justify-between items-start">
                             <div>
-                                <h4 class="font-semibold text-lg text-blue-800">Khám tổng quát định kỳ</h4>
-                                <p class="text-blue-600">📅 Ngày: 15/12/2025 - 09:00</p>
-                                <p class="text-blue-600">👨‍⚕️ Bác sĩ: Nguyễn Thị B</p>
-                                <p class="text-blue-600">📝 Ghi chú: Khám định kỳ 6 tháng</p>
+                                <h4 class="font-semibold text-lg">Khám sức khỏe</h4>
+                                <p class="text-gray-600">📅 Ngày: <%= dateFormat.format(booking.getAppointmentStart()) %> - <%= timeFormat.format(booking.getAppointmentStart()) %></p>
+                                <% if (booking.getNote() != null && !booking.getNote().trim().isEmpty()) { %>
+                                <p class="text-gray-600">📝 Ghi chú: <%= booking.getNote() %></p>
+                                <% } %>
                             </div>
-                            <span class="status-badge" style="background: #dbeafe; color: #1e40af;">Chờ xác nhận</span>
+                            <span class="status-badge <%= statusClass %>"><%= statusText %></span>
                         </div>
-                    </div>
-                    
-                    <!-- Confirmed Appointment -->
-                    <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-semibold text-lg text-green-800">Tiêm phòng định kỳ</h4>
-                                <p class="text-green-600">📅 Ngày: 22/12/2025 - 14:00</p>
-                                <p class="text-green-600">👨‍⚕️ Bác sĩ: Trần Văn C</p>
-                                <p class="text-green-600">📝 Ghi chú: Tiêm phòng dại + 5 bệnh</p>
-                            </div>
-                            <span class="status-badge" style="background: #dcfce7; color: #166534;">Đã xác nhận</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Pending Appointment -->
-                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-semibold text-lg text-yellow-800">Khám da liễu</h4>
-                                <p class="text-yellow-600">📅 Ngày: 28/12/2025 - 10:30</p>
-                                <p class="text-yellow-600">👨‍⚕️ Bác sĩ: Lê Thị D</p>
-                                <p class="text-yellow-600">📝 Ghi chú: Kiểm tra tình trạng rụng lông</p>
-                            </div>
-                            <span class="status-badge" style="background: #fef3c7; color: #92400e;">Đang chờ</span>
-                        </div>
+                        <% if ("pending".equals(booking.getStatus())) { %>
                         <div class="mt-3">
-                            <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                            <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600" 
+                                    onclick="cancelBooking(<%= booking.getBookingId() %>)">
                                 <i class="fas fa-times mr-1"></i>Hủy lịch
                             </button>
-                            <button class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 ml-2">
-                                <i class="fas fa-edit mr-1"></i>Chỉnh sửa
-                            </button>
                         </div>
+                        <% } %>
                     </div>
+                    <% } %>
                 </div>
+                <% } else { %>
+                <div class="text-center py-8">
+                    <i class="fas fa-calendar-plus text-4xl text-gray-400 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">Chưa có lịch khám nào</h3>
+                    <p class="text-gray-500">Bạn chưa đặt lịch khám nào cho thú cưng</p>
+                </div>
+                <% } %>
             </div>
         </div>
 
@@ -526,7 +578,34 @@
                 E. Đặt lịch khám mới
             </h2>
             
-            <form action="#" method="post" class="max-w-2xl">
+            <% if (currentUser == null) { %>
+            <div class="bg-yellow-50 border border-yellow-400 rounded p-4 mb-4">
+                <p class="text-yellow-700 mb-2">⚠️ Bạn cần đăng nhập để đặt lịch khám</p>
+                <a href="login.jsp" class="btn-primary">🔐 Đăng nhập ngay</a>
+            </div>
+            <% } else if (pet == null) { %>
+            <div class="bg-blue-50 border border-blue-400 rounded p-4 mb-4">
+                <p class="text-blue-700 mb-2">ℹ️ Bạn cần cập nhật thông tin thú cưng trước khi đặt lịch khám</p>
+                <a href="user/pet-info.jsp" class="btn-primary">🐾 Cập nhật thông tin thú cưng</a>
+            </div>
+            <% } else { %>
+            
+            <form action="${pageContext.request.contextPath}/health-check-booking" method="post" class="max-w-2xl">
+                <input type="hidden" name="action" value="create-booking">
+                
+                <div class="form-group">
+                    <label class="form-label">Chọn dịch vụ khám sức khỏe</label>
+                    <select class="form-select" name="serviceId" required>
+                        <option value="">Chọn dịch vụ khám</option>
+                        <% for (PetServiceModel service : healthCheckServices) { %>
+                        <option value="<%= service.getServiceId() %>">
+                            <%= service.getName() %> - <fmt:formatNumber value="<%= service.getPrice() %>" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
+                        </option>
+                        <% } %>
+                    </select>
+                    <p class="text-sm text-gray-600 mt-1">* Chọn dịch vụ khám phù hợp với tình trạng của thú cưng</p>
+                </div>
+                
                 <div class="form-group">
                     <label class="form-label">Ngày khám mong muốn</label>
                     <input type="date" class="form-input" name="appointmentDate" required>
@@ -534,29 +613,37 @@
                 
                 <div class="form-group">
                     <label class="form-label">Giờ khám có sẵn</label>
-                    <select class="form-select" name="timeSlot" required>
+                    <select class="form-select" name="appointmentTime" required>
                         <option value="">Chọn giờ khám</option>
-                        <% for (String slot : availableSlots) { %>
-                            <option value="<%= slot %>"><%= slot %></option>
-                        <% } %>
+                        <option value="08:00">08:00</option>
+                        <option value="09:00">09:00</option>
+                        <option value="10:00">10:00</option>
+                        <option value="11:00">11:00</option>
+                        <option value="14:00">14:00</option>
+                        <option value="15:00">15:00</option>
+                        <option value="16:00">16:00</option>
+                        <option value="17:00">17:00</option>
                     </select>
                     <p class="text-sm text-gray-600 mt-1">* Chỉ hiển thị các khung giờ còn trống</p>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Chọn bác sĩ</label>
-                    <select class="form-select" name="doctor" required>
+                    <select class="form-select" name="doctorId" required>
                         <option value="">Chọn bác sĩ</option>
-                        <% for (String doctor : doctors) { %>
-                            <option value="<%= doctor %>"><%= doctor %></option>
-                        <% } %>
+                        <option value="1">BS. Nguyễn Minh Anh - Da liễu & chăm sóc lông</option>
+                        <option value="2">BS. Trần Văn Cường - Phẫu thuật & chỉnh hình</option>
+                        <option value="3">BS. Lê Thị Mai - Tim mạch & hô hấp</option>
+                        <option value="4">BS. Phạm Đức Minh - Tiêu hóa & dinh dưỡng</option>
+                        <option value="5">BS. Võ Thị Hương - Sản khoa & sinh sản</option>
+                        <option value="6">BS. Đặng Văn Tùng - Thần kinh & hành vi</option>
                     </select>
                     <p class="text-sm text-gray-600 mt-1">* Bác sĩ bận sẽ không hiển thị trong danh sách</p>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Mô tả triệu chứng (tùy chọn)</label>
-                    <textarea class="form-textarea" name="symptoms" rows="4" 
+                    <textarea class="form-textarea" name="note" rows="4" 
                               placeholder="Mô tả chi tiết các triệu chứng bạn quan sát được..."></textarea>
                 </div>
                 
@@ -567,6 +654,7 @@
                     </button>
                 </div>
             </form>
+            <% } %>
         </div>
     </div>
 
@@ -583,11 +671,8 @@
             dateInput.value = tomorrow.toISOString().split('T')[0];
         });
 
-        // Form submission handler
-        document.querySelector('form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Lịch khám đã được đặt thành công! Chúng tôi sẽ liên hệ lại để xác nhận.');
-        });
+        // Form submission handler - removed preventDefault to allow form submission
+        // The form will now submit to the HealthCheckBookingServlet
 
         // Show/Hide appointments functionality
         document.getElementById('showAppointments').addEventListener('click', function() {
@@ -602,16 +687,31 @@
             document.getElementById('hideAppointments').style.display = 'none';
         });
 
-        // Cancel appointment functionality
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.bg-red-500')) {
-                if (confirm('Bạn có chắc chắn muốn hủy lịch khám này?')) {
-                    e.target.closest('.bg-yellow-50').style.opacity = '0.5';
-                    e.target.closest('.bg-yellow-50').style.textDecoration = 'line-through';
-                    alert('Lịch khám đã được hủy thành công!');
-                }
+        // Cancel booking functionality
+        function cancelBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn hủy lịch khám này?')) {
+                fetch('${pageContext.request.contextPath}/health-check-booking', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `action=cancel-booking&bookingId=${bookingId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Lịch khám đã được hủy thành công!');
+                        location.reload();
+                    } else {
+                        alert('Có lỗi xảy ra: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi hủy lịch khám');
+                });
             }
-        });
+        }
 
         // Edit appointment functionality
         document.addEventListener('click', function(e) {
@@ -641,3 +741,4 @@
     </script>
 </body>
 </html>
+

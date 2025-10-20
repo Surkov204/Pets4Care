@@ -123,7 +123,7 @@ public class PetService implements IPetService {
         }
         
         // Validate pet name
-        if (pet.getPetName() == null || pet.getPetName().trim().length() < 2) {
+        if (pet.getPetName() == null || pet.getPetName().trim().isEmpty()) {
             System.out.println("Invalid pet name: " + pet.getPetName());
             return false;
         }
@@ -135,7 +135,7 @@ public class PetService implements IPetService {
         }
         
         // Validate breed
-        if (pet.getBreed() == null || pet.getBreed().trim().length() < 2) {
+        if (pet.getBreed() == null || pet.getBreed().trim().isEmpty()) {
             System.out.println("Invalid breed: " + pet.getBreed());
             return false;
         }

@@ -411,7 +411,7 @@
              <ul>
                  <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
                  <li><a href="<%= request.getContextPath()%>/spa-service.jsp">DỊCH VỤ</a></li>
-                 <li><a href="<%= request.getContextPath()%>/dat-lich-kham.jsp">ĐẶT LỊCH KHÁM</a></li>
+                 <li><a href="<%= request.getContextPath()%>/health-check-booking">ĐẶT LỊCH KHÁM</a></li>
                  <li><a href="<%= request.getContextPath()%>/search?categoryId=2">SẢN PHẨM</a></li>
                  <li><a href="<%= request.getContextPath()%>/doctor.jsp">BÁC SĨ</a></li>
                  <li><a href="<%= request.getContextPath()%>/gioi-thieu.jsp">GIỚI THIỆU</a></li>
@@ -420,8 +420,26 @@
              </ul>
          </nav>
 
+        <!-- Breadcrumbs and Quick Nav -->
+        <div class="max-w-4xl mx-auto mt-6 px-6">
+            <nav class="text-sm text-gray-500 mb-4" aria-label="Breadcrumb">
+                <ol class="list-reset flex">
+                    <li><a href="<%= request.getContextPath()%>/home" class="text-blue-600 hover:underline">Trang chủ</a></li>
+                    <li><span class="mx-2">/</span></li>
+                    <li><a href="<%= request.getContextPath()%>/user/user-info.jsp" class="text-blue-600 hover:underline">Tài khoản</a></li>
+                    <li><span class="mx-2">/</span></li>
+                    <li class="text-gray-700">Thú cưng</li>
+                </ol>
+            </nav>
+            <div class="flex gap-2 overflow-x-auto pb-2 -mx-1">
+                <a href="#basic" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 whitespace-nowrap"><i class="fas fa-info-circle mr-2"></i>Cơ bản</a>
+                <a href="#photo" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 whitespace-nowrap"><i class="fas fa-camera mr-2"></i>Ảnh</a>
+                <a href="#desc" class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 whitespace-nowrap"><i class="fas fa-notes-medical mr-2"></i>Mô tả & sức khỏe</a>
+            </div>
+        </div>
+
         <!-- MAIN CONTENT -->
-        <main class="main-content max-w-4xl mx-auto mt-10 px-6 space-y-10">
+        <main class="main-content max-w-4xl mx-auto mt-4 px-6 space-y-10">
             <div class="pet-info-card p-8">
                 <h2 class="text-3xl font-bold text-center mb-8" style="color: #6FD5DD; font-family: 'Baloo 2', cursive;">
                     🐾 Thông Tin Thú Cưng Của Bạn 🐾
@@ -467,11 +485,21 @@
                                     imageUrl = request.getContextPath() + "/" + trimmed;
                                 }
                             }
+                            
+                            // Debug: Log image path
+                            System.out.println("=== DEBUG PET IMAGE ===");
+                            System.out.println("Raw path: " + rawPath);
+                            System.out.println("Has image: " + hasImg);
+                            System.out.println("Image URL: " + imageUrl);
                         %>
                         <div class="mb-4 flex justify-center">
-                            <img src="<%= hasImg ? imageUrl : (request.getContextPath()+"/images/pets/placeholder.svg") %>" alt="Ảnh thú cưng hiện tại" class="preview-image"/>
+                            <img src="<%= hasImg ? imageUrl : (request.getContextPath()+"/images/pets/placeholder.svg") %>" 
+                                 alt="Ảnh thú cưng hiện tại" 
+                                 class="w-32 h-32 rounded-full object-cover border-4 border-blue-200"
+                                 onerror="this.src='<%= request.getContextPath() %>/images/pets/placeholder.svg'"/>
                         </div>
-                         <div class="grid grid-cols-2 gap-4 text-sm">
+                        
+                        <div class="grid grid-cols-2 gap-4 text-sm">
                              <div><strong>Tên:</strong> <%= pet.getPetName() %></div>
                              <div><strong>Loài:</strong> <%= pet.getSpecies() %></div>
                              <div><strong>Giống:</strong> <%= pet.getBreed() %></div>
@@ -483,7 +511,7 @@
                      <% } %>
 
                     <!-- Thông tin cơ bản -->
-                    <div class="form-section">
+                    <div id="basic" class="form-section">
                         <h3 class="section-title">
                             <i class="fas fa-paw"></i> Thông tin cơ bản
                         </h3>
@@ -557,7 +585,7 @@
                     </div>
 
                     <!-- Upload ảnh -->
-                    <div class="form-section">
+                    <div id="photo" class="form-section">
                         <h3 class="section-title">
                             <i class="fas fa-camera"></i> Ảnh thú cưng
                         </h3>
@@ -577,7 +605,7 @@
                     </div>
 
                     <!-- Mô tả thêm -->
-                    <div class="form-section">
+                    <div id="desc" class="form-section">
                         <h3 class="section-title">
                             <i class="fas fa-edit"></i> Mô tả thêm
                         </h3>
@@ -599,16 +627,23 @@
 
                     <!-- Nút submit -->
                     <div class="text-center space-y-4">
-                        <button type="submit" class="btn-primary w-full md:w-auto">
-                            <i class="fas fa-save"></i> Lưu thông tin thú cưng
-                        </button>
-
+                        <div class="flex flex-col md:flex-row gap-3 justify-center">
+                            <button type="submit" class="btn-primary w-full md:w-auto">
+                                <i class="fas fa-save"></i> Lưu thông tin thú cưng
+                            </button>
+                            <button type="reset" class="btn-secondary">
+                                <i class="fas fa-undo"></i> Đặt lại
+                            </button>
+                        </div>
                         <div class="flex justify-center gap-4">
                             <a href="<%= request.getContextPath()%>/home" class="btn-secondary">
                                 <i class="fas fa-home"></i> Về trang chủ
                             </a>
                             <a href="user-info.jsp" class="btn-secondary">
                                 <i class="fas fa-user"></i> Thông tin tài khoản
+                            </a>
+                            <a href="<%= request.getContextPath()%>/health-check-booking" class="btn-secondary">
+                                <i class="fas fa-calendar-check"></i> Đặt lịch khám
                             </a>
                         </div>
                     </div>

@@ -356,7 +356,7 @@
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
                 <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
-                <li><a href="dat-lich-kham.jsp">ĐẶT LỊCH KHÁM</a></li>
+                <li><a href="<%= request.getContextPath()%>/health-check-booking">ĐẶT LỊCH KHÁM</a></li>
                 <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
                 <li><a href="doctor.jsp" style="background: rgba(255, 255, 255, 0.2);">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
@@ -420,7 +420,7 @@
                     <a href="doctor-detail.jsp?id=<%= doctor.get("id") %>" class="btn btn-secondary">
                         <i class="fas fa-user-md mr-1"></i>Xem hồ sơ
                     </a>
-                    <a href="dat-lich-kham.jsp?doctor=<%= doctor.get("id") %>" class="btn btn-primary">
+                    <a href="<%= request.getContextPath()%>/health-check-booking?doctor=<%= doctor.get("id") %>" class="btn btn-primary">
                         <i class="fas fa-calendar-plus mr-1"></i>Đặt lịch
                     </a>
                 </div>

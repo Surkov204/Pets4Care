@@ -372,7 +372,7 @@
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
                 <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
-                <li><a href="dat-lich-kham.jsp">ĐẶT LỊCH KHÁM</a></li>
+                <li><a href="<%= request.getContextPath()%>/health-check-booking">ĐẶT LỊCH KHÁM</a></li>
                 <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
                 <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
@@ -437,7 +437,7 @@
                 </div>
                 
                 <div>
-                    <a href="dat-lich-kham.jsp?doctor=<%= doctor.get("id") %>" class="btn-primary">
+                    <a href="<%= request.getContextPath()%>/health-check-booking?doctor=<%= doctor.get("id") %>" class="btn-primary">
                         🩺 Đặt lịch với bác sĩ này
                     </a>
                 </div>

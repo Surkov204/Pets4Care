@@ -25,7 +25,7 @@ public class StaffLoginServlet extends HttpServlet {
         HttpSession session = request.getSession();
         Staff staff = (Staff) session.getAttribute("staff");
         if (staff != null) {
-            response.sendRedirect(request.getContextPath() + "/staff/bookings");
+            response.sendRedirect(request.getContextPath() + "/staff/viewOrder");
             return;
         }
         
@@ -66,8 +66,8 @@ public class StaffLoginServlet extends HttpServlet {
                     
                     logger.info("Staff login successful: " + staff.getName() + " (" + staff.getPosition() + ")");
                     
-                    // Chuyển hướng đến trang quản lý booking
-                    response.sendRedirect(request.getContextPath() + "/staff/dashboard.jsp");
+                    // Chuyển hướng đến trang viewOrder
+                    response.sendRedirect(request.getContextPath() + "/staff/viewOrder");
                 } else {
                     logger.warning("Staff not found: " + email);
                     request.setAttribute("error", "Không tìm thấy tài khoản staff");

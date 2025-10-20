@@ -11,24 +11,23 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.HashMap;
 import java.util.List;
-import model.Review;
-import model.Supplier;
-import model.Product;
-import model.ProductCategory;
-import service.SupplierService;
-import service.ProductCategoryService;
-import service.ProductService;
+import java.util.Map;
+import model.Customer;
+import model.OrderStats;
+import service.CustomerService;
+import service.ICustomerService;
+import service.IOrderService;
+import service.OrderService;
 
 /**
  *
  * @author ASUS
  */
-@WebServlet(name = "ProductDetailServlet", urlPatterns = {"/product-detail"})
-public class ProductDetailServlet extends HttpServlet {
-    private ProductService toyService = new ProductService();
-    private SupplierService supplierService = new SupplierService();
-    private ProductCategoryService categoryService = new ProductCategoryService();
+@WebServlet(name = "ManageCustomerServlet", urlPatterns = {"/admin/manage-customer"})
+public class ManageCustomerServlet extends HttpServlet {
+    private ICustomerService customerService = new CustomerService();
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -46,10 +45,10 @@ public class ProductDetailServlet extends HttpServlet {
             out.println("<!DOCTYPE html>");
             out.println("<html>");
             out.println("<head>");
-            out.println("<title>Servlet ProductDetailServlet</title>");
+            out.println("<title>Servlet ManageCustomerServlet</title>");
             out.println("</head>");
             out.println("<body>");
-            out.println("<h1>Servlet ProductDetailServlet at " + request.getContextPath() + "</h1>");
+            out.println("<h1>Servlet ManageCustomerServlet at " + request.getContextPath() + "</h1>");
             out.println("</body>");
             out.println("</html>");
         }
@@ -67,27 +66,42 @@ public class ProductDetailServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-         String idParam = request.getParameter("id");
-    if (idParam != null) {
-        try {
-            int toyId = Integer.parseInt(idParam);
-            Product toy = toyService.getProductById(toyId);
-            List<Review> reviews = toyService.getProductReviews(toyId);
-            ProductCategory category = categoryService.getCategoryById(toy.getCategoryId());
-            Supplier supplier = supplierService.getSupplierById(toy.getSupplierId());
+        String keyword = request.getParameter("keyword");
+    String statusFilter = request.getParameter("status");
 
-            request.setAttribute("toy", toy);
-            request.setAttribute("reviews", reviews);
-            request.setAttribute("supplier", supplier);  
-            request.setAttribute("category", category);
+    List<Customer> customers;
 
-            request.getRequestDispatcher("/product-detail.jsp").forward(request, response);
-        } catch (NumberFormatException e) {
-            response.sendRedirect("home.jsp");
-        }
+    if (keyword != null && !keyword.trim().isEmpty()) {
+        customers = customerService.searchCustomers(keyword); // dùng cả khi filter
     } else {
-        response.sendRedirect("home.jsp");
+        customers = customerService.getAllCustomers();
     }
+
+    // Lọc theo status nếu có
+    if (statusFilter != null && !statusFilter.equals("all")) {
+        customers.removeIf(c -> !statusFilter.equalsIgnoreCase(c.getStatus()));
+    }
+    
+    IOrderService orderService = new OrderService();
+    Map<Integer, OrderStats> statsMap = new HashMap<>();
+
+    for (Customer c : customers) {
+        statsMap.put(c.getCustomerId(), orderService.getOrderStatsByCustomerId(c.getCustomerId()));
+    }
+
+    // Đếm thống kê
+    long activeCount = customers.stream().filter(c -> "active".equalsIgnoreCase(c.getStatus())).count();
+    long inactiveCount = customers.stream().filter(c -> "inactive".equalsIgnoreCase(c.getStatus())).count();
+    
+    request.setAttribute("orderStats", statsMap);
+
+    request.setAttribute("customers", customers);
+    request.setAttribute("keyword", keyword);
+    request.setAttribute("statusFilter", statusFilter);
+    request.setAttribute("activeCount", activeCount);
+    request.setAttribute("inactiveCount", inactiveCount);
+
+    request.getRequestDispatcher("/admin/manage-customer.jsp").forward(request, response);
     }
 
     /**
@@ -101,7 +115,16 @@ public class ProductDetailServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+        String action = request.getParameter("action");
+    if ("toggle-status".equals(action)) {
+        int customerId = Integer.parseInt(request.getParameter("customerId"));
+        String currentStatus = request.getParameter("currentStatus");
+
+        String newStatus = currentStatus.equals("active") ? "inactive" : "active";
+        customerService.updateCustomerStatus(customerId, newStatus);
+
+        response.sendRedirect("manage-customer");
+    }
     }
 
     /**

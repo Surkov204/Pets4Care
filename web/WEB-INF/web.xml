@@ -5,14 +5,14 @@
 
     <!-- Định nghĩa servlet cho ToyDetailServlet -->
     <servlet>
-        <servlet-name>ProductDetailServlet</servlet-name>
-        <servlet-class>controller.ProductDetailServlet</servlet-class>
+        <servlet-name>ToyDetailServlet</servlet-name>
+        <servlet-class>controller.ToyDetailServlet</servlet-class>
     </servlet>
 
     <!-- Ánh xạ servlet đến URL /toydetailservlet -->
     <servlet-mapping>
-        <servlet-name>ProductDetailServlet</servlet-name>
-        <url-pattern>/productdetailservlet</url-pattern>
+        <servlet-name>ToyDetailServlet</servlet-name>
+        <url-pattern>/toydetailservlet</url-pattern>
     </servlet-mapping>
 
 

@@ -61,7 +61,7 @@ public class LoginServlet extends HttpServlet {
             if (isDoctorAuthenticated) {
                 Doctor doctor = doctorDAO.findByEmail(email.trim());
                 if (doctor != null) {
-                    handleDoctorLogin(request, response, doctor, email, rememberMe);
+                    handleDoctorLogin(request, response, doctor, email, password, rememberMe);
                     return;
                 }
             }
@@ -157,7 +157,7 @@ public class LoginServlet extends HttpServlet {
     }
 
     private void handleDoctorLogin(HttpServletRequest request, HttpServletResponse response, 
-                                 Doctor doctor, String email, String rememberMe) 
+                                 Doctor doctor, String email, String password, String rememberMe) 
                                  throws IOException {
         
         HttpSession session = request.getSession();
@@ -171,7 +171,7 @@ public class LoginServlet extends HttpServlet {
         logger.info("Doctor login successful: " + doctor.getName() + " (" + doctor.getSpecialization() + ")");
 
         // Xử lý Remember Me
-        handleRememberMe(response, email, rememberMe);
+        handleRememberMe(response, email, password, rememberMe);
 
         // Chuyển hướng đến trang doctor dashboard
         response.sendRedirect(request.getContextPath() + "/doctor/doctor-dashboard.jsp");

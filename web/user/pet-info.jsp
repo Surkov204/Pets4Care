@@ -416,7 +416,7 @@
                  <li><a href="<%= request.getContextPath()%>/doctor.jsp">BÁC SĨ</a></li>
                  <li><a href="<%= request.getContextPath()%>/gioi-thieu.jsp">GIỚI THIỆU</a></li>
                  <li><a href="<%= request.getContextPath()%>/tin-tuc.jsp">TIN TỨC</a></li>
-                 <li><a href="<%= request.getContextPath()%>/lien-he.jsp">LIÊN HỆ</a></li>
+                 <li><a href="<%= request.getContextPath()%>/home">LIÊN HỆ</a></li>
              </ul>
          </nav>
 
@@ -523,7 +523,6 @@
                                 </label>
                                 <input type="text" name="petName" class="form-input" placeholder="Nhập tên thú cưng" 
                                        value="<%= hasPet ? pet.getPetName() : "" %>" required>
-                                <span id="petNameError" class="error-message"></span>
                             </div>
 
                             <div class="form-group">
@@ -540,7 +539,6 @@
                                     <option value="fish" <%= hasPet && "fish".equals(pet.getSpecies()) ? "selected" : "" %>>🐠 Cá</option>
                                     <option value="other" <%= hasPet && "other".equals(pet.getSpecies()) ? "selected" : "" %>>🐾 Khác</option>
                                 </select>
-                                <span id="speciesError" class="error-message"></span>
                             </div>
                         </div>
 
@@ -551,7 +549,6 @@
                                 </label>
                                 <input type="text" name="breed" class="form-input" placeholder="Ví dụ: Golden Retriever, Persian..." 
                                        value="<%= hasPet ? pet.getBreed() : "" %>" required>
-                                <span id="breedError" class="error-message"></span>
                             </div>
 
                             <div class="form-group">
@@ -560,7 +557,6 @@
                                 </label>
                                 <input type="number" name="age" class="form-input" placeholder="Tuổi (năm)" min="0" max="30" 
                                        value="<%= hasPet ? pet.getAge() : "" %>" required>
-                                <span id="ageError" class="error-message"></span>
                             </div>
                         </div>
 
@@ -580,7 +576,6 @@
                                     <span>♀️ Cái</span>
                                 </label>
                             </div>
-                            <span id="genderError" class="error-message"></span>
                         </div>
                     </div>
 

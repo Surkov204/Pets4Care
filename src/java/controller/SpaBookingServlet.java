@@ -1,7 +1,6 @@
 package controller;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -12,6 +11,7 @@ import model.Booking;
 import model.BookingServiceItem;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -27,7 +27,6 @@ import model.PetServiceModel;
  * Tích hợp với Cart hiện có
  * @author ASUS
  */
-@WebServlet("/spa-booking")
 public class SpaBookingServlet extends HttpServlet {
     
     private static final Logger logger = Logger.getLogger(SpaBookingServlet.class.getName());
@@ -54,8 +53,12 @@ public class SpaBookingServlet extends HttpServlet {
         
         try {
             String action = request.getParameter("action");
+            String requestURI = request.getRequestURI();
             
-            if (action == null || action.equals("services")) {
+            // Nếu URL là /spa-cart, hiển thị giỏ hàng trực tiếp
+            if (requestURI.endsWith("/spa-cart")) {
+                showSpaCart(request, response, customer);
+            } else if (action == null || action.equals("services")) {
                 // Hiển thị danh sách dịch vụ Spa
                 showSpaServices(request, response);
             } else if (action.equals("cart")) {
@@ -72,8 +75,8 @@ public class SpaBookingServlet extends HttpServlet {
         } catch (Exception e) {
             logger.severe("Error in SpaBookingServlet doGet: " + e.getMessage());
             e.printStackTrace();
-            request.setAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
-            request.getRequestDispatcher("/error.jsp").forward(request, response);
+            request.setAttribute("errorMessage", "Có lỗi xảy ra: " + e.getMessage());
+            request.getRequestDispatcher("/spa-cart.jsp").forward(request, response);
         }
     }
     
@@ -101,12 +104,21 @@ public class SpaBookingServlet extends HttpServlet {
             } else if (action != null && action.equals("cancel")) {
                 // Hủy booking Spa
                 cancelSpaBooking(request, response, customer);
+            } else if (action != null && action.equals("update-quantity")) {
+                // Cập nhật số lượng dịch vụ trong giỏ hàng
+                updateSpaServiceQuantity(request, response, customer);
+            } else if (action != null && action.equals("remove-service")) {
+                // Xóa dịch vụ khỏi giỏ hàng
+                removeSpaServiceFromCart(request, response, customer);
+            } else if (action != null && action.equals("total")) {
+                // Lấy tổng giá trị giỏ hàng
+                getSpaCartTotal(request, response, customer);
             }
             
         } catch (Exception e) {
             logger.severe("Error in SpaBookingServlet doPost: " + e.getMessage());
             e.printStackTrace();
-            request.setAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            session.setAttribute("errorMessage", "Có lỗi xảy ra: " + e.getMessage());
             response.sendRedirect(request.getContextPath() + "/spa-booking?action=cart");
         }
     }
@@ -146,11 +158,11 @@ public class SpaBookingServlet extends HttpServlet {
         
         if (spaCart == null || spaCart.isEmpty()) {
             request.setAttribute("spaCart", new HashMap<Integer, Integer>());
-            request.setAttribute("spaServices", new ArrayList<model.PetServiceModel>());
-            request.setAttribute("totalPrice", 0);
-            request.setAttribute("totalDuration", 0);
+            request.setAttribute("spaServices", new ArrayList<PetServiceModel>());
+            request.setAttribute("totalPrice", BigDecimal.ZERO);
+            request.setAttribute("totalDuration", Integer.valueOf(0));
         } else {
-            List<model.PetServiceModel> spaServices = new ArrayList<>();
+            List<PetServiceModel> spaServices = new ArrayList<>();
             List<Integer> serviceIds = new ArrayList<>();
             List<Integer> quantities = new ArrayList<>();
             
@@ -158,7 +170,7 @@ public class SpaBookingServlet extends HttpServlet {
                 int serviceId = entry.getKey();
                 int quantity = entry.getValue();
                 
-                model.PetServiceModel service = spaBookingService.getSpaServiceById(serviceId);
+                PetServiceModel service = spaBookingService.getSpaServiceById(serviceId);
                 if (service != null) {
                     spaServices.add(service);
                     serviceIds.add(serviceId);
@@ -168,12 +180,12 @@ public class SpaBookingServlet extends HttpServlet {
             
             // Tính tổng giá và thời gian
             int totalDuration = spaBookingService.calculateTotalDuration(serviceIds);
-            java.math.BigDecimal totalPrice = spaBookingService.calculateSpaBookingTotal(serviceIds, quantities);
+            BigDecimal totalPrice = spaBookingService.calculateSpaBookingTotal(serviceIds, quantities);
             
             request.setAttribute("spaCart", spaCart);
             request.setAttribute("spaServices", spaServices);
             request.setAttribute("totalPrice", totalPrice);
-            request.setAttribute("totalDuration", totalDuration);
+            request.setAttribute("totalDuration", Integer.valueOf(totalDuration));
         }
         
         request.getRequestDispatcher("/spa-cart.jsp").forward(request, response);
@@ -200,7 +212,8 @@ public class SpaBookingServlet extends HttpServlet {
         
         String bookingIdParam = request.getParameter("id");
         if (bookingIdParam == null || bookingIdParam.trim().isEmpty()) {
-            request.setAttribute("error", "Không tìm thấy booking");
+            HttpSession session = request.getSession();
+            session.setAttribute("errorMessage", "Không tìm thấy booking");
             response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
             return;
         }
@@ -214,7 +227,8 @@ public class SpaBookingServlet extends HttpServlet {
                     .orElse(null);
             
             if (booking == null) {
-                request.setAttribute("error", "Không tìm thấy booking hoặc bạn không có quyền xem");
+                HttpSession session = request.getSession();
+                session.setAttribute("errorMessage", "Không tìm thấy booking hoặc bạn không có quyền xem");
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
                 return;
             }
@@ -228,7 +242,8 @@ public class SpaBookingServlet extends HttpServlet {
             request.getRequestDispatcher("/spa-booking-detail.jsp").forward(request, response);
             
         } catch (NumberFormatException e) {
-            request.setAttribute("error", "ID booking không hợp lệ");
+            HttpSession session = request.getSession();
+            session.setAttribute("errorMessage", "ID booking không hợp lệ");
             response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
         }
     }
@@ -244,7 +259,8 @@ public class SpaBookingServlet extends HttpServlet {
             String quantityParam = request.getParameter("quantity");
             
             if (serviceIdParam == null || quantityParam == null) {
-                request.setAttribute("error", "Thiếu thông tin dịch vụ");
+                HttpSession session = request.getSession();
+                session.setAttribute("errorMessage", "Thiếu thông tin dịch vụ");
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=services");
                 return;
             }
@@ -253,14 +269,16 @@ public class SpaBookingServlet extends HttpServlet {
             int quantity = Integer.parseInt(quantityParam);
             
             if (quantity <= 0) {
-                request.setAttribute("error", "Số lượng phải lớn hơn 0");
+                HttpSession session = request.getSession();
+                session.setAttribute("errorMessage", "Số lượng phải lớn hơn 0");
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=services");
                 return;
             }
             
             // Validate dịch vụ Spa
             if (!spaBookingService.validateSpaService(serviceId)) {
-                request.setAttribute("error", "Dịch vụ không hợp lệ hoặc không còn hoạt động");
+                HttpSession session = request.getSession();
+                session.setAttribute("errorMessage", "Dịch vụ không hợp lệ hoặc không còn hoạt động");
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=services");
                 return;
             }
@@ -277,11 +295,13 @@ public class SpaBookingServlet extends HttpServlet {
             spaCart.put(serviceId, quantity);
             request.getSession().setAttribute("spaCart", spaCart);
             
-            request.setAttribute("success", "Đã thêm dịch vụ vào giỏ hàng Spa");
+            HttpSession session = request.getSession();
+            session.setAttribute("successMessage", "Đã thêm dịch vụ vào giỏ hàng Spa");
             response.sendRedirect(request.getContextPath() + "/spa-booking?action=cart");
             
         } catch (NumberFormatException e) {
-            request.setAttribute("error", "Dữ liệu không hợp lệ");
+            HttpSession session = request.getSession();
+            session.setAttribute("errorMessage", "Dữ liệu không hợp lệ");
             response.sendRedirect(request.getContextPath() + "/spa-booking?action=services");
         }
     }
@@ -298,7 +318,8 @@ public class SpaBookingServlet extends HttpServlet {
             Map<Integer, Integer> spaCart = (Map<Integer, Integer>) request.getSession().getAttribute("spaCart");
             
             if (spaCart == null || spaCart.isEmpty()) {
-                request.setAttribute("error", "Giỏ hàng Spa trống");
+                HttpSession session = request.getSession();
+                session.setAttribute("errorMessage", "Giỏ hàng Spa trống");
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=cart");
                 return;
             }
@@ -309,7 +330,8 @@ public class SpaBookingServlet extends HttpServlet {
             String note = request.getParameter("note");
             
             if (appointmentDate == null || appointmentTime == null) {
-                request.setAttribute("error", "Vui lòng chọn ngày và giờ hẹn");
+                HttpSession session = request.getSession();
+                session.setAttribute("errorMessage", "Vui lòng chọn ngày và giờ hẹn");
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=cart");
                 return;
             }
@@ -320,7 +342,8 @@ public class SpaBookingServlet extends HttpServlet {
             try {
                 appointmentStart = new Timestamp(dateFormat.parse(appointmentDate + " " + appointmentTime).getTime());
             } catch (ParseException e) {
-                request.setAttribute("error", "Thời gian hẹn không hợp lệ");
+                HttpSession session = request.getSession();
+                session.setAttribute("errorMessage", "Thời gian hẹn không hợp lệ");
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=cart");
                 return;
             }
@@ -330,18 +353,21 @@ public class SpaBookingServlet extends HttpServlet {
             
             if (success) {
                 // Xóa giỏ hàng Spa sau khi đặt lịch thành công
-                request.getSession().removeAttribute("spaCart");
-                request.setAttribute("success", "Đặt lịch Spa thành công! Chúng tôi sẽ liên hệ lại để xác nhận.");
+                HttpSession session = request.getSession();
+                session.removeAttribute("spaCart");
+                session.setAttribute("successMessage", "Đặt lịch Spa thành công! Chúng tôi sẽ liên hệ lại để xác nhận.");
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
             } else {
-                request.setAttribute("error", "Đặt lịch Spa thất bại. Vui lòng thử lại.");
+                HttpSession session = request.getSession();
+                session.setAttribute("errorMessage", "Đặt lịch Spa thất bại. Vui lòng thử lại.");
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=cart");
             }
             
         } catch (Exception e) {
             logger.severe("Error creating spa booking from cart: " + e.getMessage());
             e.printStackTrace();
-            request.setAttribute("error", "Có lỗi xảy ra khi đặt lịch: " + e.getMessage());
+            HttpSession session = request.getSession();
+            session.setAttribute("errorMessage", "Có lỗi xảy ra khi đặt lịch: " + e.getMessage());
             response.sendRedirect(request.getContextPath() + "/spa-booking?action=cart");
         }
     }
@@ -352,9 +378,10 @@ public class SpaBookingServlet extends HttpServlet {
     private void cancelSpaBooking(HttpServletRequest request, HttpServletResponse response, Customer customer) 
             throws ServletException, IOException {
         
+        HttpSession session = request.getSession();
         String bookingIdParam = request.getParameter("bookingId");
         if (bookingIdParam == null || bookingIdParam.trim().isEmpty()) {
-            request.setAttribute("error", "Không tìm thấy booking");
+            session.setAttribute("errorMessage", "Không tìm thấy booking");
             response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
             return;
         }
@@ -362,38 +389,205 @@ public class SpaBookingServlet extends HttpServlet {
         try {
             int bookingId = Integer.parseInt(bookingIdParam);
             
-            // Kiểm tra quyền sở hữu
-            List<Booking> customerBookings = spaBookingService.getSpaBookingsByCustomerId(customer.getCustomerId());
-            boolean hasBooking = customerBookings.stream()
-                    .anyMatch(b -> b.getBookingId() == bookingId);
+            // Lấy thông tin booking để kiểm tra chi tiết
+            Booking booking = spaBookingService.getSpaBookingsByCustomerId(customer.getCustomerId())
+                    .stream()
+                    .filter(b -> b.getBookingId() == bookingId)
+                    .findFirst()
+                    .orElse(null);
             
-            if (!hasBooking) {
-                request.setAttribute("error", "Không tìm thấy booking hoặc bạn không có quyền hủy");
+            logger.info("Attempting to cancel booking ID: " + bookingId + " for customer: " + customer.getCustomerId());
+            
+            if (booking == null) {
+                logger.warning("Booking ID " + bookingId + " not found for customer " + customer.getCustomerId());
+                session.setAttribute("errorMessage", "Không tìm thấy booking hoặc bạn không có quyền hủy");
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
                 return;
             }
             
-            // Kiểm tra có thể hủy không
-            if (!spaBookingService.canCancelSpaBooking(bookingId)) {
-                request.setAttribute("error", "Không thể hủy booking này");
+            logger.info("Found booking ID " + bookingId + " with status: " + booking.getStatus());
+            
+            // Kiểm tra có thể hủy không - sử dụng trạng thái từ booking object
+            String status = booking.getStatus();
+            boolean canCancel = "pending".equals(status) || "confirmed".equals(status);
+            
+            if (!canCancel) {
+                String reason;
+                
+                if ("cancelled".equals(status)) {
+                    reason = "Booking này đã được hủy trước đó";
+                } else if ("completed".equals(status)) {
+                    reason = "Booking này đã hoàn thành, không thể hủy";
+                } else {
+                    reason = "Booking có trạng thái '" + status + "' không thể hủy";
+                }
+                
+                logger.warning("Cannot cancel booking ID " + bookingId + " with status: " + status);
+                session.setAttribute("errorMessage", reason);
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
                 return;
             }
             
             // Hủy booking
+            logger.info("Attempting to cancel booking ID: " + bookingId);
             boolean success = spaBookingService.cancelSpaBooking(bookingId);
             
             if (success) {
-                request.setAttribute("success", "Hủy đặt lịch Spa thành công");
+                logger.info("Cancel booking ID " + bookingId + " successful");
+                session.setAttribute("successMessage", "Hủy đặt lịch Spa thành công");
             } else {
-                request.setAttribute("error", "Hủy đặt lịch Spa thất bại");
+                logger.warning("Cancel booking ID " + bookingId + " failed");
+                session.setAttribute("errorMessage", "Hủy đặt lịch Spa thất bại. Vui lòng thử lại hoặc liên hệ hỗ trợ.");
             }
             
             response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
             
         } catch (NumberFormatException e) {
-            request.setAttribute("error", "ID booking không hợp lệ");
+            session.setAttribute("errorMessage", "ID booking không hợp lệ");
             response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
+        }
+    }
+    
+    /**
+     * Cập nhật số lượng dịch vụ trong giỏ hàng Spa
+     */
+    private void updateSpaServiceQuantity(HttpServletRequest request, HttpServletResponse response, Customer customer) 
+            throws ServletException, IOException {
+        
+        try {
+            String serviceIdParam = request.getParameter("serviceId");
+            String quantityParam = request.getParameter("quantity");
+            
+            if (serviceIdParam == null || quantityParam == null) {
+                response.getWriter().write("{\"error\": \"Thiếu thông tin dịch vụ\"}");
+                return;
+            }
+            
+            int serviceId = Integer.parseInt(serviceIdParam);
+            int quantity = Integer.parseInt(quantityParam);
+            
+            if (quantity <= 0) {
+                response.getWriter().write("{\"error\": \"Số lượng phải lớn hơn 0\"}");
+                return;
+            }
+            
+            // Lấy giỏ hàng Spa từ session
+            @SuppressWarnings("unchecked")
+            Map<Integer, Integer> spaCart = (Map<Integer, Integer>) request.getSession().getAttribute("spaCart");
+            
+            if (spaCart == null) {
+                spaCart = new HashMap<>();
+            }
+            
+            // Validate dịch vụ Spa
+            if (!spaBookingService.validateSpaService(serviceId)) {
+                response.getWriter().write("{\"error\": \"Dịch vụ không hợp lệ hoặc không còn hoạt động\"}");
+                return;
+            }
+            
+            // Cập nhật số lượng
+            spaCart.put(serviceId, quantity);
+            request.getSession().setAttribute("spaCart", spaCart);
+            
+            // Tính toán lại tổng giá trị
+            List<Integer> serviceIds = new ArrayList<>();
+            List<Integer> quantities = new ArrayList<>();
+            
+            for (Map.Entry<Integer, Integer> entry : spaCart.entrySet()) {
+                serviceIds.add(entry.getKey());
+                quantities.add(entry.getValue());
+            }
+            
+            BigDecimal totalPrice = spaBookingService.calculateSpaBookingTotal(serviceIds, quantities);
+            java.math.BigDecimal itemTotal = spaBookingService.getSpaServiceById(serviceId).getPrice().multiply(BigDecimal.valueOf(quantity));
+            
+            // Trả về JSON response
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(String.format("{\"success\": true, \"total\": \"%.0f\", \"item_%d\": \"%.0f\"}", 
+                totalPrice.doubleValue(), serviceId, itemTotal.doubleValue()));
+            
+        } catch (NumberFormatException e) {
+            response.getWriter().write("{\"error\": \"Dữ liệu không hợp lệ\"}");
+        } catch (Exception e) {
+            logger.severe("Error updating spa service quantity: " + e.getMessage());
+            response.getWriter().write("{\"error\": \"Có lỗi xảy ra khi cập nhật số lượng\"}");
+        }
+    }
+    
+    /**
+     * Xóa dịch vụ khỏi giỏ hàng Spa
+     */
+    private void removeSpaServiceFromCart(HttpServletRequest request, HttpServletResponse response, Customer customer) 
+            throws ServletException, IOException {
+        
+        try {
+            String serviceIdParam = request.getParameter("serviceId");
+            
+            if (serviceIdParam == null) {
+                response.getWriter().write("{\"error\": \"Thiếu thông tin dịch vụ\"}");
+                return;
+            }
+            
+            int serviceId = Integer.parseInt(serviceIdParam);
+            
+            // Lấy giỏ hàng Spa từ session
+            @SuppressWarnings("unchecked")
+            Map<Integer, Integer> spaCart = (Map<Integer, Integer>) request.getSession().getAttribute("spaCart");
+            
+            if (spaCart != null) {
+                spaCart.remove(serviceId);
+                request.getSession().setAttribute("spaCart", spaCart);
+            }
+            
+            // Trả về JSON response
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("{\"success\": true}");
+            
+        } catch (NumberFormatException e) {
+            response.getWriter().write("{\"error\": \"ID dịch vụ không hợp lệ\"}");
+        } catch (Exception e) {
+            logger.severe("Error removing spa service from cart: " + e.getMessage());
+            response.getWriter().write("{\"error\": \"Có lỗi xảy ra khi xóa dịch vụ\"}");
+        }
+    }
+    
+    /**
+     * Lấy tổng giá trị giỏ hàng Spa
+     */
+    private void getSpaCartTotal(HttpServletRequest request, HttpServletResponse response, Customer customer) 
+            throws ServletException, IOException {
+        
+        try {
+            // Lấy giỏ hàng Spa từ session
+            @SuppressWarnings("unchecked")
+            Map<Integer, Integer> spaCart = (Map<Integer, Integer>) request.getSession().getAttribute("spaCart");
+            
+            if (spaCart == null || spaCart.isEmpty()) {
+                response.getWriter().write("0");
+                return;
+            }
+            
+            // Tính tổng giá trị
+            List<Integer> serviceIds = new ArrayList<>();
+            List<Integer> quantities = new ArrayList<>();
+            
+            for (Map.Entry<Integer, Integer> entry : spaCart.entrySet()) {
+                serviceIds.add(entry.getKey());
+                quantities.add(entry.getValue());
+            }
+            
+            BigDecimal totalPrice = spaBookingService.calculateSpaBookingTotal(serviceIds, quantities);
+            
+            // Trả về tổng giá trị
+            response.setContentType("text/plain");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(String.format("%.0f", totalPrice.doubleValue()));
+            
+        } catch (Exception e) {
+            logger.severe("Error getting spa cart total: " + e.getMessage());
+            response.getWriter().write("0");
         }
     }
 }

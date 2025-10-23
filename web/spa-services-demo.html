@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌟 Các dịch vụ Spa - Petcity</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <style>
+        .service-card {
+            transition: all 0.3s ease;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .service-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .price-tag {
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .duration-badge {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+        .booking-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: inline-block;
+            border: none;
+            cursor: pointer;
+        }
+        .booking-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-md py-4">
+        <div class="container mx-auto px-6">
+            <h1 class="text-3xl font-bold text-orange-600 text-center">🌟 Các dịch vụ Spa - Petcity</h1>
+        </div>
+    </header>
+
+    <!-- Services Section -->
+    <main class="container mx-auto px-6 py-10">
+        <section class="mb-16">
+            <h2 class="text-4xl font-bold mb-10 text-center text-orange-600">🌟 Các dịch vụ Spa</h2>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Dịch vụ 1: Tắm + Vệ sinh cơ bản -->
+                <div class="service-card bg-white">
+                    <div class="p-6 text-center">
+                        <div class="service-icon">🛁</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">Tắm + Vệ sinh cơ bản</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Tắm, sấy, cắt móng, vệ sinh tai</p>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="price-tag">150,000₫</span>
+                            <span class="duration-badge">45 phút</span>
+                        </div>
+                        <button class="booking-btn">
+                            🛒 Thêm vào giỏ Spa
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dịch vụ 2: Cắt tỉa lông chuyên nghiệp -->
+                <div class="service-card bg-white">
+                    <div class="p-6 text-center">
+                        <div class="service-icon">✂️</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">Cắt tỉa lông chuyên nghiệp</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Cắt tỉa lông theo kiểu dáng chuyên nghiệp</p>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="price-tag">300,000₫</span>
+                            <span class="duration-badge">90 phút</span>
+                        </div>
+                        <button class="booking-btn">
+                            🛒 Thêm vào giỏ Spa
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dịch vụ 3: Spa cao cấp -->
+                <div class="service-card bg-white">
+                    <div class="p-6 text-center">
+                        <div class="service-icon">✨</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">Spa cao cấp</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Spa: tắm tinh dầu, massage, dưỡng lông</p>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="price-tag">500,000₫</span>
+                            <span class="duration-badge">120 phút</span>
+                        </div>
+                        <button class="booking-btn">
+                            🛒 Thêm vào giỏ Spa
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dịch vụ 4: Vệ sinh răng miệng -->
+                <div class="service-card bg-white">
+                    <div class="p-6 text-center">
+                        <div class="service-icon">🦷</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">Vệ sinh răng miệng</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Vệ sinh răng miệng, lấy cao răng</p>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="price-tag">200,000₫</span>
+                            <span class="duration-badge">30 phút</span>
+                        </div>
+                        <button class="booking-btn">
+                            🛒 Thêm vào giỏ Spa
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Why Choose Us Section -->
+        <section class="mb-16 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8">
+            <h3 class="text-3xl font-bold text-center text-gray-800 mb-8">🎯 Tại sao chọn Petcity Spa?</h3>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-user-md text-2xl text-blue-600"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-800 mb-2">Chuyên gia giàu kinh nghiệm</h4>
+                    <p class="text-gray-600">Đội ngũ kỹ thuật viên được đào tạo chuyên nghiệp, có nhiều năm kinh nghiệm trong lĩnh vực chăm sóc thú cưng.</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-leaf text-2xl text-green-600"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-800 mb-2">Sản phẩm tự nhiên</h4>
+                    <p class="text-gray-600">Sử dụng các sản phẩm chăm sóc tự nhiên, an toàn cho da và lông thú cưng, không gây kích ứng.</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-home text-2xl text-purple-600"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-gray-800 mb-2">Môi trường thân thiện</h4>
+                    <p class="text-gray-600">Không gian spa thoải mái, giúp thú cưng cảm thấy an toàn và thư giãn trong quá trình chăm sóc.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Booking Process Section -->
+        <section class="mb-16">
+            <h3 class="text-3xl font-bold text-center text-gray-800 mb-8">📋 Quy trình đặt lịch</h3>
+            <div class="grid md:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="bg-orange-500 text-white rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
+                    <h4 class="font-bold text-gray-800 mb-2">Chọn dịch vụ</h4>
+                    <p class="text-gray-600 text-sm">Lựa chọn dịch vụ spa phù hợp với nhu cầu của thú cưng</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-orange-500 text-white rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
+                    <h4 class="font-bold text-gray-800 mb-2">Đặt lịch hẹn</h4>
+                    <p class="text-gray-600 text-sm">Chọn thời gian và ngày phù hợp với lịch trình của bạn</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-orange-500 text-white rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
+                    <h4 class="font-bold text-gray-800 mb-2">Đến spa</h4>
+                    <p class="text-gray-600 text-sm">Mang thú cưng đến spa đúng giờ hẹn</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-orange-500 text-white rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">4</div>
+                    <h4 class="font-bold text-gray-800 mb-2">Tận hưởng</h4>
+                    <p class="text-gray-600 text-sm">Thú cưng được chăm sóc và bạn nhận lại một em bé xinh đẹp</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section class="text-center bg-gray-100 rounded-2xl p-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">📞 Liên hệ đặt lịch</h3>
+            <p class="text-gray-600 mb-6">Để đặt lịch spa cho thú cưng, vui lòng liên hệ với chúng tôi</p>
+            <div class="flex flex-wrap justify-center gap-4 mb-6">
+                <a href="tel:090900900" class="bg-green-500 text-white px-6 py-3 rounded-full hover:bg-green-600 transition">
+                    <i class="fas fa-phone mr-2"></i>090 900 900
+                </a>
+                <a href="mailto:support@petcity.vn" class="bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition">
+                    <i class="fas fa-envelope mr-2"></i>support@petcity.vn
+                </a>
+            </div>
+            <p class="text-sm text-gray-500">⏰ Giờ làm việc: 8:00 - 17:00 (Thứ 2 - Chủ nhật)</p>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+        <div class="container mx-auto px-6 text-center">
+            <p>© 2025 Petcity. Bản quyền thuộc về G5. ❤️ Made with love for pets</p>
+        </div>
+    </footer>
+</body>
+</html>

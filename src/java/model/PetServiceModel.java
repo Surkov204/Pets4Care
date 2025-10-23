@@ -40,7 +40,7 @@ public class PetServiceModel {
     }
 
     // Constructor không có ID (cho insert)
-    public PetServiceModel (String name, String serviceType, String description, 
+    public PetServiceModel(String name, String serviceType, String description, 
                      BigDecimal price, int duration, String status, String imagePath) {
         this.name = name;
         this.serviceType = serviceType;

@@ -293,7 +293,7 @@
                 <li><a href="<%= request.getContextPath()%>/search?categoryId=3">DỊCH VỤ SPA</a></li>
                 <li><a href="<%= request.getContextPath()%>/tin-tuc.jsp">TIN TỨC</a></li>
                 <li><a href="<%= request.getContextPath()%>/meo-vat.jsp">MẸO VẶT</a></li>
-                <li><a href="<%= request.getContextPath()%>/lien-he.jsp">LIÊN HỆ</a></li>
+                <li><a href="<%= request.getContextPath()%>/home">LIÊN HỆ</a></li>
             </ul>
         </nav>
 

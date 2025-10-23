@@ -396,4 +396,37 @@ public class WorkScheduleDAO {
             e.printStackTrace();
         }
     }
+
+    public boolean canSwapShift(int staffA, int staffB,
+            Date fromDate, Date toDate,
+            int fromShift, int toShift) {
+        String sql = """
+        SELECT COUNT(*) AS conflicts
+        FROM WorkSchedule
+        WHERE 
+            -- B đang có ca mà A muốn đổi
+            (work_date = ? AND shift_id = ? AND staff_id = ?) 
+            OR
+            -- A đang có ca mà B muốn đổi
+            (work_date = ? AND shift_id = ? AND staff_id = ?)
+    """;
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setDate(1, fromDate);
+            ps.setInt(2, fromShift);
+            ps.setInt(3, staffB);
+            ps.setDate(4, toDate);
+            ps.setInt(5, toShift);
+            ps.setInt(6, staffA);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("conflicts") == 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }

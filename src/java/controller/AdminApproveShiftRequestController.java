@@ -16,23 +16,25 @@ public class AdminApproveShiftRequestController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
+        
+        HttpSession session = request.getSession();
         String idStr = request.getParameter("id");
+        
         if (idStr == null || idStr.isEmpty()) {
             response.sendRedirect(request.getContextPath() + "/shift-request");
             return;
         }
 
         int requestId = Integer.parseInt(idStr);
-
         boolean swapped = shiftDAO.swapShift(requestId);
+        
         if (swapped) {
             notifyDAO.createForAdmin(
-                "✅ Đã phê duyệt đổi ca",
-                "Yêu cầu #" + requestId + " đã được admin phê duyệt và hoán đổi ca thành công."
+                    "✅ Đã phê duyệt đổi ca",
+                    "Yêu cầu #" + requestId + " đã được admin phê duyệt và hoán đổi ca thành công."
             );
-        }
-
+           // session.setAttribute("successMessage", "✅ Đổi ca thành công cho yêu cầu #" + requestId);
+        } 
         response.sendRedirect(request.getContextPath() + "/shift-request");
     }
 }

@@ -29,7 +29,7 @@ public class StaffScheduleController extends HttpServlet {
         System.out.println("=== DEBUG: StaffScheduleController.doGet() CALLED ===");
         System.out.println("Session staffId = " + session.getAttribute("staffId"));
         System.out.print("hello");
-        
+
         Integer staffId = (Integer) session.getAttribute("staffId");
         if (staffId == null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
@@ -110,6 +110,7 @@ public class StaffScheduleController extends HttpServlet {
         try {
             if ("register".equals(action) && dayParam != null && shiftType != null) {
                 LocalDate workDay = LocalDate.parse(dayParam);
+                session.setAttribute("successMessage", "✅ Đăng ký ca thành công!");
                 workDAO.addScheduleByShiftType(staffId, workDay, shiftType);
                 System.out.println("✅ Đăng ký " + shiftType + " cho ngày " + workDay);
             } else if ("cancel".equals(action) && dayParam != null && shiftType != null) {
@@ -138,6 +139,7 @@ public class StaffScheduleController extends HttpServlet {
                             LocalDate workDate = LocalDate.parse(parts[0]);
                             int shiftId = Integer.parseInt(parts[1]);
                             workDAO.deleteScheduleByStaffShiftDate(staffId, shiftId, workDate);
+                            session.setAttribute("successMessage", "🗑️ Hủy ca thành công!");
                         } catch (Exception e) {
                             e.printStackTrace();
                         }

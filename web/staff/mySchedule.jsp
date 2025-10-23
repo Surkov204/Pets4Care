@@ -367,10 +367,54 @@
                 border-radius: 12px;
                 overflow: hidden;
             }
-
+            .toast {
+                position: fixed;
+                top: -60px; /* ẩn ban đầu */
+                left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(90deg, #a6e3e9, #f9e4d4);
+                color: #2f3e46;
+                padding: 14px 24px;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                font-weight: 600;
+                font-size: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                transition: top 0.5s ease;
+                z-index: 9999;
+            }
+            .toast.show {
+                top: 20px; /* trượt xuống khi hiển thị */
+            }
+            .toast i {
+                color: #00bfa6;
+                font-size: 1.2rem;
+            }
+            .toast.success {
+                background: linear-gradient(90deg, #a6e3e9, #f9e4d4);
+                color: #064e3b;
+            }
+            .toast.error {
+                background: linear-gradient(90deg, #ffb5b5, #ff8a8a);
+                color: #7f1d1d;
+            }
         </style>
     </head>
     <body>
+        <c:if test="${not empty sessionScope.successMessage}">
+            <div id="toast" class="toast">
+                <i class="fa-solid fa-circle-check"></i> ${sessionScope.successMessage}
+            </div>
+            <c:remove var="successMessage" scope="session"/>
+        </c:if>
+        <c:if test="${not empty sessionScope.errorMessage}">
+            <div id="toast" class="toast error">
+                <i class="fa-solid fa-triangle-exclamation"></i> ${sessionScope.errorMessage}
+            </div>
+            <c:remove var="errorMessage" scope="session"/>
+        </c:if>
 
         <!-- 🗓️ LỊCH CỦA TÔI -->
         <div class="section-card">
@@ -423,6 +467,12 @@
             </table>
 
             <div class="btn-group">
+                <a href="${pageContext.request.contextPath}/staff/dashboard.jsp"
+                   class="btn"
+                   style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:inherit;">
+                    <i class="fa-solid fa-arrow-left"></i> Trở về Dashboard
+                </a>
+
                 <button class="btn" id="openModalBtn"><i class="fa-solid fa-plus"></i> Đăng ký ca</button>
                 <button class="btn btn-danger" id="openCancelModalBtn"><i class="fa-solid fa-trash"></i> Hủy ca</button>
                 <button class="btn" id="openSwapModalBtn">
@@ -710,6 +760,15 @@
                 cancelModal.style.display = "none";
                 swapModal.style.display = "none";
             };
+            window.addEventListener("DOMContentLoaded", () => {
+                const toast = document.getElementById("toast");
+                if (toast) {
+                    // Hiện thông báo
+                    setTimeout(() => toast.classList.add("show"), 100);
+                    // 3 giây sau ẩn đi
+                    setTimeout(() => toast.classList.remove("show"), 3100);
+                }
+            });
         </script>
     </body>
 </html>

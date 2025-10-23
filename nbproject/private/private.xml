@@ -117,6 +117,30 @@
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ShiftRegistrationDAO.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/registerShift.jsp</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/StaffDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StaffHomeServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StaffLoginServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StaffLogoutServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StaffProductsServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StaffCustomerServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/CommonScheduleController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/staff/bookings.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IProductCategoryDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IProductDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/ProductCategoryDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/PetDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/RespondSwapController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ApproveSwapController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/SwapShiftController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StatisticServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ToyDetailServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/NotificationDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/Notification.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/NotificationController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/AcceptShiftRequestController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/RejectShiftRequestController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/AdminApproveShiftRequestController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/admin/manage-customer.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/admin/manage-order-detail.jsp</file>
         </group>
     </open-files>
 </project-private>

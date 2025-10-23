@@ -4,6 +4,7 @@ import java.sql.*;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.*;
+import model.Staff;
 import model.WorkSchedule;
 import utils.DBConnection;
 
@@ -228,7 +229,7 @@ public class WorkScheduleDAO {
             ps.setDate(3, Date.valueOf(workDate));
             ps.setTime(4, start);
             ps.setTime(5, end);
-            ps.setString(6, "Đã đăng ký");
+            ps.setString(6, "Registered");
             ps.setString(7, "Đăng ký " + shiftName);
             ps.executeUpdate();
 
@@ -278,6 +279,120 @@ public class WorkScheduleDAO {
             int rows = ps.executeUpdate();
             System.out.println("🗑 Hủy ca: staff=" + staffId + ", shift=" + shiftId + ", date=" + workDate + " | rows=" + rows);
         } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Map<String, List<String>> getCommonSchedule() {
+        Map<String, List<String>> scheduleMap = new LinkedHashMap<>();
+
+        String sql = """
+        SELECT ws.work_date, s.name AS staff_name, sh.ShiftName
+        FROM WorkSchedule ws
+        JOIN Staff s ON ws.staff_id = s.staff_id
+        LEFT JOIN Shifts sh ON ws.shift_id = sh.ShiftID
+        WHERE ws.status = ? OR ws.status IS NULL
+        ORDER BY ws.work_date, sh.StartTime
+    """;
+
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, "Registered");  // ✅ đặt tiếng Việt đúng encoding
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String date = rs.getDate("work_date").toString();
+                    String shift = rs.getString("ShiftName");
+                    String key = date + " - " + (shift != null ? shift : "Không xác định");
+                    String staffName = rs.getString("staff_name");
+                    scheduleMap.computeIfAbsent(key, k -> new ArrayList<>()).add(staffName);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return scheduleMap;
+    }
+
+    public List<Staff> getAllStaffExcept(int staffId) {
+        List<Staff> list = new ArrayList<>();
+        String sql = "SELECT staff_id, name FROM Staff WHERE staff_id <> ?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, staffId);
+            System.out.println("[DEBUG] SQL = " + sql + " | staffId = " + staffId);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Staff s = new Staff();
+                s.setStaffId(rs.getInt("staff_id"));
+                s.setName(rs.getString("name"));
+                list.add(s);
+                System.out.println("👉 Found staff: " + s.getStaffId() + " - " + s.getName());
+            }
+
+            System.out.println("✅ getAllStaffExcept(): total = " + list.size());
+        } catch (Exception e) {
+            System.err.println("❌ Error in getAllStaffExcept(): " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Staff> getAllStaff() {
+        List<Staff> list = new ArrayList<>();
+        String sql = "SELECT staff_id, name FROM Staff";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Staff s = new Staff();
+                s.setStaffId(rs.getInt("staff_id"));
+                s.setName(rs.getString("name"));
+                list.add(s);
+            }
+
+            System.out.println("✅ getAllStaff(): found " + list.size() + " records");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public void swapShifts(int staffA, int staffB, int shiftId, LocalDate date) {
+        String sqlUpdateA = "UPDATE WorkSchedule SET StaffID = ? WHERE StaffID = ? AND ShiftID = ? AND WorkDate = ?";
+        String sqlUpdateB = "UPDATE WorkSchedule SET StaffID = ? WHERE StaffID = ? AND ShiftID = ? AND WorkDate = ?";
+
+        try (Connection con = DBConnection.getConnection()) {
+            con.setAutoCommit(false); // 🔒 bắt đầu transaction
+
+            // Hoán đổi: A lấy ca của B
+            try (PreparedStatement psA = con.prepareStatement(sqlUpdateA); PreparedStatement psB = con.prepareStatement(sqlUpdateB)) {
+
+                // A -> B
+                psA.setInt(1, staffB);
+                psA.setInt(2, staffA);
+                psA.setInt(3, shiftId);
+                psA.setDate(4, Date.valueOf(date));
+                int updatedA = psA.executeUpdate();
+
+                // B -> A
+                psB.setInt(1, staffA);
+                psB.setInt(2, staffB);
+                psB.setInt(3, shiftId);
+                psB.setDate(4, Date.valueOf(date));
+                int updatedB = psB.executeUpdate();
+
+                con.commit();
+                System.out.println("[WorkScheduleDAO] 🔁 Hoán đổi ca thành công: " + updatedA + " <-> " + updatedB);
+            } catch (SQLException ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi khi hoán đổi ca giữa " + staffA + " và " + staffB);
             e.printStackTrace();
         }
     }

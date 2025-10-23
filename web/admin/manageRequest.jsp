@@ -2,53 +2,98 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Yêu cầu đổi ca | Quản trị</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/admin.css">
-    <style>
-        body { background: #fff8e1; font-family: Arial; }
-        table { border-collapse: collapse; width: 100%; background: white; }
-        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #ddd; }
-        th { background: #ff9800; color: white; }
-        tr:hover { background: #fff3e0; }
-        .btn { padding: 6px 10px; border-radius: 6px; text-decoration: none; color: white; }
-        .approve { background: #4caf50; }
-        .deny { background: #f44336; }
-    </style>
-</head>
-<body>
+    <head>
+        <meta charset="UTF-8">
+        <title>Yêu cầu đổi ca | Quản trị</title>
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/css/admin.css">
+        <style>
+            body {
+                background: #fff8e1;
+                font-family: Arial;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                background: white;
+            }
+            th, td {
+                padding: 10px;
+                text-align: center;
+                border-bottom: 1px solid #ddd;
+            }
+            th {
+                background: #ff9800;
+                color: white;
+            }
+            tr:hover {
+                background: #fff3e0;
+            }
+            .btn {
+                padding: 6px 10px;
+                border-radius: 6px;
+                text-decoration: none;
+                color: white;
+            }
+            .approve {
+                background: #4caf50;
+            }
+            .deny {
+                background: #f44336;
+            }
+        </style>
+    </head>
+    <body>
 
-<h2>📨 Danh sách yêu cầu đổi ca</h2>
-<table>
-    <tr>
-        <th>ID</th>
-        <th>Nhân viên</th>
-        <th>Loại</th>
-        <th>Ngày</th>
-        <th>Từ ca</th>
-        <th>Đến ca</th>
-        <th>Lý do</th>
-        <th>Trạng thái</th>
-        <th>Duyệt</th>
-    </tr>
-    <c:forEach var="r" items="${requestList}">
-        <tr>
-            <td>${r.requestID}</td>
-            <td>${r.employeeID}</td>
-            <td>${r.type}</td>
-            <td>${r.targetDate}</td>
-            <td>${r.fromShiftID}</td>
-            <td>${r.toShiftID}</td>
-            <td>${r.reason}</td>
-            <td>${r.status}</td>
-            <td>
-                <a href="${pageContext.request.contextPath}/shift-request?action=approve&id=${r.requestID}" class="btn approve">✔️ Duyệt</a>
-                <a href="${pageContext.request.contextPath}/shift-request?action=deny&id=${r.requestID}" class="btn deny">❌ Từ chối</a>
-            </td>
-        </tr>
-    </c:forEach>
-</table>
+        <h2>📨 Danh sách yêu cầu đổi ca</h2>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Nhân viên</th>
+                <th>Loại</th>
+                <th>Ngày</th>
+                <th>Từ ca</th>
+                <th>Đến ca</th>
+                <th>Lý do</th>
+                <th>Trạng thái</th>
+                <th>Duyệt</th>
+            </tr>
+            <c:forEach var="r" items="${requestList}">
+                <tr>
+                    <td>${r.requestID}</td>
+                    <td>${r.employeeID}</td>
+                    <td>${r.type}</td>
+                    <td>${r.targetDate}</td>
+                    <td>${r.fromShiftID}</td>
+                    <td>${r.toShiftID}</td>
+                    <td>${r.reason}</td>
 
-</body>
+                    <!-- Màu theo trạng thái -->
+                    <td style="
+                        color: ${r.status eq 'ApprovedByAdmin' ? '#4CAF50' :
+                                 (r.status eq 'Rejected' ? '#F44336' :
+                                 (r.status eq 'AcceptedByTo' ? '#2196F3' : '#FF9800'))};
+                        font-weight: bold;">
+                        ${r.status}
+                    </td>
+
+                    <!-- Nút duyệt / từ chối -->
+                    <td>
+                        <c:choose>
+                            <c:when test="${r.status eq 'Pending' || r.status eq 'AcceptedByTo'}">
+                                <a href="${pageContext.request.contextPath}/admin/approveShiftRequest?id=${r.requestID}" 
+                                   class="btn approve">✔️ Duyệt</a>
+                                <a href="${pageContext.request.contextPath}/admin/rejectShiftRequest?id=${r.requestID}" 
+                                   class="btn deny">❌ Từ chối</a>
+                            </c:when>
+
+                            <c:otherwise>
+                                <span style="color:#999;">Đã xử lý</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </td>
+                </tr>
+            </c:forEach>
+        </table>
+
+    </body>
 </html>

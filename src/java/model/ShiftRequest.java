@@ -4,24 +4,33 @@ import java.sql.Date;
 import java.sql.Timestamp;
 
 public class ShiftRequest {
+
     private int requestID;
-    private int employeeID;
-    private String type;
-    private Date targetDate;
-    private int fromShiftID;
-    private int toShiftID;
-    private String reason;
-    private String status;
-    private Integer approvedBy;
-    private Timestamp createdAt;
+    private int employeeID;     // Người gửi yêu cầu đổi ca
+    private int toStaffID;      // Người được chọn để đổi cùng
+    private String type;        // Loại yêu cầu: "Swap", "Register", ...
+    private Date fromDate;      // Ngày làm hiện tại của người gửi
+    private Date toDate;        // Ngày muốn đổi (của người kia)
+    private int fromShiftID;    // Ca hiện tại của người gửi
+    private int toShiftID;      // Ca muốn đổi sang (của người kia)
+    private String reason;      // Lý do đổi ca
+    private String status;      // Trạng thái: Pending / Approved / Rejected
+    private Integer approvedBy; // ID Admin duyệt
+    private Timestamp createdAt; // Ngày tạo yêu cầu
 
-    public ShiftRequest() {}
+    // ===== Constructors =====
+    public ShiftRequest() {
+    }
 
-    public ShiftRequest(int requestID, int employeeID, String type, Date targetDate, int fromShiftID, int toShiftID, String reason, String status, Integer approvedBy, Timestamp createdAt) {
+    public ShiftRequest(int requestID, int employeeID, int toStaffID, String type,
+            Date fromDate, Date toDate, int fromShiftID, int toShiftID,
+            String reason, String status, Integer approvedBy, Timestamp createdAt) {
         this.requestID = requestID;
         this.employeeID = employeeID;
+        this.toStaffID = toStaffID;
         this.type = type;
-        this.targetDate = targetDate;
+        this.fromDate = fromDate;
+        this.toDate = toDate;
         this.fromShiftID = fromShiftID;
         this.toShiftID = toShiftID;
         this.reason = reason;
@@ -30,33 +39,124 @@ public class ShiftRequest {
         this.createdAt = createdAt;
     }
 
-    public int getRequestID() { return requestID; }
-    public void setRequestID(int requestID) { this.requestID = requestID; }
+    // ===== Getters & Setters =====
+    public int getRequestID() {
+        return requestID;
+    }
 
-    public int getEmployeeID() { return employeeID; }
-    public void setEmployeeID(int employeeID) { this.employeeID = employeeID; }
+    public void setRequestID(int requestID) {
+        this.requestID = requestID;
+    }
 
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public int getEmployeeID() {
+        return employeeID;
+    }
 
-    public Date getTargetDate() { return targetDate; }
-    public void setTargetDate(Date targetDate) { this.targetDate = targetDate; }
+    public void setEmployeeID(int employeeID) {
+        this.employeeID = employeeID;
+    }
 
-    public int getFromShiftID() { return fromShiftID; }
-    public void setFromShiftID(int fromShiftID) { this.fromShiftID = fromShiftID; }
+    public int getToStaffID() {
+        return toStaffID;
+    }
 
-    public int getToShiftID() { return toShiftID; }
-    public void setToShiftID(int toShiftID) { this.toShiftID = toShiftID; }
+    public void setToStaffID(int toStaffID) {
+        this.toStaffID = toStaffID;
+    }
 
-    public String getReason() { return reason; }
-    public void setReason(String reason) { this.reason = reason; }
+    public String getType() {
+        return type;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setType(String type) {
+        this.type = type;
+    }
 
-    public Integer getApprovedBy() { return approvedBy; }
-    public void setApprovedBy(Integer approvedBy) { this.approvedBy = approvedBy; }
+    public Date getFromDate() {
+        return fromDate;
+    }
 
-    public Timestamp getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+    public void setFromDate(Date fromDate) {
+        this.fromDate = fromDate;
+    }
+
+    public Date getToDate() {
+        return toDate;
+    }
+
+    public void setToDate(Date toDate) {
+        this.toDate = toDate;
+    }
+
+    public int getFromShiftID() {
+        return fromShiftID;
+    }
+
+    public void setFromShiftID(int fromShiftID) {
+        this.fromShiftID = fromShiftID;
+    }
+
+    public int getToShiftID() {
+        return toShiftID;
+    }
+
+    public void setToShiftID(int toShiftID) {
+        this.toShiftID = toShiftID;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Integer getApprovedBy() {
+        return approvedBy;
+    }
+
+    public void setApprovedBy(Integer approvedBy) {
+        this.approvedBy = approvedBy;
+    }
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getTargetDate() {
+        // Nếu type là "Swap" → ưu tiên fromDate
+        // Nếu type là "Register" → có thể là toDate
+        return (fromDate != null) ? fromDate : toDate;
+    }
+    private boolean toNotified;
+    private boolean adminNotified;
+
+    public boolean isToNotified() {
+        return toNotified;
+    }
+
+    public void setToNotified(boolean toNotified) {
+        this.toNotified = toNotified;
+    }
+
+    public boolean isAdminNotified() {
+        return adminNotified;
+    }
+
+    public void setAdminNotified(boolean adminNotified) {
+        this.adminNotified = adminNotified;
+    }
 }

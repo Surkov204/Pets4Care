@@ -190,6 +190,17 @@
             .send-button:hover {
                 background: #166fe5;
             }
+            .search-conversations {
+                margin-top: 15px;
+                position: relative;
+                width: 100%;
+                box-sizing: border-box;
+                padding-right: 10px;
+            }
+            .search-conversations input {
+                width: 100%;
+                box-sizing: border-box;
+            }
         </style>
     </head>
     <body>
@@ -253,11 +264,12 @@
                         <div class="chat-area">
                             <div class="chat-header">
                                 <div class="chat-user-info">
-                                    <div class="chat-user-avatar">?</div>
+                                    <div class="chat-user-avatar" id="chatUserAvatar">?</div>
                                     <div class="chat-user-details">
-                                        <h4>Chưa chọn khách</h4>
-                                        <p>Chọn khách hàng bên trái để bắt đầu chat</p>
+                                        <h4 id="chatUserName">Chưa chọn khách</h4>
+                                        <p id="chatUserStatus">Chọn khách hàng bên trái để bắt đầu chat</p>
                                     </div>
+
                                 </div>
                             </div>
                             <div class="messages-container" id="messagesContainer">
@@ -282,69 +294,143 @@
         </footer>
 
         <script>
+            const ctx = "${pageContext.request.contextPath}";
+            const baseUrl = ctx + "/chat";
+
             let currentCustomerId = null;
 
-            // 🔹 Load danh sách cuộc trò chuyện thật từ DB
-            fetch("../chat?action=getSessions")
-                    .then(res => res.json())
-                    .then(data => {
-                        const list = document.getElementById("conversationsList");
-                        list.innerHTML = "";
-                        if (data.length === 0) {
-                            list.innerHTML = "<p style='padding:15px;color:#888;'>Chưa có cuộc trò chuyện nào</p>";
-                            return;
+            // 🔹 Load danh sách cuộc trò chuyện
+            function loadChatSessions() {
+                console.log("📡 Fetch sessions from:", baseUrl + "?action=getSessions");
+
+                fetch(baseUrl + "?action=getSessions")
+                        .then(res => res.json())
+                        .then(data => {
+                            console.log("✅ Sessions data:", data);
+                            const list = document.getElementById("conversationsList");
+                            list.innerHTML = "";
+
+                            if (!data || data.length === 0) {
+                                list.innerHTML = "<p style='padding:15px;color:#888;'>Chưa có cuộc trò chuyện nào</p>";
+                                return;
+                            }
+
+                            for (const s of data) {
+                                const item = document.createElement("div");
+                                item.className = "conversation-item";
+                                item.dataset.customerId = s.customerId;
+                                // ✅ Lưu lowercase name để tìm kiếm
+                                item.dataset.name = (s.customerName || ("Khách hàng #" + s.customerId)).toLowerCase();
+
+                                const avatarText = (s.customerName ? s.customerName.substring(0, 2) : "??").toUpperCase();
+                                const displayName = s.customerName || ("Khách hàng #" + s.customerId);
+                                const startedText = s.startedAt || "";
+
+                                item.innerHTML =
+                                        "<div class='conversation-avatar'>" + avatarText + "</div>" +
+                                        "<div class='conversation-info'>" +
+                                        "<div class='conversation-name'>" + displayName + "</div>" +
+                                        "<div class='conversation-preview'>Nhấn để xem tin nhắn...</div>" +
+                                        "<div class='conversation-time'>" + startedText + "</div>" +
+                                        "</div>";
+
+                                item.addEventListener("click", function () {
+                                    selectCustomer(s.customerId, s.customerName);
+                                });
+
+                                list.appendChild(item);
+                            }
+
+                            // ✅ Kích hoạt tìm kiếm sau khi render danh sách
+                            initSearchConversations();
+                        })
+                        .catch(err => console.error("❌ Lỗi load danh sách:", err));
+            }
+
+            // ✅ Tìm kiếm khách hàng theo tên
+            function initSearchConversations() {
+                const searchInput = document.getElementById("searchConversations");
+                if (!searchInput)
+                    return;
+
+                // Lọc khi gõ hoặc nhấn Enter
+                const filterList = function () {
+                    const keyword = searchInput.value.trim().toLowerCase();
+                    const items = document.querySelectorAll(".conversation-item");
+                    let visibleCount = 0;
+
+                    items.forEach(item => {
+                        const name = item.dataset.name || "";
+                        if (name.includes(keyword)) {
+                            item.style.display = "flex";
+                            visibleCount++;
+                        } else {
+                            item.style.display = "none";
                         }
-                        data.forEach(function (s) {
-                            const item = document.createElement("div");
-                            item.className = "conversation-item";
-                            item.dataset.customerId = s.customerId;
-
-                            const avatarText = ((s.customerName || '??').substring(0, 2)).toUpperCase();
-                            const displayName = s.customerName || ('Khách hàng #' + s.customerId);
-                            const startedText = s.startedAt ? new Date(s.startedAt).toLocaleString('vi-VN') : '';
-
-                            item.innerHTML =
-                                    '<div class="conversation-avatar">' + avatarText + '</div>' +
-                                    '<div class="conversation-info">' +
-                                    '<div class="conversation-name">' + displayName + '</div>' +
-                                    '<div class="conversation-preview">Nhấn để xem tin nhắn...</div>' +
-                                    '<div class="conversation-time">' + startedText + '</div>' +
-                                    '</div>';
-
-                            item.addEventListener("click", function () {
-                                selectCustomer(s.customerId);
-                            });
-                            list.appendChild(item);
-                        });
                     });
 
-            function selectCustomer(id) {
+                    const noResult = document.getElementById("noResults");
+                    if (visibleCount === 0) {
+                        if (!noResult) {
+                            const msg = document.createElement("p");
+                            msg.id = "noResults";
+                            msg.textContent = "Không tìm thấy kết quả";
+                            msg.style.padding = "10px";
+                            msg.style.color = "#aaa";
+                            document.getElementById("conversationsList").appendChild(msg);
+                        }
+                    } else if (noResult) {
+                        noResult.remove();
+                    }
+                };
+
+                // Gõ từng ký tự
+                searchInput.addEventListener("input", filterList);
+
+                // Nhấn Enter
+                searchInput.addEventListener("keypress", function (e) {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        filterList();
+                    }
+                });
+            }
+
+            // ✅ Chọn khách hàng
+            function selectCustomer(id, name) {
                 currentCustomerId = id;
+
                 document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
-                document.querySelector(`[data-customer-id='${id}']`)?.classList.add('active');
+                const selectedItem = document.querySelector("[data-customer-id='" + id + "']");
+                if (selectedItem)
+                    selectedItem.classList.add('active');
+
+                const avatarText = (name || "??").substring(0, 2).toUpperCase();
+                document.getElementById('chatUserName').textContent = name || ("Khách hàng #" + id);
+                document.getElementById('chatUserAvatar').textContent = avatarText;
+                document.getElementById('chatUserStatus').textContent = "Đang trò chuyện";
+
                 loadStaffChat();
             }
 
+            // ✅ Load tin nhắn
             function loadStaffChat() {
                 if (!currentCustomerId)
                     return;
 
-                fetch("../chat?action=get&customerId=" + currentCustomerId)
-                        .then(res => res.json()) // ✅ đổi sang JSON
+                fetch(baseUrl + "?action=get&customerId=" + currentCustomerId)
+                        .then(res => res.json())
                         .then(messages => {
                             const container = document.getElementById("messagesContainer");
                             container.innerHTML = "";
 
-                            if (messages.length === 0) {
+                            if (!messages || messages.length === 0) {
                                 container.innerHTML = "<p style='color:#999;text-align:center;margin-top:50px;'>Chưa có tin nhắn nào</p>";
                                 return;
                             }
 
-                            messages.forEach(m => {
+                            for (const m of messages) {
                                 const msgDiv = document.createElement("div");
-                                msgDiv.classList.add("message-row");
-
-                                // ✅ staff gửi -> align phải; customer -> align trái
                                 msgDiv.style.display = "flex";
                                 msgDiv.style.justifyContent = (m.senderType.toLowerCase() === "staff") ? "flex-end" : "flex-start";
                                 msgDiv.style.marginBottom = "10px";
@@ -368,28 +454,34 @@
 
                                 msgDiv.appendChild(bubble);
                                 container.appendChild(msgDiv);
-                            });
+                            }
 
                             container.scrollTop = container.scrollHeight;
                         })
                         .catch(err => console.error("❌ loadStaffChat error:", err));
             }
+
+            // ✅ Gửi tin nhắn
             function sendStaffMessage() {
                 const msgInput = document.getElementById("messageInput");
                 const text = msgInput.value.trim();
                 if (!text || !currentCustomerId)
                     return;
 
-                fetch("../chat", {
+                fetch(baseUrl, {
                     method: "POST",
                     headers: {"Content-Type": "application/x-www-form-urlencoded"},
-                    body: `action=send&customerId=${"$"}{currentCustomerId}&senderType=staff&message=${"$"}{encodeURIComponent(text)}`
-                }).then(() => {
-                    msgInput.value = "";
-                    loadStaffChat();
-                });
+                    body: "action=send&customerId=" + currentCustomerId + "&senderType=staff&message=" + encodeURIComponent(text)
+                })
+                        .then(() => {
+                            msgInput.value = "";
+                            loadStaffChat();
+                        })
+                        .catch(err => console.error("❌ sendStaffMessage error:", err));
             }
 
+            // ✅ Khởi chạy
+            loadChatSessions();
             setInterval(loadStaffChat, 3000);
         </script>
     </body>

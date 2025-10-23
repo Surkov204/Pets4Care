@@ -103,7 +103,7 @@
                 <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp" style="background: rgba(255, 255, 255, 0.2);">GIỚI THIỆU</a></li>
                 <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
-                <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
+                <li><a href="<%= request.getContextPath()%>/home">LIÊN HỆ</a></li>
             </ul>
         </nav>
 

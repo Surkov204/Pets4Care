@@ -4,6 +4,7 @@ import model.Booking;
 import utils.DBConnection;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.*;
 
 public class BookingDAO implements IBookingDAO {
@@ -670,6 +671,123 @@ public List<Booking> getAllBookings() {
             logger.severe("Error auto-cancelling expired deposit bookings: " + e.getMessage());
             e.printStackTrace();
             return 0;
+        }
+    }
+    
+    // =========================
+    // DOCTOR SPECIFIC METHODS
+    // =========================
+    
+    /**
+     * Lấy lịch hẹn của doctor theo ngày cụ thể
+     */
+    public List<Booking> getBookingsByDoctorAndDate(int doctorId, LocalDate date) {
+        String sql = """
+            SELECT b.*, 
+                   c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email,
+                   p.name AS pet_name, p.species AS pet_type,
+                   s.name AS staff_name,
+                   d.name AS doctor_name,
+                   (SELECT STRING_AGG(sv.name, ', ')
+                      FROM dbo.BookingService bs
+                      JOIN dbo.Service sv ON sv.service_id = bs.service_id
+                      WHERE bs.booking_id = b.booking_id) AS service_names
+            FROM dbo.Booking b
+            LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id
+            LEFT JOIN dbo.Pet p ON b.pet_id = p.pet_id
+            LEFT JOIN dbo.Staff s ON b.staff_id = s.staff_id
+            LEFT JOIN dbo.Doctor d ON b.doctor_id = d.doctor_id
+            WHERE b.doctor_id = ? 
+            AND CAST(b.appointment_start AS date) = ?
+            ORDER BY b.appointment_start ASC
+            """;
+        
+        List<Booking> bookings = new ArrayList<>();
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, doctorId);
+            ps.setDate(2, java.sql.Date.valueOf(date));
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    bookings.add(mapBookingFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error getting bookings by doctor and date: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return bookings;
+    }
+    
+    /**
+     * Lấy lịch hẹn của doctor trong khoảng thời gian
+     */
+    public List<Booking> getBookingsByDoctorAndDateRange(int doctorId, LocalDate startDate, LocalDate endDate) {
+        String sql = """
+            SELECT b.*, 
+                   c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email,
+                   p.name AS pet_name, p.species AS pet_type,
+                   s.name AS staff_name,
+                   d.name AS doctor_name,
+                   (SELECT STRING_AGG(sv.name, ', ')
+                      FROM dbo.BookingService bs
+                      JOIN dbo.Service sv ON sv.service_id = bs.service_id
+                      WHERE bs.booking_id = b.booking_id) AS service_names
+            FROM dbo.Booking b
+            LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id
+            LEFT JOIN dbo.Pet p ON b.pet_id = p.pet_id
+            LEFT JOIN dbo.Staff s ON b.staff_id = s.staff_id
+            LEFT JOIN dbo.Doctor d ON b.doctor_id = d.doctor_id
+            WHERE b.doctor_id = ? 
+            AND CAST(b.appointment_start AS date) BETWEEN ? AND ?
+            ORDER BY b.appointment_start ASC
+            """;
+        
+        List<Booking> bookings = new ArrayList<>();
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, doctorId);
+            ps.setDate(2, java.sql.Date.valueOf(startDate));
+            ps.setDate(3, java.sql.Date.valueOf(endDate));
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    bookings.add(mapBookingFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error getting bookings by doctor and date range: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return bookings;
+    }
+    
+    /**
+     * Thêm ghi chú cho lịch hẹn
+     */
+    public boolean updateBookingNote(int bookingId, String note) {
+        String sql = "UPDATE dbo.Booking SET note = ? WHERE booking_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setString(1, note);
+            ps.setInt(2, bookingId);
+            
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            logger.severe("Error updating booking note: " + e.getMessage());
+            e.printStackTrace();
+            return false;
         }
     }
 }

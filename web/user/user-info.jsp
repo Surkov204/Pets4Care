@@ -211,7 +211,7 @@
                 <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
                 <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
-                <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
+                <li><a href="<%= request.getContextPath()%>/home">LIÊN HỆ</a></li>
             </ul>
         </nav>
 
@@ -363,21 +363,21 @@
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg text-center">
+                    <a href="<%= request.getContextPath()%>/petinfoservlet#basic" class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg text-center hover:shadow-md transition-shadow">
                         <i class="fas fa-heart text-blue-500 text-2xl mb-2"></i>
                         <h3 class="font-semibold text-blue-700">Thông tin cơ bản</h3>
                         <p class="text-sm text-blue-600">Tên, loài, giống, tuổi</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg text-center">
+                    </a>
+                    <a href="<%= request.getContextPath()%>/petinfoservlet#photo" class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg text-center hover:shadow-md transition-shadow">
                         <i class="fas fa-camera text-green-500 text-2xl mb-2"></i>
                         <h3 class="font-semibold text-green-700">Ảnh thú cưng</h3>
                         <p class="text-sm text-green-600">Upload ảnh đáng yêu</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg text-center">
+                    </a>
+                    <a href="<%= request.getContextPath()%>/petinfoservlet#desc" class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg text-center hover:shadow-md transition-shadow">
                         <i class="fas fa-notes-medical text-purple-500 text-2xl mb-2"></i>
                         <h3 class="font-semibold text-purple-700">Sức khỏe</h3>
                         <p class="text-sm text-purple-600">Tình trạng sức khỏe</p>
-                    </div>
+                    </a>
                 </div>
             </section>
                 </div>

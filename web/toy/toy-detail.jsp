@@ -128,7 +128,7 @@
                 <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
                 <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
-                <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
+                <li><a href="<%= request.getContextPath()%>/home">LIÊN HỆ</a></li>
             </ul>
         </nav>
 

@@ -12,6 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
 import model.Shift;
+import model.Staff;
 import model.WorkSchedule;
 
 @WebServlet("/staff/mySchedule")
@@ -25,6 +26,10 @@ public class StaffScheduleController extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession();
+        System.out.println("=== DEBUG: StaffScheduleController.doGet() CALLED ===");
+        System.out.println("Session staffId = " + session.getAttribute("staffId"));
+        System.out.print("hello");
+
         Integer staffId = (Integer) session.getAttribute("staffId");
         if (staffId == null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
@@ -78,6 +83,13 @@ public class StaffScheduleController extends HttpServlet {
         request.setAttribute("startOfWeek", java.sql.Date.valueOf(startOfWeek));
         request.setAttribute("endOfWeek", java.sql.Date.valueOf(endOfWeek));
         request.setAttribute("shifts", shiftDAO.getAllShifts());
+        Map<String, List<String>> commonSchedule = workDAO.getCommonSchedule();
+        request.setAttribute("commonSchedule", commonSchedule);
+        System.out.println("[DEBUG] mySchedule.doGet() -> staffId = " + staffId);
+        List<Staff> list = workDAO.getAllStaffExcept(staffId);
+        System.out.println("[DEBUG] Found " + list.size() + " staff in DB");
+        request.setAttribute("staffList", list);
+        request.setAttribute("staffList", workDAO.getAllStaffExcept(staffId));
         request.getRequestDispatcher("/staff/mySchedule.jsp").forward(request, response);
     }
 
@@ -98,6 +110,7 @@ public class StaffScheduleController extends HttpServlet {
         try {
             if ("register".equals(action) && dayParam != null && shiftType != null) {
                 LocalDate workDay = LocalDate.parse(dayParam);
+                session.setAttribute("successMessage", "✅ Đăng ký ca thành công!");
                 workDAO.addScheduleByShiftType(staffId, workDay, shiftType);
                 System.out.println("✅ Đăng ký " + shiftType + " cho ngày " + workDay);
             } else if ("cancel".equals(action) && dayParam != null && shiftType != null) {
@@ -126,6 +139,7 @@ public class StaffScheduleController extends HttpServlet {
                             LocalDate workDate = LocalDate.parse(parts[0]);
                             int shiftId = Integer.parseInt(parts[1]);
                             workDAO.deleteScheduleByStaffShiftDate(staffId, shiftId, workDate);
+                            session.setAttribute("successMessage", "🗑️ Hủy ca thành công!");
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -137,6 +151,8 @@ public class StaffScheduleController extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        Map<String, List<String>> commonSchedule = workDAO.getCommonSchedule();
+        request.setAttribute("commonSchedule", commonSchedule);
 
         response.sendRedirect(request.getContextPath() + "/staff/mySchedule");
 

@@ -1,78 +1,65 @@
 package controller;
 
 import dao.ShiftRequestDAO;
+import dao.WorkScheduleDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
-import java.sql.Date;
-import java.util.List;
 import model.ShiftRequest;
 
 @WebServlet("/shift-request")
 public class ShiftRequestController extends HttpServlet {
 
-    private ShiftRequestDAO dao = new ShiftRequestDAO();
+    private final ShiftRequestDAO reqDAO = new ShiftRequestDAO();
+    private final WorkScheduleDAO workDAO = new WorkScheduleDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         String action = request.getParameter("action");
+        String idParam = request.getParameter("id");
 
-        if (action == null || action.equals("list")) {
-            // ✅ Hiển thị danh sách yêu cầu
-            List<ShiftRequest> list = dao.getAllRequests();
-            request.setAttribute("requestList", list);
-
-            // 🔧 Sửa đúng đường dẫn tới JSP thật
+        if (action == null) {
+            // ✅ Nếu không có action => load danh sách yêu cầu
+            request.setAttribute("requestList", reqDAO.getAllRequests());
             request.getRequestDispatcher("/admin/manageRequest.jsp").forward(request, response);
+            return;
         }
 
-        else if (action.equals("approve")) {
-            int id = Integer.parseInt(request.getParameter("id"));
-            dao.updateStatus(id, "approved", 1); // Giả sử admin ID = 1
-            response.sendRedirect(request.getContextPath() + "/shift-request?action=list");
+        // ✅ Nếu có action => xử lý duyệt hoặc từ chối
+        try {
+            int id = Integer.parseInt(idParam);
+            ShiftRequest req = reqDAO.getById(id);
+
+            if (req == null) {
+                response.sendRedirect(request.getContextPath() + "/shift-request");
+                return;
+            }
+
+            if ("approve".equalsIgnoreCase(action)) {
+                // 🔁 Đổi ca thật trong WorkSchedule
+                workDAO.swapShifts(
+                        req.getEmployeeID(),
+                        req.getToShiftID(),
+                        req.getFromShiftID(),
+                        req.getTargetDate().toLocalDate() // ⚠️ nếu bạn dùng java.sql.Date → .toLocalDate()
+                );
+                reqDAO.updateStatus(id, "ApprovedByAdmin", null);
+                System.out.println("[ADMIN] ✅ Đã duyệt yêu cầu đổi ca #" + id);
+
+            } else if ("deny".equalsIgnoreCase(action)) {
+                reqDAO.updateStatus(id, "Rejected", null);
+                System.out.println("[ADMIN] ❌ Đã từ chối yêu cầu đổi ca #" + id);
+            }
+
+            // Quay lại trang quản lý
+            response.sendRedirect(request.getContextPath() + "/shift-request");
+
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/shift-request");
         }
-
-        else if (action.equals("deny")) {
-            int id = Integer.parseInt(request.getParameter("id"));
-            dao.updateStatus(id, "denied", 1);
-            response.sendRedirect(request.getContextPath() + "/shift-request?action=list");
-        }
-
-        else if (action.equals("delete")) {
-            int id = Integer.parseInt(request.getParameter("id"));
-            dao.deleteRequest(id);
-            response.sendRedirect(request.getContextPath() + "/shift-request?action=list");
-        }
-
-        else if (action.equals("new")) {
-            // ✅ Forward đến form thêm yêu cầu (nếu có)
-            request.getRequestDispatcher("/admin/shiftRequestForm.jsp").forward(request, response);
-        }
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        request.setCharacterEncoding("UTF-8");
-
-        // ✅ Lấy dữ liệu từ form
-        ShiftRequest r = new ShiftRequest();
-        r.setEmployeeID(Integer.parseInt(request.getParameter("employeeID")));
-        r.setType(request.getParameter("type"));
-        r.setTargetDate(Date.valueOf(request.getParameter("targetDate")));
-        r.setFromShiftID(Integer.parseInt(request.getParameter("fromShiftID")));
-        r.setToShiftID(Integer.parseInt(request.getParameter("toShiftID")));
-        r.setReason(request.getParameter("reason"));
-        r.setStatus("pending");
-        r.setApprovedBy(null);
-
-        dao.addRequest(r);
-
-        // 🔁 Quay lại danh sách yêu cầu
-        response.sendRedirect(request.getContextPath() + "/shift-request?action=list");
     }
 }

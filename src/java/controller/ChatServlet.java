@@ -35,6 +35,9 @@ public class ChatServlet extends HttpServlet {
             case "getsessions":
                 handleGetSessions(request, response); // ✅ thêm dòng này
                 break;
+            case "getunread":
+                handleGetUnreadCount(request, response);
+                break;
             default:
                 response.setStatus(HttpServletResponse.SC_NO_CONTENT);
         }
@@ -130,5 +133,18 @@ public class ChatServlet extends HttpServlet {
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;");
+    }
+
+    private void handleGetUnreadCount(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+        try (Connection conn = DBConnection.getConnection()) {
+            ChatDAO dao = new ChatDAO(conn);
+            int unread = dao.countUnreadMessages();
+            response.getWriter().write("{\"unread\":" + unread + "}");
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.getWriter().write("{\"unread\":0}");
+        }
     }
 }

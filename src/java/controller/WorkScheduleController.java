@@ -1,5 +1,7 @@
 package controller;
 
+import java.sql.*;
+import java.util.*;
 import dao.WorkScheduleDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -7,8 +9,11 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.sql.Date;
 import java.sql.Time;
+import java.util.ArrayList;
 import java.util.List;
+import model.Staff;
 import model.WorkSchedule;
+import utils.DBConnection;
 
 @WebServlet("/schedule")
 public class WorkScheduleController extends HttpServlet {
@@ -28,18 +33,14 @@ public class WorkScheduleController extends HttpServlet {
 
             // 🔧 Forward đúng đường dẫn thật trong thư mục admin
             request.getRequestDispatcher("/admin/manageSchedule.jsp").forward(request, response);
-        }
-
-        else if (action.equals("delete")) {
+        } else if (action.equals("delete")) {
             // ✅ Xóa lịch làm việc
             int id = Integer.parseInt(request.getParameter("id"));
             dao.deleteSchedule(id);
 
             // 🔁 Redirect về danh sách sau khi xóa
             response.sendRedirect(request.getContextPath() + "/schedule?action=list");
-        }
-
-        else if (action.equals("new")) {
+        } else if (action.equals("new")) {
             // ✅ Chuyển tới form thêm mới lịch làm việc
             request.getRequestDispatcher("/admin/scheduleForm.jsp").forward(request, response);
         }
@@ -77,4 +78,6 @@ public class WorkScheduleController extends HttpServlet {
         // 🔁 Quay lại danh sách
         response.sendRedirect(request.getContextPath() + "/schedule?action=list");
     }
+
+
 }

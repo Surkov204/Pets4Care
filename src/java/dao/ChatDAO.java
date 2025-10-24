@@ -79,4 +79,24 @@ public class ChatDAO {
         System.out.println("✅ [ChatDAO] getChatSessions() returned " + list.size() + " session(s)");
         return list;
     }
-}   
+
+    public int countUnreadMessages() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM ChatMessages WHERE SenderType = 'customer' AND IsRead = 0";
+        try (PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
+// ✅ Đánh dấu là đã đọc khi staff mở chat với 1 khách cụ thể
+    public void markMessagesAsRead(int customerId) throws SQLException {
+        String sql = "UPDATE ChatMessages SET IsRead = 1 WHERE CustomerID = ? AND SenderType = 'customer' AND IsRead = 0";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ps.executeUpdate();
+        }
+    }
+
+}

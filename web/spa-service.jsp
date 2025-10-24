@@ -23,7 +23,15 @@
     
     // Get spa services from request attributes
     List<PetServiceModel> spaServices = (List<PetServiceModel>) request.getAttribute("spaServices");
-    if (spaServices == null) spaServices = new ArrayList<>();
+    if (spaServices == null) {
+        // Nếu không có dữ liệu từ servlet, thử load từ service trực tiếp
+        try {
+            service.SpaBookingService spaService = new service.SpaBookingService();
+            spaServices = spaService.getActiveSpaServices();
+        } catch (Exception e) {
+            spaServices = new ArrayList<>();
+        }
+    }
 %>
 
 <!DOCTYPE html>
@@ -161,13 +169,13 @@
     <nav>
         <ul>
             <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
-            <li><a href="spa-service.jsp" style="background: rgba(255, 255, 255, 0.2);">DỊCH VỤ</a></li>
+            <li><a href="${pageContext.request.contextPath}/spa-service" style="background: rgba(255, 255, 255, 0.2);">DỊCH VỤ</a></li>
             <li><a href="<%= request.getContextPath()%>/health-check-booking">ĐẶT LỊCH KHÁM</a></li>
             <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
             <li><a href="doctor.jsp">BÁC SĨ</a></li>
             <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
             <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
-            <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
+            <li><a href="<%= request.getContextPath()%>/home">LIÊN HỆ</a></li>
         </ul>
     </nav>
 
@@ -200,7 +208,7 @@
         <section class="mb-16">
             <h2 class="text-4xl font-bold mb-10 text-center text-orange-600">🌟 Các dịch vụ Spa</h2>
             
-            <% if (!spaServices.isEmpty()) { %>
+            <% if (spaServices != null && !spaServices.isEmpty()) { %>
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <% for (PetServiceModel service : spaServices) { %>
                 <div class="service-card bg-white">
@@ -239,7 +247,7 @@
                             <input type="hidden" name="action" value="add-to-cart">
                             <input type="hidden" name="serviceId" value="<%= service.getServiceId() %>">
                             <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="booking-btn" style="border: none; background: none; cursor: pointer;">
+                            <button type="submit" class="booking-btn">
                                 🛒 Thêm vào giỏ Spa
                             </button>
                         </form>
@@ -257,6 +265,138 @@
                 </a>
             </div>
             <% } %>
+        </section>
+
+        <!-- Health Check Services Section -->
+        <section class="mb-16">
+            <h2 class="text-4xl font-bold mb-10 text-center text-blue-600">🏥 Dịch vụ Khám sức khỏe</h2>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Khám sức khỏe tổng quát -->
+                <div class="service-card bg-white">
+                    <div class="p-6 text-center">
+                        <div class="service-icon">
+                            🩺
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">Khám sức khỏe tổng quát</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Kiểm tra sức khỏe tổng quát: khám lâm sàng, đo nhiệt độ, nhịp tim</p>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="price-tag">
+                                ₫200,000
+                            </span>
+                            <span class="duration-badge">30 phút</span>
+                        </div>
+                        <form method="POST" action="/Pets4Care/health-check-booking" style="display: inline;">
+                            <input type="hidden" name="action" value="add-to-cart">
+                            <input type="hidden" name="serviceId" value="1">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="booking-btn">
+                                🛒 Thêm vào giỏ Khám
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Khám chuyên sâu -->
+                <div class="service-card bg-white">
+                    <div class="p-6 text-center">
+                        <div class="service-icon">
+                            🔬
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">Khám chuyên sâu</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Khám chuyên sâu: xét nghiệm máu, nước tiểu, X-quang</p>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="price-tag">
+                                ₫500,000
+                            </span>
+                            <span class="duration-badge">60 phút</span>
+                        </div>
+                        <form method="POST" action="/Pets4Care/health-check-booking" style="display: inline;">
+                            <input type="hidden" name="action" value="add-to-cart">
+                            <input type="hidden" name="serviceId" value="2">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="booking-btn">
+                                🛒 Thêm vào giỏ Khám
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Khám định kỳ -->
+                <div class="service-card bg-white">
+                    <div class="p-6 text-center">
+                        <div class="service-icon">
+                            📅
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">Khám định kỳ</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Khám định kỳ 6 tháng/1 lần: kiểm tra cơ bản</p>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="price-tag">
+                                ₫150,000
+                            </span>
+                            <span class="duration-badge">20 phút</span>
+                        </div>
+                        <form method="POST" action="/Pets4Care/health-check-booking" style="display: inline;">
+                            <input type="hidden" name="action" value="add-to-cart">
+                            <input type="hidden" name="serviceId" value="3">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="booking-btn">
+                                🛒 Thêm vào giỏ Khám
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Tiêm phòng cơ bản -->
+                <div class="service-card bg-white">
+                    <div class="p-6 text-center">
+                        <div class="service-icon">
+                            💉
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">Tiêm phòng cơ bản</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Tiêm phòng: dại, viêm gan, parvo, distemper</p>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="price-tag">
+                                ₫300,000
+                            </span>
+                            <span class="duration-badge">20 phút</span>
+                        </div>
+                        <form method="POST" action="/Pets4Care/health-check-booking" style="display: inline;">
+                            <input type="hidden" name="action" value="add-to-cart">
+                            <input type="hidden" name="serviceId" value="4">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="booking-btn">
+                                🛒 Thêm vào giỏ Khám
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Tư vấn dinh dưỡng -->
+                <div class="service-card bg-white">
+                    <div class="p-6 text-center">
+                        <div class="service-icon">
+                            🥗
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">Tư vấn dinh dưỡng</h3>
+                        <p class="text-gray-600 mb-4 leading-relaxed">Tư vấn chế độ dinh dưỡng phù hợp</p>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="price-tag">
+                                ₫100,000
+                            </span>
+                            <span class="duration-badge">30 phút</span>
+                        </div>
+                        <form method="POST" action="/Pets4Care/health-check-booking" style="display: inline;">
+                            <input type="hidden" name="action" value="add-to-cart">
+                            <input type="hidden" name="serviceId" value="5">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="booking-btn">
+                                🛒 Thêm vào giỏ Khám
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- Why Choose Us Section -->

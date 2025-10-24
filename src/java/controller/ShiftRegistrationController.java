@@ -33,6 +33,8 @@ public class ShiftRegistrationController extends HttpServlet {
 
         // Lấy ngày hiện tại hoặc ngày được chọn
         String dateParam = request.getParameter("date");
+        session.setAttribute("successMessage", "✅ Đăng ký ca thành công!");
+        
         LocalDate baseDate = (dateParam == null)
                 ? LocalDate.now()
                 : LocalDate.parse(dateParam);

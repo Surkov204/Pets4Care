@@ -100,6 +100,9 @@
             <!-- Sidebar -->
             <aside class="staff-sidebar">
                 <ul>
+                    <li><a href="${pageContext.request.contextPath}/staff/dashboard.jsp">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/viewOrder"><i class="fas fa-receipt"></i> View Orders</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/mySchedule"><i class="fas fa-calendar-alt"></i> My Work Schedule</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-users"></i> Customer Profile</a></li>
@@ -278,7 +281,7 @@
                 dropdown.classList.toggle('show');
             }
 
-        // Close dropdown when clicking outside
+            // Close dropdown when clicking outside
             document.addEventListener('click', function (event) {
                 const dropdown = document.getElementById('dropdownMenu');
                 const avatar = document.querySelector('.avatar');

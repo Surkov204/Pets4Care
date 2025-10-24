@@ -10,12 +10,16 @@ import service.HealthCheckBookingService;
 import model.Customer;
 import model.Booking;
 import model.BookingServiceItem;
+import model.CartItem;
+import model.Product;
 
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import model.PetServiceModel;
 
@@ -96,6 +100,9 @@ public class HealthCheckBookingServlet extends HttpServlet {
             } else if (action != null && action.equals("cancel")) {
                 // Hủy booking khám sức khỏe
                 cancelHealthCheckBooking(request, response, customer);
+            } else if (action != null && action.equals("add-to-cart")) {
+                // Thêm dịch vụ vào giỏ khám
+                addHealthCheckServiceToCart(request, response, customer);
             }
             
         } catch (Exception e) {
@@ -377,6 +384,75 @@ public class HealthCheckBookingServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             request.setAttribute("error", "ID booking không hợp lệ");
             response.sendRedirect(request.getContextPath() + "/health-check-booking?action=history");
+        }
+    }
+    
+    /**
+     * Thêm dịch vụ khám sức khỏe vào giỏ
+     */
+    private void addHealthCheckServiceToCart(HttpServletRequest request, HttpServletResponse response, Customer customer) 
+            throws ServletException, IOException {
+        
+        HttpSession session = request.getSession();
+        
+        try {
+            String serviceIdParam = request.getParameter("serviceId");
+            String quantityParam = request.getParameter("quantity");
+            
+            if (serviceIdParam == null || serviceIdParam.trim().isEmpty()) {
+                session.setAttribute("errorMessage", "Vui lòng chọn dịch vụ");
+                response.sendRedirect(request.getContextPath() + "/health-check-booking");
+                return;
+            }
+            
+            int serviceId = Integer.parseInt(serviceIdParam);
+            int quantity = 1; // Default quantity
+            if (quantityParam != null && !quantityParam.trim().isEmpty()) {
+                quantity = Integer.parseInt(quantityParam);
+            }
+            
+            // Lấy dịch vụ từ database
+            PetServiceModel service = healthCheckBookingService.getHealthCheckServiceById(serviceId);
+            if (service == null) {
+                session.setAttribute("errorMessage", "Dịch vụ không tồn tại");
+                response.sendRedirect(request.getContextPath() + "/health-check-booking");
+                return;
+            }
+            
+            // Lấy giỏ hàng từ session
+            Map<Integer, CartItem> healthCheckCart = (Map<Integer, CartItem>) session.getAttribute("healthCheckCart");
+            if (healthCheckCart == null) {
+                healthCheckCart = new HashMap<>();
+            }
+            
+            // Thêm hoặc cập nhật số lượng
+            if (healthCheckCart.containsKey(serviceId)) {
+                CartItem existingItem = healthCheckCart.get(serviceId);
+                existingItem.setQuantity(existingItem.getQuantity() + quantity);
+            } else {
+                // Tạo CartItem mới với Product (giả lập)
+                Product product = new Product();
+                product.setProductId(serviceId);
+                product.setName(service.getName());
+                product.setPrice(service.getPrice().doubleValue());
+                product.setDescription(service.getDescription());
+                
+                CartItem newItem = new CartItem(product, quantity);
+                healthCheckCart.put(serviceId, newItem);
+            }
+            
+            // Lưu giỏ hàng vào session
+            session.setAttribute("healthCheckCart", healthCheckCart);
+            
+            response.sendRedirect(request.getContextPath() + "/health-check-booking");
+            
+        } catch (NumberFormatException e) {
+            session.setAttribute("errorMessage", "Dữ liệu không hợp lệ");
+            response.sendRedirect(request.getContextPath() + "/health-check-booking");
+        } catch (Exception e) {
+            logger.severe("Error adding service to cart: " + e.getMessage());
+            session.setAttribute("errorMessage", "Có lỗi xảy ra khi thêm dịch vụ vào giỏ");
+            response.sendRedirect(request.getContextPath() + "/health-check-booking");
         }
     }
 }

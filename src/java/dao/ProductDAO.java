@@ -54,8 +54,7 @@ public class ProductDAO implements IProductDAO {
 
         try (Connection con = DBConnection.getConnection(); 
              PreparedStatement ps = con.prepareStatement(sql)) {
-            
-            System.out.println("Connection: " + (con != null ? "SUCCESS" : "FAILED"));
+           
             
             ps.setInt(1, offset);
             ps.setInt(2, limit);
@@ -65,9 +64,7 @@ public class ProductDAO implements IProductDAO {
                 while (rs.next()) {
                     Product product = mapProductWithDetailsFromResultSet(rs);
                     products.add(product);
-                    System.out.println("Added product: " + product.getName());
                 }
-                System.out.println("Total products found: " + products.size());
             }
 
         } catch (Exception e) {
@@ -662,10 +659,7 @@ public class ProductDAO implements IProductDAO {
         // Set additional fields for display
         String categoryName = rs.getString("category_name");
         String supplierName = rs.getString("supplier_name");
-        
-        System.out.println("Mapping product: " + product.getName() + 
-                          ", Category: " + categoryName + 
-                          ", Supplier: " + supplierName);
+       
         
         product.setCategoryName(categoryName);
         product.setSupplierName(supplierName);

@@ -133,8 +133,8 @@
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StatisticServlet.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ToyDetailServlet.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/NotificationDAO.java</file>
-            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/Notification.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/NotificationController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/Notification.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/AcceptShiftRequestController.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/RejectShiftRequestController.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/AdminApproveShiftRequestController.java</file>
@@ -143,6 +143,24 @@
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/doctor/appointments.jsp</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/admin/customer-orders.jsp</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/SimpleTestServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/UpdatePetServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/UpdateOrderStatusServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/SpaServiceServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ViewOrderServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/admin/edit-supplier.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ChatHistoryServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/BookingDashboardServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/OrderDetailServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/LogoutServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ManageCustomerServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ManageToyServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/SpaBookingServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/PassShiftController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/admin/manage-supplier.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ConfirmPaymentServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/CustomerOrderServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/HealthCheckBookingServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/EditProfileServlet.java</file>
         </group>
     </open-files>
 </project-private>

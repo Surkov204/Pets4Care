@@ -6,11 +6,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
+import model.ShiftRequest;
 import model.Staff;
 
 @WebServlet("/staff/acceptShiftRequest")
 public class AcceptShiftRequestController extends HttpServlet {
-
     private final ShiftRequestDAO shiftDAO = new ShiftRequestDAO();
     private final NotificationDAO notifyDAO = new NotificationDAO();
 
@@ -26,28 +26,56 @@ public class AcceptShiftRequestController extends HttpServlet {
 
         String idStr = request.getParameter("requestId");
         if (idStr == null || idStr.isEmpty()) {
-            session.setAttribute("swapSuccess", "⚠️ Thiếu thông tin yêu cầu đổi ca.");
+            session.setAttribute("swapSuccess", "⚠️ Thiếu thông tin yêu cầu ca.");
             response.sendRedirect(request.getContextPath() + "/staff/dashboard.jsp");
             return;
         }
 
         int requestId = Integer.parseInt(idStr);
+        ShiftRequest req = shiftDAO.getById(requestId);
+        if (req == null) {
+            session.setAttribute("swapSuccess", "⚠️ Không tìm thấy yêu cầu này.");
+            response.sendRedirect(request.getContextPath() + "/staff/dashboard.jsp");
+            return;
+        }
 
-        // ✅ B cập nhật trạng thái “AcceptedByTo” (chuẩn với DB)
-        shiftDAO.updateStatus(requestId, "AcceptedByTo");
-
-        // ✅ Lấy thông tin nhân viên hiện tại (người B)
         Staff staff = (Staff) session.getAttribute("staff");
         String staffName = (staff != null) ? staff.getName() : "Nhân viên không xác định";
 
-        // ✅ Gửi thông báo cho admin để phê duyệt
-        notifyDAO.createForAdmin(
-            "Yêu cầu đổi ca chờ duyệt",
-            staffName + " đã chấp nhận yêu cầu đổi ca #" + requestId + ". Vui lòng kiểm tra và phê duyệt."
-        );
+        // ✅ 1️⃣ Nếu là yêu cầu “Đổi ca”
+        if ("Swap".equalsIgnoreCase(req.getType())) {
+            shiftDAO.updateStatus(requestId, "AcceptedByTo");
 
-        // ✅ Báo kết quả cho người B
-        session.setAttribute("swapSuccess", "✅ Bạn đã chấp nhận yêu cầu đổi ca. Chờ admin duyệt nhé!");
+            notifyDAO.createForAdmin(
+                "Yêu cầu đổi ca chờ duyệt",
+                staffName + " đã chấp nhận yêu cầu đổi ca #" + requestId + ". Vui lòng kiểm tra và phê duyệt."
+            );
+
+            session.setAttribute("swapSuccess", "✅ Bạn đã chấp nhận yêu cầu đổi ca. Chờ admin duyệt nhé!");
+        }
+
+        // ✅ 2️⃣ Nếu là yêu cầu “Pass ca”
+        else if ("Pass".equalsIgnoreCase(req.getType())) {
+            shiftDAO.updateStatus(requestId, "AcceptedByTo");
+
+            notifyDAO.createForAdmin(
+                "Yêu cầu pass ca chờ duyệt",
+                staffName + " đã đồng ý nhận ca làm thay #" + requestId + ". Vui lòng kiểm tra và phê duyệt."
+            );
+
+            session.setAttribute("swapSuccess", "✅ Bạn đã đồng ý nhận ca làm thay. Chờ admin duyệt nhé!");
+        }
+
+        // ✅ Đánh dấu thông báo của nhân viên đã xử lý (nếu có)
+        String notifyIdStr = request.getParameter("notificationId");
+        if (notifyIdStr != null && !notifyIdStr.isEmpty()) {
+            try {
+                int notifyId = Integer.parseInt(notifyIdStr);
+                notifyDAO.markAsHandled(notifyId);
+            } catch (NumberFormatException e) {
+                System.err.println("[AcceptShiftRequest] ⚠️ notificationId không hợp lệ: " + notifyIdStr);
+            }
+        }
 
         // ✅ Redirect về dashboard
         response.sendRedirect(request.getContextPath() + "/staff/dashboard.jsp");

@@ -429,4 +429,24 @@ public class WorkScheduleDAO {
         }
         return false;
     }
+
+    public boolean hasShift(int staffId, Date workDate, int shiftId) {
+        String sql = """
+        SELECT COUNT(*) 
+        FROM WorkSchedule 
+        WHERE staff_id = ? AND work_date = ? AND shift_id = ?
+    """;
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, staffId);
+            ps.setDate(2, workDate);
+            ps.setInt(3, shiftId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }

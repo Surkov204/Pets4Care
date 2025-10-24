@@ -313,4 +313,130 @@ public class ShiftRequestDAO {
         }
         return false;
     }
+
+    public boolean passShift(int requestId) {
+        String sql = """
+        SELECT EmployeeID, ToStaffID, FromDate, FromShiftID
+        FROM ShiftRequests WHERE RequestID = ?
+    """;
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, requestId);
+            ResultSet rs = ps.executeQuery();
+
+            if (!rs.next()) {
+                System.out.println("[ShiftRequestDAO] ❌ Không tìm thấy request #" + requestId);
+                return false;
+            }
+
+            int empA = rs.getInt("EmployeeID"); // người pass ca
+            int empB = rs.getInt("ToStaffID");  // người nhận ca
+            Date date = rs.getDate("FromDate");
+            int shift = rs.getInt("FromShiftID");
+
+            // 1️⃣ Kiểm tra người A có ca đó thật không
+            String checkA = """
+            SELECT COUNT(*) FROM WorkSchedule 
+            WHERE staff_id = ? AND work_date = ? AND shift_id = ?
+        """;
+            try (PreparedStatement psCheck = con.prepareStatement(checkA)) {
+                psCheck.setInt(1, empA);
+                psCheck.setDate(2, date);
+                psCheck.setInt(3, shift);
+                ResultSet rsA = psCheck.executeQuery();
+                if (rsA.next() && rsA.getInt(1) == 0) {
+                    System.out.println("[ShiftRequestDAO] ⚠️ Nhân viên A không có ca này để pass.");
+                    return false;
+                }
+            }
+
+            // 2️⃣ Kiểm tra B có bị trùng ca không
+            String checkB = """
+            SELECT COUNT(*) FROM WorkSchedule 
+            WHERE staff_id = ? AND work_date = ? AND shift_id = ?
+        """;
+            try (PreparedStatement psCheck = con.prepareStatement(checkB)) {
+                psCheck.setInt(1, empB);
+                psCheck.setDate(2, date);
+                psCheck.setInt(3, shift);
+                ResultSet rsB = psCheck.executeQuery();
+                if (rsB.next() && rsB.getInt(1) > 0) {
+                    System.out.println("[ShiftRequestDAO] ⚠️ Nhân viên B đã có ca trùng, không thể nhận thêm.");
+                    return false;
+                }
+            }
+
+            // ✅ 3️⃣ Cập nhật WorkSchedule: người A → người B
+            String update = """
+            UPDATE WorkSchedule 
+            SET staff_id = ? 
+            WHERE staff_id = ? AND work_date = ? AND shift_id = ?
+        """;
+            try (PreparedStatement psU = con.prepareStatement(update)) {
+                psU.setInt(1, empB);
+                psU.setInt(2, empA);
+                psU.setDate(3, date);
+                psU.setInt(4, shift);
+
+                int rows = psU.executeUpdate();
+                if (rows > 0) {
+                    try (PreparedStatement psStatus = con.prepareStatement(
+                            "UPDATE ShiftRequests SET Status='ApprovedByAdmin' WHERE RequestID=?")) {
+                        psStatus.setInt(1, requestId);
+                        psStatus.executeUpdate();
+                    }
+                    System.out.println("[ShiftRequestDAO] ✅ Pass ca thành công #" + requestId);
+                    return true;
+                } else {
+                    System.out.println("[ShiftRequestDAO] ⚠️ Không tìm thấy ca để cập nhật.");
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public int createPassRequest(int fromStaffId, int toStaffId, int fromShiftId, Date fromDate, String reason) {
+        String sql = """
+        INSERT INTO ShiftRequests (EmployeeID, ToStaffID, FromShiftID, ToShiftID, FromDate, ToDate, Type, Reason, Status, CreatedAt)
+        VALUES (?, ?, ?, NULL, ?, NULL, 'Pass', ?, 'Pending', GETDATE())
+    """;
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, fromStaffId);
+            ps.setInt(2, toStaffId);
+            ps.setInt(3, fromShiftId);
+            ps.setDate(4, fromDate);
+            ps.setString(5, reason);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    public void addPassRequest(ShiftRequest r) {
+        String sql = """
+        INSERT INTO ShiftRequests
+        (EmployeeID, ToStaffID, Type, TargetDate, FromDate, FromShiftID, Reason, Status, CreatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, GETDATE())
+    """;
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, r.getEmployeeID());
+            ps.setInt(2, r.getToStaffID());
+            ps.setString(3, r.getType());         // 'Leave' hoặc 'Extra'
+            ps.setDate(4, r.getFromDate());       // ✅ TargetDate = FromDate (chỉ 1 ngày)
+            ps.setDate(5, r.getFromDate());       // FromDate
+            ps.setInt(6, r.getFromShiftID());
+            ps.setString(7, r.getReason());
+            ps.setString(8, r.getStatus());
+
+            ps.executeUpdate();
+            System.out.println("[ShiftRequestDAO] ✅ Thêm yêu cầu " + r.getType() + " thành công.");
+        } catch (SQLException e) {
+            System.err.println("[ShiftRequestDAO] ❌ Lỗi khi insert yêu cầu " + r.getType() + ":");
+            e.printStackTrace();
+        }
+    }
 }

@@ -38,13 +38,32 @@ public class SwapShiftController extends HttpServlet {
             int toShiftId = Integer.parseInt(request.getParameter("toShiftId"));
             int toStaffId = Integer.parseInt(request.getParameter("toStaffId"));
             String reason = request.getParameter("reason");
+            
+            boolean hasShiftA = workDAO.hasShift(staffId, fromDate, fromShiftId);
 
+            // 🧩 2️⃣ Kiểm tra người nhận có ca kia không
+            boolean hasShiftB = workDAO.hasShift(toStaffId, toDate, toShiftId);
+
+            if (!hasShiftA) {
+                session.setAttribute("errorMessage",
+                        "⚠️ Bạn không có ca " + fromShiftId + " vào ngày " + fromDate + " để đổi!");
+                response.sendRedirect(request.getContextPath() + "/staff/mySchedule");
+                return;
+            }
+
+            if (!hasShiftB) {
+                session.setAttribute("errorMessage",
+                        "⚠️ Nhân viên được chọn không có ca " + toShiftId + " vào ngày " + toDate + "!");
+                response.sendRedirect(request.getContextPath() + "/staff/mySchedule");
+                return;
+            }
+            
             // 🧩 1️⃣ Kiểm tra trùng ca / conflict trước khi cho phép gửi yêu cầu
             boolean valid = workDAO.canSwapShift(staffId, toStaffId, fromDate, toDate, fromShiftId, toShiftId);
 
             if (!valid) {
                 session.setAttribute("errorMessage",
-                        "⚠️ Không thể đổi ca — Ca làm bị trùng hoặc không hợp lệ (ví dụ: một người làm hai ca cùng lúc).");
+                        "⚠️ Không thể đổi ca — Ca làm bị trùng hoặc không hợp lệ.");
                 response.sendRedirect(request.getContextPath() + "/staff/mySchedule");
                 return;
             }

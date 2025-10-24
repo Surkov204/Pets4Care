@@ -186,7 +186,7 @@
 
             /* MODAL */
             .modal {
-                display: flex;
+                display: none;
                 justify-content: center;
                 align-items: center;
                 position: fixed;
@@ -392,14 +392,6 @@
                 color: #00bfa6;
                 font-size: 1.2rem;
             }
-            .toast.success {
-                background: linear-gradient(90deg, #a6e3e9, #f9e4d4);
-                color: #064e3b;
-            }
-            .toast.error {
-                background: linear-gradient(90deg, #ffb5b5, #ff8a8a);
-                color: #7f1d1d;
-            }
         </style>
     </head>
     <body>
@@ -410,7 +402,7 @@
             <c:remove var="successMessage" scope="session"/>
         </c:if>
         <c:if test="${not empty sessionScope.errorMessage}">
-            <div id="toast" class="toast error">
+            <div id="toast" class="toast">
                 <i class="fa-solid fa-triangle-exclamation"></i> ${sessionScope.errorMessage}
             </div>
             <c:remove var="errorMessage" scope="session"/>
@@ -470,13 +462,17 @@
                 <a href="${pageContext.request.contextPath}/staff/dashboard.jsp"
                    class="btn"
                    style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:inherit;">
-                    <i class="fa-solid fa-arrow-left"></i> Trở về Dashboard
+                    <i class="fa-solid fa-arrow-left"></i> Trang chủ
                 </a>
 
                 <button class="btn" id="openModalBtn"><i class="fa-solid fa-plus"></i> Đăng ký ca</button>
                 <button class="btn btn-danger" id="openCancelModalBtn"><i class="fa-solid fa-trash"></i> Hủy ca</button>
                 <button class="btn" id="openSwapModalBtn">
                     <i class="fa-solid fa-repeat"></i> Yêu cầu đổi ca
+                </button>
+                <button onclick="openPassModal()" 
+                        style="background:#6c63ff;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;margin-right:15px;">
+                    <i class="fas fa-handshake"></i> Nhờ làm thay
                 </button>
             </div>
         </div>
@@ -734,19 +730,78 @@
                 </form>
             </div>
         </div>
+                    
+        <!-- 🔹 Modal Nhờ Làm Thay -->
+        <div id="passShiftModal" class="modal">
+            <div class="modal-content" style="width:480px;border-radius:14px;">
+                <span class="close" onclick="closePassModal()">&times;</span>
+                <h2 style="text-align:center;margin-bottom:20px;">
+                    <i class="fa-regular fa-clock" style="color:#6c63ff;"></i>
+                    Nhờ Làm Thay
+                </h2>
 
+                <form method="post" action="${pageContext.request.contextPath}/staff/passShift">
 
+                    <!-- 🕐 Chọn ca -->
+                    <label for="fromShiftId">Ca cần làm thay</label>
+                    <select id="fromShiftId" name="fromShiftId" required>
+                        <option value="">-- Chọn ca --</option>
+                        <option value="1">Ca sáng (08:00–12:00)</option>
+                        <option value="2">Ca chiều (13:00–17:00)</option>
+                        <option value="3">Ca tối (18:00–22:00)</option>
+                    </select>
+
+                    <!-- 📅 Chọn ngày -->
+                    <label for="fromDate">Ngày cần làm thay</label>
+                    <select id="fromDate" name="fromDate" required>
+                        <option value="">-- Chọn ngày --</option>
+                        <c:forEach var="day" items="${weekDays}">
+                            <option value="${day.date}">
+                                ${day.dayName} - ${fn:substring(day.date,8,10)}/${fn:substring(day.date,5,7)}
+                            </option>
+                        </c:forEach>
+                    </select>
+
+                    <!-- 👥 Người nhận làm thay -->
+                    <label for="toStaffId">Người nhận làm thay</label>
+                    <select id="toStaffId" name="toStaffId" required>
+                        <option value="">-- Chọn nhân viên --</option>
+                        <c:forEach var="s" items="${staffList}">
+                            <option value="${s.staffId}">${s.name}</option>
+                        </c:forEach>
+                    </select>
+
+                    <!-- 📝 Lý do -->
+                    <label for="reason">Lý do</label>
+                    <textarea id="reason" name="reason" rows="3"
+                              placeholder="Ví dụ: Bận việc cá nhân, nhờ bạn làm thay..."></textarea>
+
+                    <button type="submit" class="submit-btn">
+                        <i class="fa-solid fa-paper-plane"></i> Gửi yêu cầu
+                    </button>
+                </form>
+            </div>
+        </div>
+                
         <script>
             const regModal = document.getElementById("registerModal");
             const cancelModal = document.getElementById("cancelModal");
             const swapModal = document.getElementById("swapModal");
+            const passModal = document.getElementById("passShiftModal");
 
+            // Mở modal
             document.getElementById("openModalBtn").onclick = () => regModal.style.display = "block";
-            document.getElementById("closeModalBtn").onclick = () => regModal.style.display = "none";
             document.getElementById("openCancelModalBtn").onclick = () => cancelModal.style.display = "block";
-            document.getElementById("closeCancelModalBtn").onclick = () => cancelModal.style.display = "none";
             document.getElementById("openSwapModalBtn").onclick = () => swapModal.style.display = "block";
+            window.openPassModal = () => passModal.style.display = "block";
+
+            // Đóng modal
+            document.getElementById("closeModalBtn").onclick = () => regModal.style.display = "none";
+            document.getElementById("closeCancelModalBtn").onclick = () => cancelModal.style.display = "none";
             document.getElementById("closeSwapModalBtn").onclick = () => swapModal.style.display = "none";
+            document.querySelector("#passShiftModal .close").onclick = () => passModal.style.display = "none";
+
+            // Đóng khi click ngoài modal
             window.onclick = (e) => {
                 if (e.target === regModal)
                     regModal.style.display = "none";
@@ -754,21 +809,19 @@
                     cancelModal.style.display = "none";
                 if (e.target === swapModal)
                     swapModal.style.display = "none";
+                if (e.target === passModal)
+                    passModal.style.display = "none";
             };
-            window.onload = function () {
-                regModal.style.display = "none";
-                cancelModal.style.display = "none";
-                swapModal.style.display = "none";
-            };
+
+            // Toast hiển thị mượt
             window.addEventListener("DOMContentLoaded", () => {
                 const toast = document.getElementById("toast");
                 if (toast) {
-                    // Hiện thông báo
                     setTimeout(() => toast.classList.add("show"), 100);
-                    // 3 giây sau ẩn đi
                     setTimeout(() => toast.classList.remove("show"), 3100);
                 }
             });
+
         </script>
     </body>
 </html>

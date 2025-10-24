@@ -9,15 +9,24 @@ public class Notification {
     private String message;
     private Timestamp createdAt;
     private boolean isRead;
+    private boolean isHandled; // ✅ thêm cột này
 
     public Notification() {}
-    public Notification(int id, int staffId, String title, String message, Timestamp createdAt, boolean isRead) {
+
+    // ✅ constructor đầy đủ
+    public Notification(int id, int staffId, String title, String message, Timestamp createdAt, boolean isRead, boolean isHandled) {
         this.id = id;
         this.staffId = staffId;
         this.title = title;
         this.message = message;
         this.createdAt = createdAt;
         this.isRead = isRead;
+        this.isHandled = isHandled;
+    }
+
+    // ✅ constructor cũ vẫn giữ lại để tương thích
+    public Notification(int id, int staffId, String title, String message, Timestamp createdAt, boolean isRead) {
+        this(id, staffId, title, message, createdAt, isRead, false);
     }
 
     public int getId() { return id; }
@@ -37,4 +46,7 @@ public class Notification {
 
     public boolean isRead() { return isRead; }
     public void setRead(boolean isRead) { this.isRead = isRead; }
+
+    public boolean isHandled() { return isHandled; }       // ✅ getter
+    public void setHandled(boolean isHandled) { this.isHandled = isHandled; } // ✅ setter
 }

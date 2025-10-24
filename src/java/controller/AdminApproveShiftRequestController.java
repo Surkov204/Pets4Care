@@ -1,11 +1,10 @@
-package controller;
-
 import dao.ShiftRequestDAO;
 import dao.NotificationDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
+import model.ShiftRequest;
 
 @WebServlet("/admin/approveShiftRequest")
 public class AdminApproveShiftRequestController extends HttpServlet {
@@ -16,25 +15,45 @@ public class AdminApproveShiftRequestController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         HttpSession session = request.getSession();
         String idStr = request.getParameter("id");
-        
+
         if (idStr == null || idStr.isEmpty()) {
             response.sendRedirect(request.getContextPath() + "/shift-request");
             return;
         }
 
         int requestId = Integer.parseInt(idStr);
-        boolean swapped = shiftDAO.swapShift(requestId);
-        
-        if (swapped) {
+
+        // ✅ Lấy thông tin request từ DB
+        ShiftRequest req = shiftDAO.getById(requestId);
+        if (req == null) {
+            session.setAttribute("errorMessage", "❌ Không tìm thấy yêu cầu #" + requestId);
+            response.sendRedirect(request.getContextPath() + "/shift-request");
+            return;
+        }
+
+        boolean success = false;
+
+        // ✅ Phân nhánh xử lý
+        if ("Swap".equalsIgnoreCase(req.getType())) {
+            success = shiftDAO.swapShift(requestId);
+        } else if ("Leave".equalsIgnoreCase(req.getType())) {
+            success = shiftDAO.passShift(requestId);
+        }
+
+        // ✅ Gửi thông báo & phản hồi UI
+        if (success) {
             notifyDAO.createForAdmin(
-                    "✅ Đã phê duyệt đổi ca",
-                    "Yêu cầu #" + requestId + " đã được admin phê duyệt và hoán đổi ca thành công."
+                    "✅ Duyệt yêu cầu " + req.getType(),
+                    "Yêu cầu #" + requestId + " (" + req.getType() + ") đã được phê duyệt thành công."
             );
-           // session.setAttribute("successMessage", "✅ Đổi ca thành công cho yêu cầu #" + requestId);
-        } 
+            session.setAttribute("successMessage", "✅ Đã phê duyệt thành công yêu cầu #" + requestId + " (" + req.getType() + ")");
+        } else {
+            session.setAttribute("errorMessage", "⚠️ Xử lý thất bại cho yêu cầu #" + requestId);
+        }
+
         response.sendRedirect(request.getContextPath() + "/shift-request");
     }
 }

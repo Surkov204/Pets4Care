@@ -332,11 +332,12 @@
                                     // Dựa trên hình ảnh, ta dùng tiêu đề "Yêu cầu đổi ca mới" để nhận diện
                                     // (Tốt nhất là dùng một trường 'type' hoặc 'status' từ API, nhưng ta tạm dùng 'title')
 
-                                        if (n.title === 'Yêu cầu đổi ca mới') {
+                                        if (n.title === 'Yêu cầu đổi ca mới' || n.title === 'Yêu cầu làm thay') {
                                             actionButtons = `
                                                 <div style="display:flex; gap:10px; margin-top:10px;">
                                                     <form action="${pageContext.request.contextPath}/staff/acceptShiftRequest" method="post" style="margin:0;">
                                                         <input type="hidden" name="requestId" value="${'$'}{n.id}">
+                                                        <input type="hidden" name="notificationId" value="${n.notificationID}">
                                                         <button type="submit" style="background:#28a745; color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">
                                                             Chấp nhận
                                                         </button>
@@ -370,6 +371,22 @@
                             });
                 }
             }
+            document.addEventListener("submit", function (e) {
+                const form = e.target;
+                if (form.action.includes("acceptShiftRequest") || form.action.includes("rejectShiftRequest")) {
+                    e.preventDefault();
+                    const formData = new FormData(form);
+                    const parentDiv = form.closest("div");
+
+                    fetch(form.action, { method: "POST", body: formData })
+                        .then(res => {
+                            if (!res.ok) throw new Error("Network error");
+                            parentDiv.innerHTML = `<p style="color:#28a745;font-size:13px;">✅ Cảm ơn bạn! Phản hồi đã được gửi.</p>`;
+                            updateNotifyBadge();
+                        })
+                        .catch(err => console.error("❌ Lỗi gửi phản hồi:", err));
+                }
+            });
             updateNotifyBadge();
             updateChatBadge();
             setInterval(updateChatBadge, 5000);

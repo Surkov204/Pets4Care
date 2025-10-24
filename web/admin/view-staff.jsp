@@ -8,17 +8,26 @@
         return;
     }
     
-    // Lấy staff từ request attribute hoặc tạo mẫu để test
+    // Nếu truy cập trực tiếp JSP (không qua servlet), redirect về servlet
     Staff staff = (Staff) request.getAttribute("staff");
+    String successMessage = request.getParameter("success");
+    
     if (staff == null) {
-        staff = new Staff(1, "Đỗ Quốc Anh", "doquocanh@pets4care.com", "0901234567", "staff123", "Nhân viên");
+        // Kiểm tra nếu có ID parameter thì redirect về servlet với ID
+        String idParam = request.getParameter("id");
+        if (idParam != null) {
+            response.sendRedirect("view-staff?id=" + idParam);
+        } else {
+            response.sendRedirect("manage-staff");
+        }
+        return;
     }
 %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Hồ sơ nhân viên - PET TOY SHOP</title>
+    <title>Hồ sơ nhân viên - <%= staff.getName() %></title>
     <link rel="stylesheet" href="../css/homeStyle.css">
     <style>
         .admin-sidebar {
@@ -31,6 +40,7 @@
             position: fixed;
             top: 0;
             left: 0;
+            overflow-y: auto;
         }
 
         .admin-sidebar h2 {
@@ -59,7 +69,7 @@
             border-radius: var(--border-radius-small);
         }
 
-        .admin-sidebar a:hover {
+        .admin-sidebar a:hover, .admin-sidebar a.active {
             color: var(--primary);
             background: var(--accent);
             transform: translateX(5px);
@@ -100,78 +110,87 @@
             display: flex;
             align-items: center;
             gap: 2rem;
-            padding-bottom: 1.5rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
             border-bottom: 2px solid rgba(111, 213, 221, 0.2);
         }
 
         .profile-avatar {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            background: linear-gradient(135deg, var(--primary), var(--accent-pink));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
+            font-size: 2.5rem;
             color: white;
-            font-family: 'Baloo 2', cursive;
-            box-shadow: var(--shadow-light);
+            font-weight: 700;
+            flex-shrink: 0;
         }
 
         .profile-info h2 {
             font-size: 1.8rem;
             color: var(--text);
-            font-family: 'Baloo 2', cursive;
             margin-bottom: 0.5rem;
         }
 
-        .profile-info .role-badge {
-            display: inline-block;
+        .role-badge {
             padding: 0.4rem 1rem;
-            background: #f59e0b;
-            color: white;
-            border-radius: 999px;
-            font-size: 0.85rem;
+            border-radius: var(--border-radius-small);
+            font-size: 0.9rem;
             font-weight: 600;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .role-admin {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .role-manager {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .role-staff {
+            background: #d1fae5;
+            color: #065f46;
         }
 
         .info-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(2, 1fr);
             gap: 1.5rem;
-            margin-top: 1.5rem;
         }
 
         .info-item {
             padding: 1rem;
             background: rgba(111, 213, 221, 0.05);
             border-radius: var(--border-radius-small);
-            border-left: 3px solid var(--primary);
+            border-left: 4px solid var(--primary);
         }
 
         .info-item .label {
             font-size: 0.85rem;
             color: var(--text-light);
-            font-weight: 600;
             margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
         .info-item .value {
-            font-size: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
             color: var(--text);
-            font-weight: 500;
         }
 
         .btn {
-            background: var(--primary);
-            color: white;
             padding: 0.75rem 1.5rem;
-            border: none;
             border-radius: var(--border-radius);
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: white;
             text-decoration: none;
             font-weight: 600;
             transition: var(--transition);
@@ -191,14 +210,6 @@
 
         .btn-back:hover {
             background: #4b5563;
-        }
-
-        .btn-danger {
-            background: #ef4444;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
         }
 
         .back-to-site {
@@ -222,33 +233,45 @@
             box-shadow: var(--shadow-button-hover);
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
+        .alert-success {
+            background: #d1fae5;
+            color: #059669;
+            border-left: 4px solid #059669;
+            padding: 1rem;
+            border-radius: var(--border-radius-small);
+            margin-bottom: 1.5rem;
+            animation: slideIn 0.3s ease-out;
         }
 
-        .stat-card {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-light);
-            text-align: center;
-            border-top: 3px solid #f59e0b;
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .stat-card h3 {
-            color: var(--text-light);
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
+        .schedule-note {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px solid rgba(111, 213, 221, 0.2);
         }
 
-        .stat-card .number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #f59e0b;
+        .schedule-note h3 {
+            font-size: 1.3rem;
+            color: var(--text);
             font-family: 'Baloo 2', cursive;
+            margin-bottom: 1rem;
+        }
+
+        .schedule-note .content {
+            padding: 1rem;
+            background: rgba(111, 213, 221, 0.05);
+            border-radius: var(--border-radius-small);
+            color: var(--text-light);
         }
     </style>
 </head>
@@ -265,7 +288,6 @@
         <li><a href="manage-staff" class="active">👔 Nhân viên</a></li>
         <li><a href="statistics?type=day">📈 Thống kê</a></li>
     </ul>
-
     <a href="dashboard.jsp" class="back-to-site">📋 Về trang quản trị</a>
 </aside>
 
@@ -273,28 +295,19 @@
 <div class="admin-content">
     <!-- Header -->
     <div class="admin-header">
-        <h1>👨‍💼 Hồ sơ nhân viên</h1>
+        <h1>👤 Hồ sơ nhân viên</h1>
         <div style="display: flex; gap: 1rem;">
-            <a href="manage-staff.jsp" class="btn btn-back">◀ Quay lại</a>
+            <a href="manage-staff" class="btn btn-back">◀ Quay lại</a>
             <a href="../home" class="btn" style="background: #10b981;">🏠 Về trang chủ</a>
         </div>
     </div>
 
-    <!-- Thống kê nhanh -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>Mã nhân viên</h3>
-            <div class="number">#<%= staff.getStaffId() %></div>
-        </div>
-        <div class="stat-card">
-            <h3>Vai trò</h3>
-            <div class="number" style="font-size: 1.2rem;">Staff</div>
-        </div>
-        <div class="stat-card">
-            <h3>Trạng thái</h3>
-            <div class="number" style="color: #10b981; font-size: 1.2rem;">Hoạt động</div>
-        </div>
+    <!-- Success Message -->
+    <% if (successMessage != null && successMessage.equals("true")) { %>
+    <div class="alert-success">
+        ✅ Cập nhật thông tin nhân viên thành công!
     </div>
+    <% } %>
 
     <!-- Card hồ sơ -->
     <div class="profile-card">
@@ -304,7 +317,16 @@
             </div>
             <div class="profile-info">
                 <h2><%= staff.getName() %></h2>
-                <span class="role-badge">👔 <%= staff.getPosition() %></span>
+                <%
+                String position = staff.getPosition();
+                String roleClass = "role-staff";
+                if ("admin".equalsIgnoreCase(position)) {
+                    roleClass = "role-admin";
+                } else if ("quản lý".equalsIgnoreCase(position)) {
+                    roleClass = "role-manager";
+                }
+                %>
+                <span class="role-badge <%= roleClass %>">👔 <%= position %></span>
                 <p style="color: var(--text-light); margin-top: 0.5rem; font-size: 0.9rem;">
                     ID: #<%= staff.getStaffId() %>
                 </p>
@@ -328,14 +350,7 @@
 
             <div class="info-item">
                 <div class="label">
-                    🔑 Mật khẩu
-                </div>
-                <div class="value">••••••••</div>
-            </div>
-
-            <div class="info-item">
-                <div class="label">
-                    🎯 Chức vụ
+                    💼 Vị trí
                 </div>
                 <div class="value"><%= staff.getPosition() %></div>
             </div>
@@ -346,26 +361,23 @@
                 </div>
                 <div class="value">#<%= staff.getStaffId() %></div>
             </div>
-
-            <div class="info-item">
-                <div class="label">
-                    ✅ Trạng thái
-                </div>
-                <div class="value" style="color: #10b981; font-weight: 700;">
-                    Đang làm việc
-                </div>
-            </div>
         </div>
 
+        <% if (staff.getScheduleNote() != null && !staff.getScheduleNote().trim().isEmpty()) { %>
+        <div class="schedule-note">
+            <h3>📅 Ghi chú lịch làm việc</h3>
+            <div class="content">
+                <%= staff.getScheduleNote() %>
+            </div>
+        </div>
+        <% } %>
+
         <div style="margin-top: 2rem; text-align: center;">
-            <a href="edit-staff.jsp?id=<%= staff.getStaffId() %>" class="btn">
+            <a href="edit-staff?id=<%= staff.getStaffId() %>" class="btn" style="background: #3b82f6;">
                 ✏️ Chỉnh sửa thông tin
             </a>
-            <a href="manage-staff.jsp" class="btn btn-back">
+            <a href="manage-staff" class="btn btn-back">
                 ◀ Quay lại danh sách
-            </a>
-            <a href="#" class="btn btn-danger" onclick="return confirm('Bạn có chắc muốn xóa nhân viên này?')">
-                🗑️ Xóa nhân viên
             </a>
         </div>
     </div>

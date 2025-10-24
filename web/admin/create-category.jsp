@@ -1,5 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page import="model.Admin" %>
 <%
     Admin admin = (Admin) session.getAttribute("admin");
@@ -12,7 +11,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Thêm sản phẩm mới - PET TOY SHOP</title>
+    <title>Thêm danh mục - PET TOY SHOP</title>
     <link rel="stylesheet" href="../css/homeStyle.css">
     <style>
         .admin-sidebar {
@@ -113,7 +112,7 @@
             padding: 2rem;
             border-radius: var(--border-radius);
             box-shadow: var(--shadow-light);
-            max-width: 800px;
+            max-width: 600px;
         }
 
         .form-group {
@@ -127,7 +126,7 @@
             color: var(--text);
         }
 
-        .form-group input, .form-group select, .form-group textarea {
+        .form-group input {
             width: 100%;
             padding: 0.75rem;
             border: 2px solid rgba(111, 213, 221, 0.3);
@@ -138,20 +137,9 @@
             transition: var(--transition);
         }
 
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        .form-group input:focus {
             outline: none;
             border-color: var(--primary);
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
         }
 
         .back-to-site {
@@ -174,25 +162,6 @@
             transform: translateY(-2px);
             box-shadow: var(--shadow-button-hover);
         }
-
-        .alert {
-            padding: 1rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 1rem;
-            font-weight: 500;
-        }
-
-        .alert-success {
-            background: #d1fae5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
-        }
-
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fca5a5;
-        }
     </style>
 </head>
 <body>
@@ -201,8 +170,8 @@
 <aside class="admin-sidebar">
     <h2>📋 Danh mục quản lý</h2>
     <ul>
-        <li><a href="toys?action=list" class="active">🧸 Sản phẩm</a></li>
-        <li><a href="categories?action=list">📂 Danh mục</a></li>
+        <li><a href="toys?action=list">🧸 Sản phẩm</a></li>
+        <li><a href="categories?action=list" class="active">📂 Danh mục</a></li>
         <li><a href="suppliers?action=list">🏢 Nhà cung cấp</a></li>
         <li><a href="manage-customer">👤 Khách hàng</a></li>
         <li><a href="manage-staff">👔 Nhân viên</a></li>
@@ -216,68 +185,25 @@
 <div class="admin-content">
     <!-- Header -->
     <div class="admin-header">
-        <h1>➕ Thêm sản phẩm mới</h1>
-        <a href="toys?action=list" class="btn btn-secondary">← Quay lại</a>
+        <h1>➕ Thêm danh mục mới</h1>
+        <a href="categories?action=list" class="btn btn-secondary">← Quay lại</a>
     </div>
 
-    <!-- Thông báo -->
-    <c:if test="${not empty success}">
-        <div class="alert alert-success">${success}</div>
-    </c:if>
-    <c:if test="${not empty error}">
-        <div class="alert alert-error">${error}</div>
-    </c:if>
-
-    <!-- Form thêm sản phẩm -->
+    <!-- Form thêm danh mục -->
     <div class="form-container">
-        <form method="post" action="toys">
+        <form method="post" action="categories">
             <input type="hidden" name="action" value="create">
             
             <div class="form-group">
-                <label for="name">Tên sản phẩm *</label>
-                <input type="text" id="name" name="name" required>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="price">Giá bán (VNĐ) *</label>
-                    <input type="number" id="price" name="price" step="0.01" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label for="stockQuantity">Số lượng tồn kho *</label>
-                    <input type="number" id="stockQuantity" name="stockQuantity" min="0" required>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="categoryId">Danh mục *</label>
-                    <select id="categoryId" name="categoryId" required>
-                        <option value="">-- Chọn danh mục --</option>
-                        <c:forEach var="cat" items="${categories}">
-                            <option value="${cat.categoryId}">${cat.name}</option>
-                        </c:forEach>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="supplierId">Nhà cung cấp *</label>
-                    <select id="supplierId" name="supplierId" required>
-                        <option value="">-- Chọn nhà cung cấp --</option>
-                        <c:forEach var="supplier" items="${suppliers}">
-                            <option value="${supplier.supplierId}">${supplier.nameCompany}</option>
-                        </c:forEach>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="description">Mô tả sản phẩm</label>
-                <textarea id="description" name="description" placeholder="Mô tả chi tiết về sản phẩm..."></textarea>
+                <label for="name">Tên danh mục *</label>
+                <input type="text" id="name" name="name" 
+                       placeholder="Ví dụ: Đồ chơi cho chó, Thức ăn cho mèo..." 
+                       required autofocus>
             </div>
 
             <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                <a href="toys?action=list" class="btn btn-secondary">Hủy</a>
-                <button type="submit" class="btn">➕ Thêm sản phẩm</button>
+                <a href="categories?action=list" class="btn btn-secondary">Hủy</a>
+                <button type="submit" class="btn">➕ Thêm danh mục</button>
             </div>
         </form>
     </div>
@@ -285,3 +211,4 @@
 
 </body>
 </html>
+

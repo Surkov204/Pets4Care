@@ -12,7 +12,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quản lý sản phẩm - PET TOY SHOP</title>
+    <title>Quản lý danh mục - PET TOY SHOP</title>
     <link rel="stylesheet" href="../css/homeStyle.css">
     <style>
         .admin-sidebar {
@@ -107,36 +107,6 @@
             background: #059669;
         }
 
-        .search-form {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            align-items: center;
-        }
-
-        .search-form input, .search-form select {
-            padding: 0.75rem;
-            border: 2px solid rgba(111, 213, 221, 0.3);
-            border-radius: var(--border-radius);
-            background: var(--card-bg);
-            color: var(--text);
-            font-size: 0.95rem;
-        }
-
-        .search-form input:focus, .search-form select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .search-form input {
-            flex: 1;
-            max-width: 300px;
-        }
-
-        .search-form select {
-            min-width: 200px;
-        }
-
         .table-container {
             background: var(--card-bg);
             border-radius: var(--border-radius);
@@ -147,7 +117,7 @@
         .table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
 
         .table th {
@@ -250,8 +220,8 @@
 <aside class="admin-sidebar">
     <h2>📋 Danh mục quản lý</h2>
     <ul>
-        <li><a href="toys?action=list" class="active">🧸 Sản phẩm</a></li>
-        <li><a href="categories?action=list">📂 Danh mục</a></li>
+        <li><a href="toys?action=list">🧸 Sản phẩm</a></li>
+        <li><a href="categories?action=list" class="active">📂 Danh mục</a></li>
         <li><a href="suppliers?action=list">🏢 Nhà cung cấp</a></li>
         <li><a href="manage-customer">👤 Khách hàng</a></li>
         <li><a href="manage-staff">👔 Nhân viên</a></li>
@@ -265,10 +235,10 @@
 <div class="admin-content">
     <!-- Header -->
     <div class="admin-header">
-        <h1>🧸 Quản lý sản phẩm</h1>
+        <h1>📂 Quản lý danh mục sản phẩm</h1>
         <div style="display: flex; gap: 1rem; align-items: center;">
             <a href="../home" class="btn" style="background: #10b981;">🏠 Về trang chủ</a>
-            <a href="toys?action=create" class="btn btn-success">+ Thêm sản phẩm</a>
+            <a href="categories?action=create" class="btn btn-success">+ Thêm danh mục</a>
         </div>
     </div>
 
@@ -280,69 +250,33 @@
         <div class="alert alert-error">${error}</div>
     </c:if>
 
-    <!-- Form tìm kiếm và lọc -->
-    <form method="get" action="toys" class="search-form">
-        <input type="text" name="keyword" placeholder="Tìm theo tên hoặc ID" value="${param.keyword}">
-        <select name="category">
-            <option value="">-- Tất cả danh mục --</option>
-            <c:forEach var="cat" items="${categories}">
-                <option value="${cat.categoryId}" ${cat.categoryId == selectedCategory ? 'selected' : ''}>
-                    ${cat.name}
-                </option>
-            </c:forEach>
-        </select>
-        <button type="submit" class="btn">🔍 Tìm kiếm</button>
-    </form>
-
-    <!-- Bảng sản phẩm -->
+    <!-- Bảng danh mục -->
     <div class="table-container">
         <table class="table">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Tên sản phẩm</th>
-                    <th>Giá</th>
-                    <th>Danh mục</th>
-                    <th>Số lượng</th>
-                    <th>Nhà cung cấp</th>
-                    <th>Mô tả</th>
-                    <th>Hành động</th>
+                    <th style="width: 100px;">ID</th>
+                    <th>Tên danh mục</th>
+                    <th style="width: 200px;">Hành động</th>
                 </tr>
             </thead>
             <tbody>
-                <c:forEach var="product" items="${products}">
+                <c:forEach var="category" items="${categories}">
                     <tr>
-                        <td>${product.productId}</td>
-                        <td><strong>${product.name}</strong></td>
-                        <td>${product.price} VNĐ</td>
-                        <td>
-                            <c:forEach var="cat" items="${categories}">
-                                <c:if test="${cat.categoryId == product.categoryId}">
-                                    ${cat.name}
-                                </c:if>
-                            </c:forEach>
-                        </td>
-                        <td>
-                            <span style="color: ${product.stockQuantity > 50 ? '#10b981' : product.stockQuantity > 0 ? '#f59e0b' : '#ef4444'};">
-                                ${product.stockQuantity}
-                            </span>
-                        </td>
-                        <td>${supplierMap[product.supplierId]}</td>
-                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            ${product.description}
-                        </td>
+                        <td>${category.categoryId}</td>
+                        <td><strong>${category.name}</strong></td>
                         <td>
                             <div class="action-links">
-                                <a href="toys?action=edit&id=${product.productId}">✏️ Sửa</a>
-                                <a href="toys?action=delete&id=${product.productId}" class="delete"
-                                   onclick="return confirm('Bạn có chắc muốn xoá sản phẩm này?')">🗑️ Xoá</a>
+                                <a href="categories?action=edit&id=${category.categoryId}">✏️ Sửa</a>
+                                <a href="categories?action=delete&id=${category.categoryId}" class="delete"
+                                   onclick="return confirm('Bạn có chắc muốn xoá danh mục này?\n\nLưu ý: Không thể xóa nếu danh mục đang có sản phẩm.')">🗑️ Xoá</a>
                             </div>
                         </td>
                     </tr>
                 </c:forEach>
-                <c:if test="${empty products}">
+                <c:if test="${empty categories}">
                     <tr>
-                        <td colspan="8" class="empty-state">Không tìm thấy sản phẩm nào.</td>
+                        <td colspan="3" class="empty-state">Chưa có danh mục nào. Hãy thêm danh mục đầu tiên!</td>
                     </tr>
                 </c:if>
             </tbody>
@@ -352,3 +286,4 @@
 
 </body>
 </html>
+

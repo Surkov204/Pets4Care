@@ -19,6 +19,9 @@
         -->
 <project xmlns:webproject1="http://www.netbeans.org/ns/web-project/1" xmlns:webproject2="http://www.netbeans.org/ns/web-project/2" xmlns:webproject3="http://www.netbeans.org/ns/web-project/3" basedir=".." default="default" name="Pets4Care-impl">
     <import file="ant-deploy.xml"/>
+<taskdef name="copylibs"
+         classname="org.netbeans.modules.java.j2seproject.copylibstask.CopyLibs"
+         classpath="D:\Pet4Cares\Pets4Care\lib\org-netbeans-modules-java-j2seproject-copylibstask.jar"/>
     <fail message="Please build using Ant 1.7.1 or higher.">
         <condition>
             <not>
@@ -30,7 +33,8 @@
     <!--
                 INITIALIZATION SECTION
             -->
-    <target name="-pre-init">
+    
+<target name="-pre-init">
         <!-- Empty placeholder for easier customization. -->
         <!-- You can override this target in the ../build.xml file. -->
     </target>

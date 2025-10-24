@@ -135,9 +135,10 @@
     <h2>📋 Danh mục quản lý</h2>
     <ul>
         <li><a href="toys?action=list">🧸 Sản phẩm</a></li>
-        <li><a href="SupplierServlet?action=list">🏢 Nhà cung cấp</a></li>
+        <li><a href="categories?action=list">📂 Danh mục</a></li>
+        <li><a href="suppliers?action=list">🏢 Nhà cung cấp</a></li>
         <li><a href="manage-customer">👤 Khách hàng</a></li>
-        <li><a href="manage-order">📦 Đơn hàng</a></li>
+        <li><a href="manage-staff">👔 Nhân viên</a></li>
         <li><a href="statistics?type=day">📈 Thống kê</a></li>
     </ul>
 
@@ -154,9 +155,19 @@
 
     <!-- Dashboard items -->
     <div class="admin-card-grid">
-        <a href="toys" class="admin-card">
+        <a href="toys?action=list" class="admin-card">
             <h2>🧸 Quản lý sản phẩm</h2>
             <p>Thêm, sửa, xoá các món đồ chơi thú cưng.</p>
+        </a>
+
+        <a href="categories?action=list" class="admin-card">
+            <h2>📂 Quản lý danh mục</h2>
+            <p>Quản lý danh mục sản phẩm cho cửa hàng.</p>
+        </a>
+
+        <a href="suppliers?action=list" class="admin-card">
+            <h2>🏢 Quản lý nhà cung cấp</h2>
+            <p>Thêm mới, cập nhật hoặc xoá nhà cung cấp.</p>
         </a>
 
         <a href="manage-customer" class="admin-card">
@@ -164,14 +175,9 @@
             <p>Xem thông tin, khoá, xoá tài khoản khách hàng.</p>
         </a>
 
-        <a href="SupplierServlet" class="admin-card">
-            <h2>🏢 Quản lý nhà cung cấp</h2>
-            <p>Thêm mới, cập nhật hoặc xoá nhà cung cấp.</p>
-        </a>
-
-        <a href="manage-order" class="admin-card">
-            <h2>📦 Quản lý đơn hàng</h2>
-            <p>Xem, lọc trạng thái và tra cứu các đơn đặt hàng.</p>
+        <a href="manage-staff" class="admin-card">
+            <h2>👔 Quản lý nhân viên</h2>
+            <p>Xem thông tin, chỉnh sửa, xoá tài khoản nhân viên.</p>
         </a>
 
         <a href="statistics?type=day" class="admin-card">

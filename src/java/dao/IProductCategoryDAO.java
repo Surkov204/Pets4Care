@@ -18,6 +18,12 @@ public interface IProductCategoryDAO {
      List<ProductCategory> getAllCategories();
      
      Map<Integer, String> getAllCategoriesMap();
+     
+     int addCategory(ProductCategory category);
+     
+     boolean updateCategory(ProductCategory category);
+     
+     boolean deleteCategory(int categoryId);
 
 }
 

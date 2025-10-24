@@ -14,6 +14,9 @@ public interface IBookingDAO {
     // Lấy booking theo customer ID
     List<Booking> getBookingsByCustomerId(int customerId);
     
+    // Lấy booking theo pet ID
+    List<Booking> getBookingsByPetId(int petId);
+    
     // Lấy booking theo staff ID
     List<Booking> getBookingsByStaffId(int staffId);
     

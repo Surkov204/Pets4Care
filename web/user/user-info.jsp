@@ -41,6 +41,56 @@
             .input-error {
                 border-color: red !important;
             }
+            
+            /* Sidebar Navigation Styles */
+            .sidebar-nav {
+                position: sticky;
+                top: 20px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                padding: 1.5rem;
+            }
+            
+            .sidebar-nav-item {
+                display: flex;
+                align-items: center;
+                padding: 0.75rem 1rem;
+                margin-bottom: 0.5rem;
+                border-radius: 8px;
+                text-decoration: none;
+                color: #4b5563;
+                transition: all 0.2s;
+                cursor: pointer;
+            }
+            
+            .sidebar-nav-item:hover {
+                background: #f3f4f6;
+                color: #f97316;
+            }
+            
+            .sidebar-nav-item.active {
+                background: linear-gradient(135deg, #f97316, #fb923c);
+                color: white;
+            }
+            
+            .sidebar-nav-item i {
+                margin-right: 0.75rem;
+                font-size: 1.1rem;
+            }
+            
+            @media (max-width: 768px) {
+                .sidebar-nav {
+                    position: relative;
+                    top: 0;
+                    margin-bottom: 2rem;
+                }
+                
+                .sidebar-nav-item {
+                    font-size: 0.9rem;
+                    padding: 0.6rem 0.8rem;
+                }
+            }
         </style>
         <script>
             function validateForm() {
@@ -156,18 +206,60 @@
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
                 <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
-                <li><a href="dat-lich-kham.jsp">ĐẶT LỊCH KHÁM</a></li>
+                <li><a href="<%= request.getContextPath()%>/health-check-booking">ĐẶT LỊCH KHÁM</a></li>
                 <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
                 <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
                 <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
-                <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
+                <li><a href="<%= request.getContextPath()%>/home">LIÊN HỆ</a></li>
             </ul>
         </nav>
 
-        <!-- MAIN CONTENT -->
-        <main class="max-w-4xl mx-auto mt-10 px-6 space-y-10">
-            <section class="bg-white shadow rounded p-8">
+        <!-- Breadcrumbs -->
+        <div class="max-w-7xl mx-auto mt-6 px-6">
+            <nav class="text-sm text-gray-500 mb-4" aria-label="Breadcrumb">
+                <ol class="list-reset flex">
+                    <li><a href="<%= request.getContextPath()%>/home" class="text-blue-600 hover:underline">Trang chủ</a></li>
+                    <li><span class="mx-2">/</span></li>
+                    <li class="text-gray-700">Tài khoản</li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- MAIN CONTENT WITH SIDEBAR -->
+        <main class="max-w-7xl mx-auto mt-4 px-6 pb-10">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Sidebar Navigation -->
+                <aside class="md:col-span-1">
+                    <div class="sidebar-nav">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Quản lý tài khoản</h3>
+                        <a href="#account" class="sidebar-nav-item active" data-section="account">
+                            <i class="fas fa-user"></i>
+                            <span>Thông tin tài khoản</span>
+                        </a>
+                        <a href="#password" class="sidebar-nav-item" data-section="password">
+                            <i class="fas fa-lock"></i>
+                            <span>Đổi mật khẩu</span>
+                        </a>
+                        <a href="#pet" class="sidebar-nav-item" data-section="pet">
+                            <i class="fas fa-paw"></i>
+                            <span>Thông tin thú cưng</span>
+                        </a>
+                        <hr class="my-3 border-gray-200">
+                        <a href="<%= request.getContextPath()%>/health-check-booking" class="sidebar-nav-item">
+                            <i class="fas fa-calendar-check"></i>
+                            <span>Đặt lịch khám</span>
+                        </a>
+                        <a href="<%= request.getContextPath()%>/home" class="sidebar-nav-item">
+                            <i class="fas fa-home"></i>
+                            <span>Về trang chủ</span>
+                        </a>
+                    </div>
+                </aside>
+
+                <!-- Main Content Area -->
+                <div class="md:col-span-3 space-y-10">
+            <section id="account" class="bg-white shadow rounded p-8">
                 <h2 class="text-2xl font-bold text-orange-600 mb-6 text-center">👤 Thông Tin Tài Khoản</h2>
 
                 <% String message = (String) request.getAttribute("message"); %>
@@ -210,9 +302,14 @@
                             <input type="text" name="address" value="<%= currentUser.getAddressCustomer()%>" class="w-full border border-gray-300 p-3 rounded" required>
                         <span id="addressError" class="error-message"></span>
                     </div>
-                    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white w-full py-3 rounded">
-                        Cập nhật thông tin
-                    </button>
+                    <div class="flex flex-col md:flex-row gap-3">
+                        <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white w-full md:w-auto px-6 py-3 rounded">
+                            <i class="fas fa-save mr-2"></i>Cập nhật thông tin
+                        </button>
+                        <button type="reset" class="bg-gray-100 hover:bg-gray-200 text-gray-700 w-full md:w-auto px-6 py-3 rounded border border-gray-300">
+                            <i class="fas fa-undo mr-2"></i>Đặt lại
+                        </button>
+                    </div>
                 </form>
                 <div class="mt-4 text-center">
                     <a href="<%= request.getContextPath()%>/home" class="text-blue-500 hover:underline">← Về trang chủ</a>
@@ -220,7 +317,7 @@
             </section>
 
             <!-- Change Password Section -->
-            <section class="bg-white shadow rounded p-8">
+            <section id="password" class="bg-white shadow rounded p-8">
                 <h2 class="text-2xl font-bold text-orange-600 mb-6 text-center">🔒 Đổi mật khẩu</h2>
 
                 <% String changePwdMsg = (String) request.getAttribute("changePwdMsg"); %>
@@ -250,35 +347,81 @@
             </section>
 
             <!-- Pet Information Section -->
-            <section class="bg-white shadow rounded p-8">
+            <section id="pet" class="bg-white shadow rounded p-8">
                 <h2 class="text-2xl font-bold text-orange-600 mb-6 text-center">🐾 Thông tin thú cưng</h2>
                 
                 <div class="text-center mb-6">
                     <p class="text-gray-600 mb-4">Quản lý thông tin thú cưng của bạn để có trải nghiệm mua sắm tốt nhất</p>
-                    <a href="<%= request.getContextPath()%>/petinfoservlet" class="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
-                        <i class="fas fa-paw mr-2"></i> Quản lý thông tin thú cưng
-                    </a>
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                        <a href="<%= request.getContextPath()%>/petinfoservlet" class="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                            <i class="fas fa-paw mr-2"></i> Quản lý thông tin thú cưng
+                        </a>
+                        <a href="<%= request.getContextPath()%>/health-check-booking" class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-3 px-6 rounded-lg border border-blue-200">
+                            <i class="fas fa-calendar-check mr-2"></i> Đặt lịch khám
+                        </a>
+                    </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg text-center">
+                    <a href="<%= request.getContextPath()%>/petinfoservlet#basic" class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg text-center hover:shadow-md transition-shadow">
                         <i class="fas fa-heart text-blue-500 text-2xl mb-2"></i>
                         <h3 class="font-semibold text-blue-700">Thông tin cơ bản</h3>
                         <p class="text-sm text-blue-600">Tên, loài, giống, tuổi</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg text-center">
+                    </a>
+                    <a href="<%= request.getContextPath()%>/petinfoservlet#photo" class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg text-center hover:shadow-md transition-shadow">
                         <i class="fas fa-camera text-green-500 text-2xl mb-2"></i>
                         <h3 class="font-semibold text-green-700">Ảnh thú cưng</h3>
                         <p class="text-sm text-green-600">Upload ảnh đáng yêu</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg text-center">
+                    </a>
+                    <a href="<%= request.getContextPath()%>/petinfoservlet#desc" class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg text-center hover:shadow-md transition-shadow">
                         <i class="fas fa-notes-medical text-purple-500 text-2xl mb-2"></i>
                         <h3 class="font-semibold text-purple-700">Sức khỏe</h3>
                         <p class="text-sm text-purple-600">Tình trạng sức khỏe</p>
-                    </div>
+                    </a>
                 </div>
             </section>
+                </div>
+            </div>
         </main>
+        
+        <script>
+            // Sidebar navigation active state
+            document.addEventListener('DOMContentLoaded', function() {
+                const navItems = document.querySelectorAll('.sidebar-nav-item[data-section]');
+                const sections = document.querySelectorAll('section[id]');
+                
+                // Update active state on scroll
+                window.addEventListener('scroll', function() {
+                    let current = '';
+                    sections.forEach(section => {
+                        const sectionTop = section.offsetTop;
+                        const sectionHeight = section.clientHeight;
+                        if (pageYOffset >= (sectionTop - 200)) {
+                            current = section.getAttribute('id');
+                        }
+                    });
+                    
+                    navItems.forEach(item => {
+                        item.classList.remove('active');
+                        if (item.getAttribute('data-section') === current) {
+                            item.classList.add('active');
+                        }
+                    });
+                });
+                
+                // Smooth scroll on click
+                navItems.forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const targetId = this.getAttribute('data-section');
+                        const targetSection = document.getElementById(targetId);
+                        if (targetSection) {
+                            targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    });
+                });
+            });
+        </script>
 
         <footer class="mt-10 text-sm text-gray-500 py-4">
             <p><strong>Petcity - Siêu thị thú cưng online</strong></p>

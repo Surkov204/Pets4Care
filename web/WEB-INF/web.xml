@@ -3,6 +3,49 @@
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
 
+    <!-- Định nghĩa servlet cho ToyDetailServlet -->
+    <servlet>
+        <servlet-name>ToyDetailServlet</servlet-name>
+        <servlet-class>controller.ToyDetailServlet</servlet-class>
+    </servlet>
+
+    <!-- Ánh xạ servlet đến URL /toydetailservlet -->
+    <servlet-mapping>
+        <servlet-name>ToyDetailServlet</servlet-name>
+        <url-pattern>/toydetailservlet</url-pattern>
+    </servlet-mapping>
+
+    <!-- Định nghĩa servlet cho SpaBookingServlet -->
+    <servlet>
+        <servlet-name>SpaBookingServlet</servlet-name>
+        <servlet-class>controller.SpaBookingServlet</servlet-class>
+    </servlet>
+
+    <!-- Ánh xạ servlet đến URL /spa-booking -->
+    <servlet-mapping>
+        <servlet-name>SpaBookingServlet</servlet-name>
+        <url-pattern>/spa-booking</url-pattern>
+    </servlet-mapping>
+
+    <!-- Ánh xạ servlet đến URL /spa-cart -->
+    <servlet-mapping>
+        <servlet-name>SpaBookingServlet</servlet-name>
+        <url-pattern>/spa-cart</url-pattern>
+    </servlet-mapping>
+
+    <!-- Định nghĩa servlet cho SpaServiceServlet -->
+    <servlet>
+        <servlet-name>SpaServiceServlet</servlet-name>
+        <servlet-class>controller.SpaServiceServlet</servlet-class>
+    </servlet>
+
+    <!-- Ánh xạ servlet đến URL /spa-service -->
+    <servlet-mapping>
+        <servlet-name>SpaServiceServlet</servlet-name>
+        <url-pattern>/spa-service</url-pattern>
+    </servlet-mapping>
+
+
     <welcome-file-list>
         <welcome-file>home</welcome-file>
     </welcome-file-list>

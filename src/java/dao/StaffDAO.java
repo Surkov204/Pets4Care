@@ -226,4 +226,19 @@ public class StaffDAO {
             return false;
         }
     }
+    public int countByPosition(String position) {
+        String sql = "SELECT COUNT(*) FROM Staff WHERE LOWER(position) LIKE LOWER(?)";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, "%" + position + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error counting staff by position: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }

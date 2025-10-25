@@ -458,11 +458,16 @@ public class ProductDAO implements IProductDAO {
 
     @Override
     public int addProduct(Product product) {
-        String sql = "INSERT INTO Products (name, price, category_id, stock_quantity, supplier_id, description, admin_id, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Products (name, price, category_id, stock_quantity, supplier_id, description, admin_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        
+        System.out.println("=== ProductDAO.addProduct ===");
+        System.out.println("SQL: " + sql);
         
         try (Connection con = DBConnection.getConnection(); 
              PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
+            System.out.println("Connection: " + (con != null ? "OK" : "FAILED"));
+            
             ps.setString(1, product.getName());
             ps.setDouble(2, product.getPrice());
             ps.setInt(3, product.getCategoryId());
@@ -470,19 +475,28 @@ public class ProductDAO implements IProductDAO {
             ps.setInt(5, product.getSupplierId());
             ps.setString(6, product.getDescription());
             ps.setInt(7, product.getAdminId());
-            ps.setString(8, product.getImageUrl());
 
+            System.out.println("Executing insert...");
             int result = ps.executeUpdate();
+            System.out.println("Rows affected: " + result);
             
             if (result > 0) {
+                System.out.println("Insert successful! Getting generated keys...");
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (rs.next()) {
-                        return rs.getInt(1);
+                        int generatedId = rs.getInt(1);
+                        System.out.println("Generated product ID: " + generatedId);
+                        return generatedId;
+                    } else {
+                        System.err.println("No generated keys found in ResultSet!");
                     }
                 }
+            } else {
+                System.err.println("No rows inserted! Result: " + result);
             }
 
         } catch (Exception e) {
+            System.err.println("ERROR in addProduct: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -527,7 +541,7 @@ public class ProductDAO implements IProductDAO {
 
     @Override
     public boolean updateProduct(Product product) {
-        String sql = "UPDATE Products SET name = ?, price = ?, category_id = ?, stock_quantity = ?, supplier_id = ?, description = ?, admin_id = ?, image_url = ? WHERE product_id = ?";
+        String sql = "UPDATE Products SET name = ?, price = ?, category_id = ?, stock_quantity = ?, supplier_id = ?, description = ?, admin_id = ? WHERE product_id = ?";
         
         try (Connection con = DBConnection.getConnection(); 
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -539,8 +553,7 @@ public class ProductDAO implements IProductDAO {
             ps.setInt(5, product.getSupplierId());
             ps.setString(6, product.getDescription());
             ps.setInt(7, product.getAdminId());
-            ps.setString(8, product.getImageUrl());
-            ps.setInt(9, product.getProductId());
+            ps.setInt(8, product.getProductId());
 
             return ps.executeUpdate() > 0;
 
@@ -641,7 +654,7 @@ public class ProductDAO implements IProductDAO {
         product.setSupplierId(rs.getInt("supplier_id"));
         product.setDescription(rs.getString("description"));
         product.setAdminId(rs.getInt("admin_id"));
-        product.setImageUrl(rs.getString("image_url"));
+        // Không có image_url trong database
         return product;
     }
     

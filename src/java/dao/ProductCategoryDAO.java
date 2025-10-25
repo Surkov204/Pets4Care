@@ -73,5 +73,94 @@ public class ProductCategoryDAO implements IProductCategoryDAO {
         return categories;
     }
 
+    @Override
+    public int addCategory(ProductCategory category) {
+        String sql = "INSERT INTO ProductCategory (name) VALUES (?)";
+        
+        System.out.println("=== ProductCategoryDAO.addCategory ===");
+        System.out.println("Category name: " + category.getName());
+        
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            
+            System.out.println("Connection: " + (conn != null ? "OK" : "FAILED"));
+            
+            ps.setString(1, category.getName());
+            
+            System.out.println("Executing insert...");
+            int result = ps.executeUpdate();
+            System.out.println("Rows affected: " + result);
+            
+            if (result > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        int generatedId = rs.getInt(1);
+                        System.out.println("Generated category ID: " + generatedId);
+                        return generatedId;
+                    }
+                }
+            }
+            
+            System.err.println("No rows inserted!");
+            
+        } catch (Exception e) {
+            System.err.println("ERROR in addCategory: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return -1;
+    }
+
+    @Override
+    public boolean updateCategory(ProductCategory category) {
+        String sql = "UPDATE ProductCategory SET name = ? WHERE category_id = ?";
+        
+        System.out.println("=== ProductCategoryDAO.updateCategory ===");
+        System.out.println("Category ID: " + category.getCategoryId() + ", Name: " + category.getName());
+        
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setString(1, category.getName());
+            ps.setInt(2, category.getCategoryId());
+            
+            int result = ps.executeUpdate();
+            System.out.println("Rows updated: " + result);
+            
+            return result > 0;
+            
+        } catch (Exception e) {
+            System.err.println("ERROR in updateCategory: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return false;
+    }
+
+    @Override
+    public boolean deleteCategory(int categoryId) {
+        String sql = "DELETE FROM ProductCategory WHERE category_id = ?";
+        
+        System.out.println("=== ProductCategoryDAO.deleteCategory ===");
+        System.out.println("Category ID: " + categoryId);
+        
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, categoryId);
+            
+            int result = ps.executeUpdate();
+            System.out.println("Rows deleted: " + result);
+            
+            return result > 0;
+            
+        } catch (Exception e) {
+            System.err.println("ERROR in deleteCategory: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return false;
+    }
+
 }
 

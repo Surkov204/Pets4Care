@@ -3,6 +3,8 @@ package dao;
 import model.Staff;
 import utils.DBConnection;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class StaffDAO {
@@ -148,5 +150,95 @@ public class StaffDAO {
         }
         return null;
     }
-    
+    public List<Staff> getAllStaff() {
+        List<Staff> list = new ArrayList<>();
+        String sql = "SELECT * FROM Staff ORDER BY staff_id DESC";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapStaffFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            logger.severe("Error getting all staff: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Staff> getStaffByPosition(String position) {
+        List<Staff> list = new ArrayList<>();
+        String sql = "SELECT * FROM Staff WHERE LOWER(position) LIKE LOWER(?)";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, "%" + position + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapStaffFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error getting staff by position: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Staff> searchStaff(String keyword) {
+        List<Staff> list = new ArrayList<>();
+        String sql = """
+        SELECT * FROM Staff 
+        WHERE LOWER(name) LIKE LOWER(?) 
+           OR LOWER(email) LIKE LOWER(?) 
+           OR LOWER(phone) LIKE LOWER(?) 
+           OR LOWER(position) LIKE LOWER(?) 
+        ORDER BY staff_id DESC
+        """;
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            String kw = "%" + keyword + "%";
+            ps.setString(1, kw);
+            ps.setString(2, kw);
+            ps.setString(3, kw);
+            ps.setString(4, kw);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapStaffFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error searching staff: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public boolean deleteStaff(int staffId) {
+        String sql = "DELETE FROM Staff WHERE staff_id = ?";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, staffId);
+            int rows = ps.executeUpdate();
+            return rows > 0;
+        } catch (SQLException e) {
+            logger.severe("Error deleting staff: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    public int countByPosition(String position) {
+        String sql = "SELECT COUNT(*) FROM Staff WHERE LOWER(position) LIKE LOWER(?)";
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, "%" + position + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error counting staff by position: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }

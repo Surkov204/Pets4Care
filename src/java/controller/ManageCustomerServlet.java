@@ -25,7 +25,7 @@ import service.OrderService;
  *
  * @author ASUS
  */
-@WebServlet(name = "ManageCustomerServlet", urlPatterns = {"/admin/manage-customer"})
+@WebServlet(name = "ManageCustomerServlet", urlPatterns = {"/admin/manage-customer-alt"})
 public class ManageCustomerServlet extends HttpServlet {
     private ICustomerService customerService = new CustomerService();
     /**

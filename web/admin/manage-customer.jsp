@@ -1,9 +1,17 @@
 <%@page import="model.OrderStats"%>
 <%@page import="java.util.Map"%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page import="java.util.List" %>
 <%@ page import="model.Customer" %>
+<%@ page import="model.Admin" %>
 <%
+    Admin admin = (Admin) session.getAttribute("admin");
+    if (admin == null) {
+        response.sendRedirect("../login.jsp");
+        return;
+    }
+    
     List<Customer> customers = (List<Customer>) request.getAttribute("customers");
     Map<Integer, OrderStats> orderStats = (Map<Integer, OrderStats>) request.getAttribute("orderStats");
     String keyword = request.getParameter("keyword") != null ? request.getParameter("keyword") : "";
@@ -13,105 +21,368 @@
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
-        <title>Quản lý khách hàng</title>
-        <script src="https://cdn.tailwindcss.com"></script>
+    <title>Quản lý khách hàng - PET TOY SHOP</title>
+    <link rel="stylesheet" href="../css/homeStyle.css">
+    <style>
+        .admin-sidebar {
+            width: 250px;
+            height: 100vh;
+            background: var(--card-bg);
+            padding: 2rem 1.5rem;
+            border-right: 2px solid rgba(111, 213, 221, 0.2);
+            box-shadow: var(--shadow-light);
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .admin-sidebar h2 {
+            font-size: 1.4rem;
+            font-family: 'Baloo 2', cursive;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .admin-sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .admin-sidebar li {
+            margin-bottom: 1rem;
+        }
+
+        .admin-sidebar a {
+            text-decoration: none;
+            color: var(--text);
+            font-weight: 600;
+            transition: var(--transition);
+            display: block;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius-small);
+        }
+
+        .admin-sidebar a:hover, .admin-sidebar a.active {
+            color: var(--primary);
+            background: var(--accent);
+            transform: translateX(5px);
+        }
+
+        .admin-content {
+            margin-left: 250px;
+            padding: 2rem;
+            background: var(--main-bg);
+            min-height: 100vh;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(111, 213, 221, 0.2);
+        }
+
+        .admin-header h1 {
+            font-size: 2rem;
+            color: var(--primary);
+            font-family: 'Baloo 2', cursive;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: var(--accent-pink);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-button-hover);
+        }
+
+        .btn-success {
+            background: #10b981;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light);
+            text-align: center;
+            border: 2px solid rgba(111, 213, 221, 0.2);
+        }
+
+        .stat-card h3 {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'Baloo 2', cursive;
+        }
+
+        .stat-card.active .number {
+            color: #10b981;
+        }
+
+        .stat-card.inactive .number {
+            color: #ef4444;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+
+        .search-form input {
+            flex: 1;
+            max-width: 400px;
+            padding: 0.75rem;
+            border: 2px solid rgba(111, 213, 221, 0.3);
+            border-radius: var(--border-radius);
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        .search-form input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .search-form select {
+            padding: 0.75rem;
+            border: 2px solid rgba(111, 213, 221, 0.3);
+            border-radius: var(--border-radius);
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        .search-form select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light);
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .table th {
+            background: var(--accent);
+            color: var(--text);
+            padding: 1rem 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(111, 213, 221, 0.2);
+            white-space: nowrap;
+        }
+
+        .table td {
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid rgba(111, 213, 221, 0.1);
+        }
+
+        .table tbody tr:hover {
+            background: rgba(111, 213, 221, 0.05);
+        }
+
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-badge.active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-action {
+            padding: 0.4rem 0.9rem;
+            border-radius: var(--border-radius-small);
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-lock {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-lock:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .btn-unlock {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-unlock:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        .back-to-site {
+            margin-top: 3rem;
+            display: block;
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--primary);
+            background: var(--accent);
+            padding: 0.6rem 1rem;
+            border-radius: var(--border-radius-small);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .back-to-site:hover {
+            background: var(--accent-pink);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-button-hover);
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-truncate {
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
     </head>
-    <body class="bg-gray-100 min-h-screen font-sans flex">
+<body>
 
-
-        <!-- Sidebar -->
-        <div class="w-1/5 bg-white shadow h-screen p-6 fixed top-0 left-0 border-r border-orange-100">
-            <h2 class="text-xl font-bold text-orange-600 mb-6 font-baloo">📋 Danh mục quản lý</h2>
-            <ul class="space-y-3">
-                <li>
-                    <a href="toys?action=list"
-                       class="block px-3 py-2 rounded-md text-blue-600 hover:bg-orange-50 hover:text-orange-700 transition font-medium">
-                        🧸 Sản phẩm
-                    </a>
-                </li>
-                <li>
-                    <a href="SupplierServlet?action=list"
-                       class="block px-3 py-2 rounded-md text-blue-600 hover:bg-orange-50 hover:text-orange-700 transition font-medium">
-                        🏢 Nhà cung cấp
-                    </a>
-                </li>
-                <li>
-                    <a href="manage-customer"
-                       class="block px-3 py-2 rounded-md text-blue-600 hover:bg-orange-50 hover:text-orange-700 transition font-semibold">
-                        👤 Khách hàng
-                    </a>
-                </li>
-                <li>
-                    <a href="manage-order"
-                       class="block px-3 py-2 rounded-md text-blue-600 hover:bg-orange-50 hover:text-orange-700 transition font-medium">
-                        📦 Đơn hàng
-                    </a>
-                </li>
-                <li>
-                    <a href="statistics?type=day"
-                       class="block px-3 py-2 rounded-md text-blue-600 hover:bg-orange-50 hover:text-orange-700 transition font-medium">
-                        📈 Thống kê
-                    </a>
-                </li>
+<!-- Sidebar trái -->
+<aside class="admin-sidebar">
+    <h2>📋 Danh mục quản lý</h2>
+    <ul>
+        <li><a href="toys?action=list">🧸 Sản phẩm</a></li>
+        <li><a href="categories?action=list">📂 Danh mục</a></li>
+        <li><a href="suppliers?action=list">🏢 Nhà cung cấp</a></li>
+        <li><a href="manage-customer" class="active">👤 Khách hàng</a></li>
+        <li><a href="manage-staff">👔 Nhân viên</a></li>
+        <li><a href="statistics?type=day">📈 Thống kê</a></li>
             </ul>
 
-            <div class="mt-10 space-y-2">
-                <a href="dashboard.jsp"
-                   class="block text-center bg-gray-100 hover:bg-gray-200 text-sm text-gray-700 font-medium py-2 px-3 rounded-md transition">
-                    🔙 Quay về Dashboard
-                </a>
-                <a href="../home"
-                   class="block text-center bg-orange-100 hover:bg-orange-200 text-sm text-orange-800 font-medium py-2 px-3 rounded-md transition">
-                    🏠 Về trang chủ
-                </a>
-            </div>
-        </div>
+    <a href="dashboard.jsp" class="back-to-site">📋 Về trang quản trị</a>
+</aside>
 
-
-        <!-- Main Content -->
-        <div class="ml-[20%] w-[80%] p-8">
-            <div class="mb-6 border-b pb-4">
-                <h1 class="text-2xl font-bold text-orange-600">👤 Quản lý khách hàng</h1>
+<!-- Nội dung chính -->
+<div class="admin-content">
+    <!-- Header -->
+    <div class="admin-header">
+        <h1>👤 Quản lý khách hàng</h1>
+        <a href="../home" class="btn" style="background: #10b981;">🏠 Về trang chủ</a>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white p-4 rounded shadow text-center">
-                    <h3 class="text-gray-500 text-sm">Khách đang hoạt động</h3>
-                    <div class="text-xl font-bold text-green-600">${activeCount}</div>
+    <!-- Thống kê -->
+    <div class="stats-grid">
+        <div class="stat-card active">
+            <h3>Khách đang hoạt động</h3>
+            <div class="number">${activeCount}</div>
                 </div>
-                <div class="bg-white p-4 rounded shadow text-center">
-                    <h3 class="text-gray-500 text-sm">Khách bị khóa</h3>
-                    <div class="text-xl font-bold text-red-600">${inactiveCount}</div>
+        <div class="stat-card inactive">
+            <h3>Khách bị khóa</h3>
+            <div class="number">${inactiveCount}</div>
                 </div>
             </div>
 
-            <form method="get" action="manage-customer" class="flex items-center gap-2 mb-4">
-                <input type="text" name="keyword" placeholder="Tìm theo tên hoặc email" value="<%= keyword%>"
-                       class="border px-3 py-2 rounded w-72" />
-                <select name="status" class="border px-2 py-2 rounded text-sm">
-                    <option value="all" <%= "all".equals(statusFilter) ? "selected" : ""%>>Tất cả</option>
+    <!-- Form tìm kiếm và lọc -->
+    <form method="get" action="manage-customer" class="search-form">
+        <input type="text" name="keyword" placeholder="Tìm theo tên hoặc email..." value="<%= keyword%>">
+        <select name="status">
+            <option value="all" <%= "all".equals(statusFilter) ? "selected" : ""%>>-- Tất cả trạng thái --</option>
                     <option value="active" <%= "active".equals(statusFilter) ? "selected" : ""%>>Đang hoạt động</option>
                     <option value="inactive" <%= "inactive".equals(statusFilter) ? "selected" : ""%>>Đã bị khóa</option>
                 </select>
-                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Lọc / Tìm</button>
+        <button type="submit" class="btn">🔍 Lọc / Tìm</button>
             </form>
 
-            <div class="overflow-x-auto">
-                <table class="w-full table-auto border border-collapse bg-white shadow text-sm">
-                    <thead class="bg-gray-100 text-gray-700 font-semibold">
-                        <tr>
-                            <th class="border px-4 py-2">ID</th>
-                            <th class="border px-4 py-2">Tên</th>
-                            <th class="border px-4 py-2">Email</th>
-                            <th class="border px-4 py-2">Google ID</th>
-                            <th class="border px-4 py-2">SĐT</th>
-                            <th class="border px-4 py-2">Địa chỉ</th>
-                            <th class="border px-4 py-2">Số đơn</th>
-                            <th class="border px-4 py-2">Tổng tiền</th>
-                            <th class="border px-4 py-2">Đơn gần nhất</th>
-                            <th class="border px-4 py-2">Trạng thái</th>
-                            <th class="border px-4 py-2">Khóa/Mở</th>
-                            <th class="border px-4 py-2">Đơn hàng</th>
+    <!-- Bảng khách hàng -->
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">ID</th>
+                    <th>Tên</th>
+                    <th>Email</th>
+                    <th style="width: 150px;">Google ID</th>
+                    <th style="width: 120px;">SĐT</th>
+                    <th>Địa chỉ</th>
+                    <th style="width: 120px;" class="text-center">Đơn gần nhất</th>
+                    <th style="width: 120px;" class="text-center">Trạng thái</th>
+                    <th style="width: 120px;" class="text-center">Xem chi tiết</th>
+                    <th style="width: 100px;" class="text-center">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -119,44 +390,59 @@
                                 for (Customer c : customers) {
                                     OrderStats stats = orderStats.get(c.getCustomerId());
                         %>
-                        <tr class="hover:bg-gray-50">
-                            <td class="border px-4 py-2"><%= c.getCustomerId()%></td>
-                            <td class="border px-4 py-2"><%= c.getName()%></td>
-                            <td class="border px-4 py-2"><%= c.getEmail()%></td>
-                            <td class="border px-4 py-2"><%= c.getGoogleId() != null ? c.getGoogleId() : "-"%></td>
-                            <td class="border px-4 py-2"><%= c.getPhone()%></td>
-                            <td class="border px-4 py-2"><%= c.getAddressCustomer()%></td>
-                            <td class="border px-4 py-2 text-center"><%= stats.getTotalOrders()%></td>
-                            <td class="border px-4 py-2 text-right"><%= String.format("%,.0f", stats.getTotalAmount())%> đ</td>
-                            <td class="border px-4 py-2 text-center"><%= stats.getLatestStatus() != null ? stats.getLatestStatus() : "-"%></td>
-                            <td class="border px-4 py-2"><%= c.getStatus() != null && c.getStatus().equals("active") ? "Đang hoạt động" : "Đã bị khóa"%></td>
-                            <td class="border px-4 py-2 text-center">
-                                <form action="manage-customer" method="post" onsubmit="return confirm('Bạn có chắc không?')">
+                <tr>
+                    <td><%= c.getCustomerId()%></td>
+                    <td><strong><%= c.getName()%></strong></td>
+                    <td><%= c.getEmail()%></td>
+                    <td class="text-truncate" title="<%= c.getGoogleId() != null ? c.getGoogleId() : "-"%>">
+                        <%= c.getGoogleId() != null ? c.getGoogleId() : "-"%>
+                    </td>
+                    <td><%= c.getPhone()%></td>
+                    <td class="text-truncate" title="<%= c.getAddressCustomer()%>">
+                        <%= c.getAddressCustomer()%>
+                    </td>
+                    <td class="text-center">
+                        <% if (stats.getLatestStatus() != null) { %>
+                            <span style="font-size: 0.85rem; color: var(--text-light);"><%= stats.getLatestStatus()%></span>
+                        <% } else { %>
+                            <span style="font-size: 0.85rem; color: var(--text-light);">-</span>
+                        <% } %>
+                    </td>
+                    <td class="text-center">
+                        <% if (c.getStatus() != null && c.getStatus().equals("active")) { %>
+                            <span class="status-badge active">Hoạt động</span>
+                        <% } else { %>
+                            <span class="status-badge inactive">Đã khóa</span>
+                        <% } %>
+                    </td>
+                    <td class="text-center">
+                        <a href="view-customer?id=<%= c.getCustomerId()%>" class="btn-action" style="background: #3b82f6; color: white; text-decoration: none;">
+                            👁️ Xem
+                        </a>
+                    </td>
+                    <td class="text-center">
+                        <form action="manage-customer" method="post" style="margin: 0;" onsubmit="return confirm('Bạn có chắc muốn <%= c.getStatus() != null && c.getStatus().equals("active") ? "khóa" : "mở khóa"%> tài khoản này?')">
                                     <input type="hidden" name="action" value="toggle-status" />
                                     <input type="hidden" name="customerId" value="<%= c.getCustomerId()%>" />
                                     <input type="hidden" name="currentStatus" value="<%= c.getStatus()%>" />
-                                    <button class="px-3 py-1 rounded text-white <%= c.getStatus() != null && c.getStatus().equals("active") ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"%>">
-                                        <%= c.getStatus() != null && c.getStatus().equals("active") ? "Khóa" : "Mở"%>
-                                    </button>
-
+                            <% if (c.getStatus() != null && c.getStatus().equals("active")) { %>
+                                <button type="submit" class="btn-action btn-lock">🔒 Khóa</button>
+                            <% } else { %>
+                                <button type="submit" class="btn-action btn-unlock">🔓 Mở</button>
+                            <% } %>
                                 </form>
-                            </td>
-                            <td class="border px-4 py-2 text-center">
-                                <a href="customer-orders?customerId=<%= c.getCustomerId()%>"
-                                   class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded transition">
-                                    Xem đơn hàng
-                                </a>
                             </td>
                         </tr>
                         <% }
                 } else { %>
-                        <tr>
-                            <td colspan="12" class="text-center text-gray-500 py-4">Không tìm thấy khách hàng nào.</td>
-                        </tr>
+                <tr>
+                    <td colspan="10" class="empty-state">Không tìm thấy khách hàng nào.</td>
+                </tr>
                         <% }%>
                     </tbody>
                 </table>
             </div>
         </div>
+
     </body>
 </html>

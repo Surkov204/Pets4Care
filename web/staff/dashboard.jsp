@@ -152,7 +152,174 @@
             #notifyList {
                 color: #222; /* 👈 Chữ đậm, dễ đọc trên nền trắng */
             }
+            .attendance-section {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 24px;
+                margin-top: 25px;
+            }
 
+            .attendance-card, .salary-card {
+                flex: 1;
+                background: #fff;
+                border-radius: 16px;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+                padding: 20px 25px;
+                transition: all 0.3s ease;
+            }
+
+            .attendance-card:hover, .salary-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            }
+
+            .attendance-card h3, .salary-card h3 {
+                color: #334155;
+                font-weight: 600;
+                margin-bottom: 10px;
+            }
+
+            .attendance-subtext {
+                color: #64748b;
+                font-size: 13px;
+                margin-bottom: 15px;
+            }
+
+            .attendance-actions {
+                margin-bottom: 10px;
+            }
+
+            .btn-checkin, .btn-checkout, .btn-calc-salary {
+                border: none;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                padding: 10px 20px;
+                transition: all 0.3s ease;
+            }
+
+            .btn-checkin {
+                background: #22c55e;
+                color: #fff;
+            }
+
+            .btn-checkin:hover {
+                background: #16a34a;
+            }
+
+            .btn-checkout {
+                background: #ef4444;
+                color: #fff;
+            }
+
+            .btn-checkout:hover {
+                background: #dc2626;
+            }
+
+            .salary-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 15px;
+            }
+
+            .btn-calc-salary {
+                background: #3b82f6;
+                color: #fff;
+                font-size: 13px;
+            }
+
+            .btn-calc-salary:hover {
+                background: #2563eb;
+            }
+
+            .salary-table {
+                width: 100%;
+                border-collapse: collapse;
+                text-align: center;
+            }
+
+            .salary-table th {
+                background: #f1f5f9;
+                color: #475569;
+                padding: 10px;
+                font-weight: 600;
+            }
+
+            .salary-table td {
+                padding: 10px;
+                border-top: 1px solid #e2e8f0;
+                color: #334155;
+                font-size: 14px;
+            }
+
+            .salary-table .empty-msg {
+                color: #94a3b8;
+                font-style: italic;
+                text-align: center;
+            }
+
+            .attendance-toast {
+                margin-top: 15px;
+                background: #dcfce7;
+                color: #166534;
+                padding: 10px 14px;
+                border-radius: 10px;
+                text-align: center;
+                font-weight: 500;
+            }
+
+            /* ============ SMART TOGGLE ATTENDANCE BUTTON ============ */
+            .btn-toggle {
+                width: 80%;
+                font-size: 20px;
+                padding: 16px 0;
+                border: none;
+                border-radius: 50px;
+                cursor: pointer;
+                font-weight: 700;
+                transition: all 0.3s ease;
+                color: #fff;
+                background: linear-gradient(135deg, #22c55e, #16a34a);
+                box-shadow: 0 6px 15px rgba(34,197,94,0.4);
+            }
+
+            .btn-toggle:hover {
+                transform: scale(1.03);
+            }
+
+            .attendance-card form[action$="toggle"] .btn-toggle:has(+ input[value="checkout"]),
+            .btn-toggle.checkout {
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+                box-shadow: 0 6px 15px rgba(239,68,68,0.4);
+            }
+
+            /* Card styling giữ nguyên */
+            .attendance-card {
+                flex: 1;
+                background: #fff;
+                border-radius: 16px;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+                padding: 30px 25px;
+                text-align: center;
+                transition: all 0.3s ease;
+            }
+
+            .attendance-card:hover {
+                transform: translateY(-3px);
+            }
+
+            .attendance-card h3 {
+                color: #334155;
+                font-weight: 600;
+                margin-bottom: 10px;
+            }
+
+            .attendance-subtext {
+                color: #64748b;
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
 
         </style>
     </head>
@@ -224,6 +391,78 @@
                     <h2>Chào mừng trở lại, ${sessionScope.staff.name} 🐾</h2>
                     <p>Chúc bạn một ngày làm việc vui vẻ cùng thú cưng nhé!</p>
                 </section>
+                <!-- Attendance & Payroll Section -->
+                <section class="attendance-section">
+
+                    <!-- Card bên trái: Check-in / Check-out -->
+                    <div class="attendance-card">
+                        <h3><i class="fas fa-clock"></i> Chấm công</h3>
+                        <p class="attendance-subtext">
+                        <c:choose>
+                            <c:when test="${isCheckedIn}">
+                                Bạn đang trong ca làm việc. Khi kết thúc, hãy bấm "Check Out".
+                            </c:when>
+                            <c:otherwise>
+                                Bấm nút bên dưới để bắt đầu ca làm hôm nay.
+                            </c:otherwise>
+                        </c:choose>
+                        </p>
+
+                        <form action="${pageContext.request.contextPath}/staff/attendance" method="post" class="attendance-actions">
+                            <input type="hidden" name="action" value="toggle" />
+                            <button type="submit" class="btn-toggle">
+                                <c:choose>
+                                    <c:when test="${isCheckedIn}">Check Out</c:when>
+                                    <c:otherwise>Check In</c:otherwise>
+                                </c:choose>
+                            </button>
+                        </form>
+                    </div>  
+
+                    <!-- Card bên phải: Bảng lương -->
+                    <div class="salary-card">
+                        <div class="salary-header">
+                            <h3><i class="fas fa-coins"></i> Lương hiện tại</h3>
+                            <form action="${pageContext.request.contextPath}/staff/attendance" method="post">
+                                <input type="hidden" name="action" value="generate"/>
+                                <button type="submit" class="btn-calc-salary">
+                                    <i class="fas fa-calculator"></i> Tính lương tháng này
+                                </button>
+                            </form>
+                        </div>
+
+                        <table class="salary-table">
+                            <thead>
+                                <tr>
+                                    <th>Tháng</th>
+                                    <th>Tổng giờ</th>
+                                    <th>Lương/Giờ (₫)</th>
+                                    <th>Tổng Lương (₫)</th>
+                                    <th>Ngày Tạo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <c:forEach var="p" items="${payrollList}">
+                                <tr>
+                                    <td>${p.periodStart} → ${p.periodEnd}</td>
+                                    <td>${p.totalHours}</td>
+                                    <td>${p.hourlyRate}</td>
+                                    <td><b>${p.totalSalary}</b></td>
+                                    <td>${p.createdAt}</td>
+                                </tr>
+                            </c:forEach>
+                            <c:if test="${empty payrollList}">
+                                <tr><td colspan="5" class="empty-msg">Chưa có dữ liệu lương.</td></tr>
+                            </c:if>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <c:if test="${not empty sessionScope.attendanceMsg}">
+                    <div class="attendance-toast">${sessionScope.attendanceMsg}</div>
+                    <c:remove var="attendanceMsg" scope="session"/>
+                </c:if>
 
                 <section class="cards-grid">
                     <div class="dashboard-card" onclick="window.location.href = '${pageContext.request.contextPath}/staff/viewOrder'">
@@ -332,8 +571,8 @@
                                     // Dựa trên hình ảnh, ta dùng tiêu đề "Yêu cầu đổi ca mới" để nhận diện
                                     // (Tốt nhất là dùng một trường 'type' hoặc 'status' từ API, nhưng ta tạm dùng 'title')
 
-                                        if (n.title === 'Yêu cầu đổi ca mới' || n.title === 'Yêu cầu làm thay') {
-                                            actionButtons = `
+                                    if (n.title === 'Yêu cầu đổi ca mới' || n.title === 'Yêu cầu làm thay') {
+                                        actionButtons = `
                                                 <div style="display:flex; gap:10px; margin-top:10px;">
                                                     <form action="${pageContext.request.contextPath}/staff/acceptShiftRequest" method="post" style="margin:0;">
                                                         <input type="hidden" name="requestId" value="${'$'}{n.id}">
@@ -350,7 +589,7 @@
                                                     </form>
                                                 </div>
                                             `;
-                                        }
+                                    }
 
                                     return ''
                                             + '<div style="padding:10px 14px;border-bottom:1px solid #eee;">'
@@ -378,13 +617,14 @@
                     const formData = new FormData(form);
                     const parentDiv = form.closest("div");
 
-                    fetch(form.action, { method: "POST", body: formData })
-                        .then(res => {
-                            if (!res.ok) throw new Error("Network error");
-                            parentDiv.innerHTML = `<p style="color:#28a745;font-size:13px;">✅ Cảm ơn bạn! Phản hồi đã được gửi.</p>`;
-                            updateNotifyBadge();
-                        })
-                        .catch(err => console.error("❌ Lỗi gửi phản hồi:", err));
+                    fetch(form.action, {method: "POST", body: formData})
+                            .then(res => {
+                                if (!res.ok)
+                                    throw new Error("Network error");
+                                parentDiv.innerHTML = `<p style="color:#28a745;font-size:13px;">✅ Cảm ơn bạn! Phản hồi đã được gửi.</p>`;
+                                updateNotifyBadge();
+                            })
+                            .catch(err => console.error("❌ Lỗi gửi phản hồi:", err));
                 }
             });
             updateNotifyBadge();

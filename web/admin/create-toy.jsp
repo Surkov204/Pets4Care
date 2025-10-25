@@ -1,7 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page import="model.Admin" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-
 <%
     Admin admin = (Admin) session.getAttribute("admin");
     if (admin == null) {
@@ -11,88 +10,278 @@
 %>
 <!DOCTYPE html>
 <html lang="vi">
-    <head>
-        <meta charset="UTF-8">
-        <title>Thêm sản phẩm mới</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-    </head>
-    <body class="bg-gray-100 p-6">
-        <div class="max-w-3xl mx-auto bg-white shadow-md rounded-lg p-6">
-            <h2 class="text-2xl font-bold text-orange-600 mb-4">🧸 Thêm sản phẩm mới</h2>
+<head>
+    <meta charset="UTF-8">
+    <title>Thêm sản phẩm mới - PET TOY SHOP</title>
+    <link rel="stylesheet" href="../css/homeStyle.css">
+    <style>
+        .admin-sidebar {
+            width: 250px;
+            height: 100vh;
+            background: var(--card-bg);
+            padding: 2rem 1.5rem;
+            border-right: 2px solid rgba(111, 213, 221, 0.2);
+            box-shadow: var(--shadow-light);
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
 
-            <form action="<%=request.getContextPath()%>/admin/toys" method="post" enctype="multipart/form-data" class="space-y-4">
-                <input type="hidden" name="action" value="create">
+        .admin-sidebar h2 {
+            font-size: 1.4rem;
+            font-family: 'Baloo 2', cursive;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
 
-                <div>
-                    <label class="block font-semibold mb-1">Tên sản phẩm</label>
-                    <input type="text" name="name" required class="w-full border border-gray-300 rounded px-3 py-2">
+        .admin-sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .admin-sidebar li {
+            margin-bottom: 1rem;
+        }
+
+        .admin-sidebar a {
+            text-decoration: none;
+            color: var(--text);
+            font-weight: 600;
+            transition: var(--transition);
+            display: block;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius-small);
+        }
+
+        .admin-sidebar a:hover, .admin-sidebar a.active {
+            color: var(--primary);
+            background: var(--accent);
+            transform: translateX(5px);
+        }
+
+        .admin-content {
+            margin-left: 250px;
+            padding: 2rem;
+            background: var(--main-bg);
+            min-height: 100vh;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(111, 213, 221, 0.2);
+        }
+
+        .admin-header h1 {
+            font-size: 2rem;
+            color: var(--primary);
+            font-family: 'Baloo 2', cursive;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: var(--accent-pink);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-button-hover);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .form-container {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light);
+            max-width: 800px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid rgba(111, 213, 221, 0.3);
+            border-radius: var(--border-radius);
+            background: var(--main-bg);
+            color: var(--text);
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .back-to-site {
+            margin-top: 3rem;
+            display: block;
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--primary);
+            background: var(--accent);
+            padding: 0.6rem 1rem;
+            border-radius: var(--border-radius-small);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .back-to-site:hover {
+            background: var(--accent-pink);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-button-hover);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar trái -->
+<aside class="admin-sidebar">
+    <h2>📋 Danh mục quản lý</h2>
+    <ul>
+        <li><a href="toys?action=list" class="active">🧸 Sản phẩm</a></li>
+        <li><a href="categories?action=list">📂 Danh mục</a></li>
+        <li><a href="suppliers?action=list">🏢 Nhà cung cấp</a></li>
+        <li><a href="manage-customer">👤 Khách hàng</a></li>
+        <li><a href="manage-staff">👔 Nhân viên</a></li>
+        <li><a href="statistics?type=day">📈 Thống kê</a></li>
+    </ul>
+
+    <a href="dashboard.jsp" class="back-to-site">📋 Về trang quản trị</a>
+</aside>
+
+<!-- Nội dung chính -->
+<div class="admin-content">
+    <!-- Header -->
+    <div class="admin-header">
+        <h1>➕ Thêm sản phẩm mới</h1>
+        <a href="toys?action=list" class="btn btn-secondary">← Quay lại</a>
+    </div>
+
+    <!-- Thông báo -->
+    <c:if test="${not empty success}">
+        <div class="alert alert-success">${success}</div>
+    </c:if>
+    <c:if test="${not empty error}">
+        <div class="alert alert-error">${error}</div>
+    </c:if>
+
+    <!-- Form thêm sản phẩm -->
+    <div class="form-container">
+        <form method="post" action="toys">
+            <input type="hidden" name="action" value="create">
+            
+            <div class="form-group">
+                <label for="name">Tên sản phẩm *</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="price">Giá bán (VNĐ) *</label>
+                    <input type="number" id="price" name="price" step="0.01" min="0" required>
                 </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block font-semibold mb-1">Giá</label>
-                        <input type="number" step="0.01" name="price" required class="w-full border px-3 py-2 rounded">
-                    </div>
-                    <div>
-                        <label class="block font-semibold mb-1">Số lượng kho</label>
-                        <input type="number" name="stock" required class="w-full border px-3 py-2 rounded">
-                    </div>
+                <div class="form-group">
+                    <label for="stockQuantity">Số lượng tồn kho *</label>
+                    <input type="number" id="stockQuantity" name="stockQuantity" min="0" required>
                 </div>
+            </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block mb-2 font-medium">Danh mục</label>
-                        <select name="categoryId" class="form-select w-full p-2 border rounded mb-4" required>
-                            <option value="">-- Chọn danh mục --</option>
-                            <c:forEach var="cat" items="${categories}">
-                                <option value="${cat.categoryId}">${cat.name}</option>
-                            </c:forEach>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block font-semibold mb-1">Nhà cung cấp</label>
-                        <select name="supplierId" class="form-select w-full p-2 border rounded" required>
-                            <option value="">-- Chọn nhà cung cấp --</option>
-                            <c:forEach var="sup" items="${suppliers}">
-                                <option value="${sup.supplierId}">${sup.nameCompany}</option>
-                            </c:forEach>
-                        </select>
-                    </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="categoryId">Danh mục *</label>
+                    <select id="categoryId" name="categoryId" required>
+                        <option value="">-- Chọn danh mục --</option>
+                        <c:forEach var="cat" items="${categories}">
+                            <option value="${cat.categoryId}">${cat.name}</option>
+                        </c:forEach>
+                    </select>
                 </div>
-
-                <div>
-                    <label class="block font-semibold mb-1">Mô tả</label>
-                    <textarea name="description" rows="3" class="w-full border px-3 py-2 rounded resize-none"></textarea>
+                <div class="form-group">
+                    <label for="supplierId">Nhà cung cấp *</label>
+                    <select id="supplierId" name="supplierId" required>
+                        <option value="">-- Chọn nhà cung cấp --</option>
+                        <c:forEach var="supplier" items="${suppliers}">
+                            <option value="${supplier.supplierId}">${supplier.nameCompany}</option>
+                        </c:forEach>
+                    </select>
                 </div>
+            </div>
 
-                <div>
-                    <label class="block font-semibold mb-1">Hình ảnh</label>
-                    <input type="file" name="image" accept=".jpg,image/jpeg" required class="w-full border px-3 py-2 rounded bg-white" onchange="validateImage(this)">
-                </div>
+            <div class="form-group">
+                <label for="description">Mô tả sản phẩm</label>
+                <textarea id="description" name="description" placeholder="Mô tả chi tiết về sản phẩm..."></textarea>
+            </div>
 
-                <div class="flex items-center justify-between mt-6">
-                    <a href="toys" class="text-gray-500 hover:underline">← Quay lại danh sách</a>
-                    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded">
-                        Thêm sản phẩm
-                    </button>
-                </div>
-            </form>
-        </div>
-        <script>
-            function validateImage(input) {
-                const file = input.files[0];
-                if (file) {
-                    const fileName = file.name.toLowerCase();
-                    const allowedExtension = /\.jpg$/;
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <a href="toys?action=list" class="btn btn-secondary">Hủy</a>
+                <button type="submit" class="btn">➕ Thêm sản phẩm</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-                    if (!allowedExtension.test(fileName)) {
-                        alert("❌ Chỉ chấp nhận ảnh định dạng .jpg");
-                        input.value = ""; // Clear file input
-                    }
-                }
-            }
-        </script>
-
-    </body>
+</body>
 </html>

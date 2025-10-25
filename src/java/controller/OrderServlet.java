@@ -4,8 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import model.CartItem;
 import model.Customer;
-import service.IOrderService;
-import service.OrderService;
 import utils.DBConnection;
 import utils.EmailUtils;
 
@@ -17,13 +15,10 @@ import java.io.IOException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.util.List;
 import java.util.Map;
 
-@WebServlet(urlPatterns = {"/orderservlet", "/admin/manage-order"})
+@WebServlet(urlPatterns = {"/orderservlet"})
 public class OrderServlet extends HttpServlet {
-
-    private final IOrderService orderService = new OrderService();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -110,31 +105,5 @@ public class OrderServlet extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String path = req.getServletPath();
-
-        if ("/admin/manage-order".equals(path)) {
-            String keyword = req.getParameter("keyword");
-            String status = req.getParameter("status");
-
-            List<model.Order> orders;
-
-            if (keyword != null && !keyword.trim().isEmpty()) {
-                orders = orderService.searchOrders(keyword);
-            } else if (status != null && !"all".equals(status)) {
-                orders = orderService.filterOrdersByStatus(status);
-            } else {
-                orders = orderService.getAllOrders();
-            }
-
-            req.setAttribute("orders", orders);
-            req.setAttribute("keyword", keyword);
-            req.setAttribute("status", status);
-            req.getRequestDispatcher("/admin/manage-order.jsp").forward(req, resp);
-        } else {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-        }
-    }
 }
 

@@ -159,6 +159,8 @@
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/CustomerOrderServlet.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/HealthCheckBookingServlet.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/EditProfileServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ChatOrderServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/AdminStaffServlet.java</file>
         </group>
     </open-files>
 </project-private>

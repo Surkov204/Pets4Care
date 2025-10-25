@@ -37,7 +37,7 @@ import service.ProductService;
  *
  * @author ASUS
  */
-@WebServlet(name = "ManageToyServlet", urlPatterns = {"/admin/toys"})
+@WebServlet(name = "ManageToyServlet", urlPatterns = {"/admin/toys-alts"})
 @MultipartConfig(
         fileSizeThreshold = 1024 * 1024,
         maxFileSize = 1024 * 1024 * 5,

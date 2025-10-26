@@ -295,7 +295,26 @@
                         <i class="fas fa-envelope"></i> ${fullDoctorInfo.email}
                     </div>
                 </div>
+                <div>
+                    <a href="${pageContext.request.contextPath}/doctor/update-profile" class="edit-button">
+                        <i class="fas fa-edit"></i> Chỉnh sửa Profile
+                    </a>
+                </div>
             </div>
+            
+            <!-- Success Messages -->
+            <c:if test="${param.success != null}">
+                <div style="background: #d4edda; color: #155724; padding: 12px 20px; border-radius: 6px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-check-circle"></i>
+                    <span>
+                        <c:choose>
+                            <c:when test="${param.success == 'profile_updated'}">Cập nhật thông tin thành công!</c:when>
+                            <c:when test="${param.success == 'password_changed'}">Đổi mật khẩu thành công!</c:when>
+                            <c:otherwise>Thao tác thành công!</c:otherwise>
+                        </c:choose>
+                    </span>
+                </div>
+            </c:if>
 
             <div class="profile-details">
                 <div class="detail-section">

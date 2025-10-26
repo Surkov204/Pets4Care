@@ -64,6 +64,50 @@ public class DoctorDAO {
         return false;
     }
 
+    public boolean updateProfile(Doctor doctor) {
+        String sql = "UPDATE Doctor SET name = ?, email = ?, phone = ?, specialization = ?, description = ? WHERE doctor_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setString(1, doctor.getName());
+            ps.setString(2, doctor.getEmail());
+            ps.setString(3, doctor.getPhone());
+            ps.setString(4, doctor.getSpecialization());
+            ps.setString(5, doctor.getScheduleNote()); // Map scheduleNote -> description
+            ps.setInt(6, doctor.getDoctorId());
+            
+            int rowsAffected = ps.executeUpdate();
+            logger.info("Doctor profile updated: " + doctor.getDoctorId() + ", rows affected: " + rowsAffected);
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            logger.severe("Error updating doctor profile: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public boolean updatePassword(int doctorId, String newPassword) {
+        String sql = "UPDATE Doctor SET password = ? WHERE doctor_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setString(1, newPassword);
+            ps.setInt(2, doctorId);
+            
+            int rowsAffected = ps.executeUpdate();
+            logger.info("Doctor password updated: " + doctorId);
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            logger.severe("Error updating doctor password: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     private Doctor mapDoctorFromResultSet(ResultSet rs) throws SQLException {
         Doctor doctor = new Doctor();
         doctor.setDoctorId(rs.getInt("doctor_id"));
@@ -72,7 +116,7 @@ public class DoctorDAO {
         doctor.setPhone(rs.getString("phone"));
         doctor.setPassword(rs.getString("password"));
         doctor.setSpecialization(rs.getString("specialization"));
-        doctor.setScheduleNote(rs.getString("schedule_note"));
+        doctor.setScheduleNote(rs.getString("description")); // Map description -> scheduleNote
         return doctor;
     }
 }

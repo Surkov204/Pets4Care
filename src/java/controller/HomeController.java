@@ -1,7 +1,6 @@
     package controller;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import service.IProductService;
 import service.ProductService;
@@ -10,7 +9,6 @@ import model.Product;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet("/home")
 public class HomeController extends HttpServlet {
     // hello
 

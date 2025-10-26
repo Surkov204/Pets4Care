@@ -1,7 +1,6 @@
 package controller;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,7 +18,6 @@ import dao.DoctorDAO;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-@WebServlet("/login")
 public class LoginServlet extends HttpServlet {
 
     private UserService userService = new UserService();

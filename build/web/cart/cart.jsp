@@ -18,7 +18,7 @@
             }
             .quantity-input {
                 transition: all 0.3s ease;
-            }
+            } 
             .quantity-input:focus {
                 border-color: var(--primary) !important;
                 box-shadow: 0 0 0 3px rgba(111, 213, 221, 0.2) !important;
@@ -168,7 +168,7 @@
                     <select name="payment_method" required class="w-full border rounded px-4 py-2">
                         <option value="">-- Chọn phương thức --</option>
                         <option value="Tiền mặt">💵 Tiền mặt khi nhận hàng</option>
-                        <option value="Chuyển khoản">🏦 Chuyển khoản ngân hàng</option>
+                        <option value="PayOS">💳 Thanh toán online (PayOS)</option>
                     </select>
                     <label class="block text-gray-700 font-semibold mt-4">Địa chỉ nhận hàng:</label>
                     <input type="text" name="shipping_address" placeholder="Số nhà, đường, phường/xã..." required

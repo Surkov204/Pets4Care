@@ -1,4 +1,4 @@
-package controller;
+﻿package controller;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -10,6 +10,7 @@ import utils.DBConnection;
 import utils.EmailUtils;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
@@ -20,6 +21,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+@WebServlet(urlPatterns = {"/orderservlet", "/admin/manage-order"})
 public class OrderServlet extends HttpServlet {
 
     private final IOrderService orderService = new OrderService();
@@ -56,8 +58,8 @@ public class OrderServlet extends HttpServlet {
         JsonArray itemsJson = new JsonArray();
         for (CartItem item : cart.values()) {
             JsonObject obj = new JsonObject();
-            // Use toy_id key which the stored procedure expects
-            obj.addProperty("toy_id", item.getProduct().getProductId());
+            // Use product_id key which most stored procedures/DB scripts expect
+            obj.addProperty("product_id", item.getProduct().getProductId());
             obj.addProperty("quantity", item.getQuantity());
             obj.addProperty("unit_price", item.getProduct().getPrice());
             itemsJson.add(obj);
@@ -138,7 +140,7 @@ public class OrderServlet extends HttpServlet {
 
                 // Nếu chọn PayOS, chuyển hướng đến tạo link thanh toán
                 if ("PayOS".equals(paymentMethod)) {
-                    response.sendRedirect(request.getContextPath() + "/payos/create-payment?orderId=" + orderId);
+                    response.sendRedirect("payos/create-payment?orderId=" + orderId);
                 } else {
                     response.sendRedirect("order/order-success.jsp?orderId=" + orderId + "&method=" + encodedMethod);
                 }

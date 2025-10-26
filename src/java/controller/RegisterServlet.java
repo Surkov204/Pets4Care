@@ -1,7 +1,6 @@
 package controller;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,7 +19,6 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 import utils.DBConnection;
 
-@WebServlet("/register")
 public class RegisterServlet extends HttpServlet {
     private UserService userService = new UserService();
     private StaffDAO staffDAO = new StaffDAO();

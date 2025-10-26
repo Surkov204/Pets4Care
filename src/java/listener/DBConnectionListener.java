@@ -4,7 +4,7 @@ import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebListener;
 import java.sql.*;
 
-@WebListener
+// @WebListener // Disabled to avoid auto-connecting DB at server startup
 public class DBConnectionListener implements ServletContextListener {
     private Connection conn;
 

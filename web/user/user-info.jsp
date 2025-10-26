@@ -2,7 +2,7 @@
 <%@page import="model.CartItem"%>
 <%@page import="java.util.Map"%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <%
     Customer currentUser = (Customer) session.getAttribute("currentUser");
     Map<Integer, CartItem> cart = (Map<Integer, CartItem>) session.getAttribute("cart");

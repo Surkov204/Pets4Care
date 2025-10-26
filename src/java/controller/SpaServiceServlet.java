@@ -4,6 +4,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.annotation.WebServlet;
 import service.SpaBookingService;
 import model.PetServiceModel;
 
@@ -15,6 +16,7 @@ import java.util.logging.Logger;
  * Servlet để hiển thị danh sách dịch vụ Spa
  * @author ASUS
  */
+@WebServlet("/spa-service")
 public class SpaServiceServlet extends HttpServlet {
     
     private static final Logger logger = Logger.getLogger(SpaServiceServlet.class.getName());

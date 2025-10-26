@@ -8,7 +8,7 @@
 <%@ page import="model.Shift" %>
 <%@ page import="java.util.List" %>
 
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
 
 <%
     Admin admin = (Admin) session.getAttribute("admin");

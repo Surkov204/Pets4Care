@@ -4,6 +4,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpSession;
 import service.SpaBookingService;
 import model.Customer;
@@ -27,6 +28,7 @@ import model.PetServiceModel;
  * Tích hợp với Cart hiện có
  * @author ASUS
  */
+@WebServlet(urlPatterns = {"/spa-booking", "/spa-cart"})
 public class SpaBookingServlet extends HttpServlet {
     
     private static final Logger logger = Logger.getLogger(SpaBookingServlet.class.getName());

@@ -1,3 +1,19 @@
+target/
+dist/
+build/
+
+nbproject/private/
+.classpath
+.project
+.settings/
+.idea/
+*.iml
+
+.DS_Store
+Thumbs.db
+
+*.log
+
 # Build/IDE artifacts
 /build/
 /dist/

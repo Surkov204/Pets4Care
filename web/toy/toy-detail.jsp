@@ -3,7 +3,7 @@
 <%@ page import="model.Customer" %>
 <%@ page import="model.CartItem" %>
 <%@ page import="model.Product" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c" %>
 
 <%
     Customer currentUser = (Customer) session.getAttribute("currentUser");

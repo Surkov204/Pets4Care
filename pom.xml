@@ -1,0 +1,104 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.pets4care</groupId>
+  <artifactId>Pets4Care</artifactId>
+  <version>1.0.0</version>
+  <packaging>war</packaging>
+
+  <name>Pets4Care</name>
+  <description>Pets4Care Web Application</description>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <failOnMissingWebXml>false</failOnMissingWebXml>
+    <jakarta.servlet.version>6.0.0</jakarta.servlet.version>
+    <jakarta.mail.version>2.0.1</jakarta.mail.version>
+    <jakarta.activation.version>2.1.2</jakarta.activation.version>
+    <jakarta.jstl.version>3.0.0</jakarta.jstl.version>
+    <gson.version>2.10.1</gson.version>
+    <jbcrypt.version>0.4</jbcrypt.version>
+    <mssql.jdbc.version>12.10.0.jre11</mssql.jdbc.version>
+  </properties>
+
+  <dependencies>
+    <!-- Provided by Tomcat 10.x (Servlet 6.0) -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>${jakarta.servlet.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- JSTL for Jakarta (URIs: jakarta.tags.core/fmt) -->
+    <dependency>
+      <groupId>org.glassfish.web</groupId>
+      <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+      <version>${jakarta.jstl.version}</version>
+    </dependency>
+
+    <!-- Jakarta Mail + Activation -->
+    <dependency>
+      <groupId>com.sun.mail</groupId>
+      <artifactId>jakarta.mail</artifactId>
+      <version>${jakarta.mail.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.activation</groupId>
+      <artifactId>jakarta.activation</artifactId>
+      <version>${jakarta.activation.version}</version>
+    </dependency>
+
+    <!-- JSON -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>${gson.version}</version>
+    </dependency>
+
+    <!-- BCrypt -->
+    <dependency>
+      <groupId>org.mindrot</groupId>
+      <artifactId>jbcrypt</artifactId>
+      <version>${jbcrypt.version}</version>
+    </dependency>
+
+    <!-- SQL Server JDBC -->
+    <dependency>
+      <groupId>com.microsoft.sqlserver</groupId>
+      <artifactId>mssql-jdbc</artifactId>
+      <version>${mssql.jdbc.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <!-- Keep existing source and webapp directories -->
+    <sourceDirectory>src/java</sourceDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+        <configuration>
+          <release>${maven.compiler.release}</release>
+          <encoding>${project.build.sourceEncoding}</encoding>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.4.0</version>
+        <configuration>
+          <warSourceDirectory>web</warSourceDirectory>
+          <failOnMissingWebXml>${failOnMissingWebXml}</failOnMissingWebXml>
+          <warName>Pets4Care</warName>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
+

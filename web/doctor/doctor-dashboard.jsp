@@ -215,7 +215,7 @@
                 <i class="fas fa-calendar-check"></i>
                 <h3>Work Schedule</h3>
                 <p>Lịch làm việc hôm nay</p>
-                <a href="work-schedule.jsp" class="btn-dashboard">Xem chi tiết</a>
+                <a href="${pageContext.request.contextPath}/doctor/work-schedule" class="btn-dashboard">Xem chi tiết</a>
             </div>
 
             <div class="dashboard-card">

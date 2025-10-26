@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
 <%@ page import="dao.DoctorDAO" %>
 <%@ page import="model.Doctor" %>
 <%
@@ -41,6 +42,32 @@
             border-bottom: 2px solid #f0f0f0;
         }
         
+        .week-navigation {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .week-navigation button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .week-navigation button:hover {
+            background: #45a049;
+        }
+        
+        .week-range {
+            font-weight: 600;
+            color: #333;
+            font-size: 18px;
+        }
+        
         .schedule-info {
             background: #e3f2fd;
             padding: 20px;
@@ -63,26 +90,21 @@
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 1px;
-            background: #ddd;
-            border-radius: 8px;
-            overflow: hidden;
+            gap: 10px;
             margin-bottom: 30px;
-        }
-        
-        .calendar-header {
-            background: #f8f9fa;
-            padding: 15px;
-            text-align: center;
-            font-weight: 600;
-            color: #333;
         }
         
         .calendar-day {
             background: white;
             padding: 15px;
-            min-height: 100px;
-            border: 1px solid #f0f0f0;
+            min-height: 120px;
+            border: 2px solid #f0f0f0;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .calendar-day:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         
         .calendar-day.today {
@@ -90,74 +112,146 @@
             border-color: #2196F3;
         }
         
-        .calendar-day.has-appointments {
-            background: #e8f5e8;
+        .calendar-day.has-schedule {
+            background: #e8f5e9;
             border-color: #4CAF50;
+        }
+        
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .day-name {
+            font-weight: 600;
+            color: #666;
+            font-size: 14px;
         }
         
         .day-number {
             font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .appointment-count {
-            background: #4CAF50;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 12px;
-            display: inline-block;
-        }
-        
-        .time-slots {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-        
-        .time-slot {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #4CAF50;
-        }
-        
-        .time-slot h4 {
-            margin: 0 0 10px 0;
+            font-size: 20px;
             color: #333;
         }
         
-        .time-slot p {
-            margin: 0;
-            color: #666;
-        }
-        
-        .edit-schedule-btn {
-            background: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
+        .shift-item {
+            background: #f8f9fa;
+            padding: 8px;
+            margin: 5px 0;
             border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         
-        .edit-schedule-btn:hover {
-            background: #45a049;
+        .shift-item.morning {
+            background: #fff3e0;
+            color: #e65100;
+            border-left: 3px solid #ff9800;
+        }
+        
+        .shift-item.afternoon {
+            background: #e3f2fd;
+            color: #0d47a1;
+            border-left: 3px solid #2196F3;
+        }
+        
+        .shift-item.evening {
+            background: #f3e5f5;
+            color: #4a148c;
+            border-left: 3px solid #9c27b0;
+        }
+        
+        .shift-time {
+            font-size: 11px;
+            opacity: 0.8;
         }
         
         .no-schedule {
             text-align: center;
-            padding: 40px;
-            color: #666;
+            padding: 10px;
+            color: #999;
+            font-size: 13px;
         }
         
-        .no-schedule i {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-card i {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card.morning i {
+            color: #ff9800;
+        }
+        
+        .stat-card.afternoon i {
+            color: #2196F3;
+        }
+        
+        .stat-card.evening i {
+            color: #9c27b0;
+        }
+        
+        .stat-card.total i {
+            color: #4CAF50;
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .schedule-list {
+            margin-top: 30px;
+        }
+        
+        .schedule-list-item {
+            background: white;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .schedule-date {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .schedule-shift {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: 500;
         }
         
         /* Dropdown Menu Styles */
@@ -245,8 +339,8 @@
                 </a>
             </div>
         </div>
-        </div>
-    </header>
+    </div>
+</header>
 
 <div class="staff-wrapper">
     <!-- Sidebar -->
@@ -254,7 +348,7 @@
         <ul>
             <li><a href="doctor-dashboard.jsp"><i class="fas fa-home"></i> Dashboard</a></li>
             <li><a href="medical-record.jsp"><i class="fas fa-notes-medical"></i> Medical Records</a></li>
-            <li><a href="work-schedule.jsp" class="active"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/work-schedule" class="active"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
             <li><a href="appointments.jsp"><i class="fas fa-stethoscope"></i> Appointments</a></li>
             <li><a href="doctor-profile.jsp"><i class="fas fa-user-md"></i> Doctor Profile</a></li>
         </ul>
@@ -265,144 +359,154 @@
         <section class="welcome-card">
             <h2><i class="fas fa-calendar-alt"></i> Lịch làm việc</h2>
             <p>Quản lý lịch làm việc và thời gian khám bệnh của bạn</p>
-    </section>
+        </section>
+
+        <!-- Statistics -->
+        <div class="stats-container">
+            <div class="stat-card morning">
+                <i class="fas fa-sun"></i>
+                <div class="stat-number">${shiftStats.morning}</div>
+                <div class="stat-label">Ca sáng</div>
+            </div>
+            <div class="stat-card afternoon">
+                <i class="fas fa-cloud-sun"></i>
+                <div class="stat-number">${shiftStats.afternoon}</div>
+                <div class="stat-label">Ca chiều</div>
+            </div>
+            <div class="stat-card evening">
+                <i class="fas fa-moon"></i>
+                <div class="stat-number">${shiftStats.evening}</div>
+                <div class="stat-label">Ca tối</div>
+            </div>
+            <div class="stat-card total">
+                <i class="fas fa-calendar-check"></i>
+                <div class="stat-number">${shiftStats.total}</div>
+                <div class="stat-label">Tổng ca</div>
+            </div>
+        </div>
 
         <div class="schedule-container">
             <div class="schedule-header">
-                <h3><i class="fas fa-calendar"></i> Lịch làm việc hiện tại</h3>
-                <button class="edit-schedule-btn" onclick="editSchedule()">
-                    <i class="fas fa-edit"></i> Chỉnh sửa lịch
-                </button>
-            </div>
-
-            <c:choose>
-                <c:when test="${not empty fullDoctorInfo.scheduleNote}">
-                    <div class="schedule-info">
-                        <h3><i class="fas fa-info-circle"></i> Thông tin lịch làm việc</h3>
-                        <p>${fullDoctorInfo.scheduleNote}</p>
-                    </div>
-                </c:when>
-                <c:otherwise>
-                    <div class="no-schedule">
-                        <i class="fas fa-calendar-times"></i>
-                        <h3>Chưa có lịch làm việc</h3>
-                        <p>Bạn chưa thiết lập lịch làm việc. Vui lòng liên hệ quản trị viên để được hỗ trợ.</p>
-                    </div>
-                </c:otherwise>
-            </c:choose>
-
-            <!-- Calendar View -->
-            <div class="schedule-info">
-                <h3><i class="fas fa-calendar-week"></i> Lịch làm việc tuần này</h3>
-                <div class="calendar-grid">
-                    <div class="calendar-header">Thứ 2</div>
-                    <div class="calendar-header">Thứ 3</div>
-                    <div class="calendar-header">Thứ 4</div>
-                    <div class="calendar-header">Thứ 5</div>
-                    <div class="calendar-header">Thứ 6</div>
-                    <div class="calendar-header">Thứ 7</div>
-                    <div class="calendar-header">Chủ nhật</div>
-                    
-                    <div class="calendar-day">
-                        <div class="day-number">13</div>
-                        <span class="appointment-count">3 ca</span>
-                    </div>
-                    <div class="calendar-day today">
-                        <div class="day-number">14</div>
-                        <span class="appointment-count">5 ca</span>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">15</div>
-                        <span class="appointment-count">2 ca</span>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">16</div>
-                        <span class="appointment-count">4 ca</span>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">17</div>
-                        <span class="appointment-count">3 ca</span>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">18</div>
-                        <span class="appointment-count">1 ca</span>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">19</div>
-                        <span class="appointment-count">0 ca</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Time Slots -->
-            <div class="time-slots">
-                <div class="time-slot">
-                    <h4><i class="fas fa-sun"></i> Ca sáng</h4>
-                    <p><strong>Thời gian:</strong> 08:00 - 12:00</p>
-                    <p><strong>Ngày làm việc:</strong> Thứ 2, 4, 6</p>
-                    <p><strong>Trạng thái:</strong> <span style="color: #4CAF50;">Đang hoạt động</span></p>
-                </div>
-                
-                <div class="time-slot">
-                    <h4><i class="fas fa-cloud-sun"></i> Ca chiều</h4>
-                    <p><strong>Thời gian:</strong> 13:00 - 17:00</p>
-                    <p><strong>Ngày làm việc:</strong> Thứ 3, 5, 7</p>
-                    <p><strong>Trạng thái:</strong> <span style="color: #4CAF50;">Đang hoạt động</span></p>
-                </div>
-                
-                <div class="time-slot">
-                    <h4><i class="fas fa-moon"></i> Ca tối</h4>
-                    <p><strong>Thời gian:</strong> 18:00 - 21:00</p>
-                    <p><strong>Ngày làm việc:</strong> Thứ 2, 4, 6</p>
-                    <p><strong>Trạng thái:</strong> <span style="color: #f57c00;">Tùy chọn</span></p>
-                </div>
-                
-                <div class="time-slot">
-                    <h4><i class="fas fa-calendar-weekend"></i> Cuối tuần</h4>
-                    <p><strong>Thời gian:</strong> 09:00 - 15:00</p>
-                    <p><strong>Ngày làm việc:</strong> Thứ 7</p>
-                    <p><strong>Trạng thái:</strong> <span style="color: #4CAF50;">Đang hoạt động</span></p>
-                </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="schedule-info">
-                <h3><i class="fas fa-tools"></i> Thao tác nhanh</h3>
-                <div style="display: flex; gap: 15px; margin-top: 15px;">
-                    <button class="edit-schedule-btn" onclick="requestTimeOff()">
-                        <i class="fas fa-calendar-times"></i> Xin nghỉ phép
+                <h3><i class="fas fa-calendar-week"></i> Lịch tuần</h3>
+                <div class="week-navigation">
+                    <button onclick="changeWeek(-1)">
+                        <i class="fas fa-chevron-left"></i> Tuần trước
                     </button>
-                    <button class="edit-schedule-btn" onclick="viewAppointments()">
-                        <i class="fas fa-eye"></i> Xem lịch hẹn
-                    </button>
-                    <button class="edit-schedule-btn" onclick="exportSchedule()">
-                        <i class="fas fa-download"></i> Xuất lịch
+                    <span class="week-range">${startDate} - ${endDate}</span>
+                    <button onclick="changeWeek(1)">
+                        Tuần sau <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
             </div>
+
+            <c:if test="${not empty fullDoctorInfo.scheduleNote}">
+                <div class="schedule-info">
+                    <h3><i class="fas fa-info-circle"></i> Ghi chú lịch làm việc</h3>
+                    <p>${fullDoctorInfo.scheduleNote}</p>
+                </div>
+            </c:if>
+
+            <!-- Calendar Grid -->
+            <div class="calendar-grid">
+                <c:forEach var="day" items="${weekDays}">
+                    <div class="calendar-day ${day.isToday ? 'today' : ''} ${day.hasSchedule ? 'has-schedule' : ''}">
+                        <div class="day-header">
+                            <span class="day-name">${day.dayOfWeek}</span>
+                            <span class="day-number">${day.dayNumber}</span>
+                        </div>
+                        
+                        <c:choose>
+                            <c:when test="${day.hasSchedule}">
+                                <c:forEach var="schedule" items="${day.schedules}">
+                                    <c:set var="shiftClass" value=""/>
+                                    <c:if test="${schedule.shiftName.toLowerCase().contains('sáng')}">
+                                        <c:set var="shiftClass" value="morning"/>
+                                    </c:if>
+                                    <c:if test="${schedule.shiftName.toLowerCase().contains('chiều')}">
+                                        <c:set var="shiftClass" value="afternoon"/>
+                                    </c:if>
+                                    <c:if test="${schedule.shiftName.toLowerCase().contains('tối')}">
+                                        <c:set var="shiftClass" value="evening"/>
+                                    </c:if>
+                                    
+                                    <div class="shift-item ${shiftClass}">
+                                        <i class="fas fa-clock"></i>
+                                        <div>
+                                            <div><strong>${schedule.shiftName}</strong></div>
+                                            <div class="shift-time">
+                                                <fmt:formatDate value="${schedule.startTime}" pattern="HH:mm"/> - 
+                                                <fmt:formatDate value="${schedule.endTime}" pattern="HH:mm"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </c:forEach>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="no-schedule">
+                                    <i class="fas fa-calendar-times"></i>
+                                    <div>Nghỉ</div>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                </c:forEach>
+            </div>
+
+            <!-- Detailed Schedule List -->
+            <c:if test="${not empty allSchedules}">
+                <div class="schedule-list">
+                    <h3><i class="fas fa-list"></i> Chi tiết lịch làm việc tuần này</h3>
+                    <c:forEach var="schedule" items="${allSchedules}">
+                        <div class="schedule-list-item">
+                            <div>
+                                <span class="schedule-date">
+                                    <i class="fas fa-calendar"></i>
+                                    <fmt:formatDate value="${schedule.workDate}" pattern="dd/MM/yyyy (EEEE)" />
+                                </span>
+                            </div>
+                            <div>
+                                <c:set var="shiftClass" value=""/>
+                                <c:set var="bgColor" value="#4CAF50"/>
+                                <c:if test="${schedule.shiftName.toLowerCase().contains('sáng')}">
+                                    <c:set var="bgColor" value="#ff9800"/>
+                                </c:if>
+                                <c:if test="${schedule.shiftName.toLowerCase().contains('chiều')}">
+                                    <c:set var="bgColor" value="#2196F3"/>
+                                </c:if>
+                                <c:if test="${schedule.shiftName.toLowerCase().contains('tối')}">
+                                    <c:set var="bgColor" value="#9c27b0"/>
+                                </c:if>
+                                
+                                <span class="schedule-shift" style="background: ${bgColor}; color: white;">
+                                    ${schedule.shiftName}: 
+                                    <fmt:formatDate value="${schedule.startTime}" pattern="HH:mm"/> - 
+                                    <fmt:formatDate value="${schedule.endTime}" pattern="HH:mm"/>
+                                </span>
+                            </div>
+                        </div>
+                    </c:forEach>
+                </div>
+            </c:if>
+            
+            <c:if test="${empty allSchedules}">
+                <div class="schedule-info" style="background: #fff3e0; border-left-color: #ff9800;">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Chưa có lịch làm việc</h3>
+                    <p>Bạn chưa có lịch làm việc nào trong tuần này. Vui lòng liên hệ quản trị viên để được sắp xếp lịch.</p>
+                </div>
+            </c:if>
         </div>
     </main>
 </div>
 
 <footer class="staff-footer">
     <p>© 2025 Pet4Care — Dedicated to Pet Health & Happiness 🐶🐱</p>
-    </footer>
+</footer>
 
 <script>
-function editSchedule() {
-    alert('Chức năng chỉnh sửa lịch làm việc sẽ được phát triển trong phiên bản tiếp theo!');
-}
-
-function requestTimeOff() {
-    alert('Chức năng xin nghỉ phép sẽ được phát triển trong phiên bản tiếp theo!');
-}
-
-function viewAppointments() {
-    window.location.href = 'appointments.jsp';
-}
-
-function exportSchedule() {
-    alert('Chức năng xuất lịch sẽ được phát triển trong phiên bản tiếp theo!');
+function changeWeek(offset) {
+    const currentOffset = ${weekOffset};
+    const newOffset = currentOffset + offset;
+    window.location.href = '${pageContext.request.contextPath}/doctor/work-schedule?weekOffset=' + newOffset;
 }
 
 function toggleDropdown() {
@@ -415,7 +519,7 @@ document.addEventListener('click', function(event) {
     const dropdown = document.getElementById('dropdownMenu');
     const avatar = document.querySelector('.avatar');
     
-    if (!avatar.contains(event.target)) {
+    if (avatar && !avatar.contains(event.target)) {
         dropdown.classList.remove('show');
     }
 });

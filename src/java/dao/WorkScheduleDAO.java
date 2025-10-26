@@ -449,4 +449,87 @@ public class WorkScheduleDAO {
         }
         return false;
     }
+
+    // 🟢 Lấy lịch làm việc theo bác sĩ
+    public List<WorkSchedule> getScheduleByDoctor(int doctorId) {
+        List<WorkSchedule> list = new ArrayList<>();
+        String sql = """
+        SELECT ws.schedule_id, ws.doctor_id, ws.staff_id, ws.shift_id, ws.work_date,
+               ws.start_time, ws.end_time, ws.status, ws.note,
+               s.ShiftName AS shift_name, s.StartTime AS s_start, s.EndTime AS s_end
+        FROM WorkSchedule ws
+        LEFT JOIN Shifts s ON ws.shift_id = s.ShiftID
+        WHERE ws.doctor_id = ?
+        ORDER BY ws.work_date ASC
+    """;
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, doctorId);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                WorkSchedule ws = new WorkSchedule();
+                ws.setScheduleId(rs.getInt("schedule_id"));
+                ws.setDoctorId((Integer) rs.getObject("doctor_id"));
+                ws.setStaffId((Integer) rs.getObject("staff_id"));
+                ws.setShiftId((Integer) rs.getObject("shift_id"));
+                ws.setWorkDate(rs.getDate("work_date"));
+
+                ws.setShiftName(rs.getString("shift_name"));
+                ws.setStartTime(rs.getTime("s_start") != null ? rs.getTime("s_start") : rs.getTime("start_time"));
+                ws.setEndTime(rs.getTime("s_end") != null ? rs.getTime("s_end") : rs.getTime("end_time"));
+
+                ws.setStatus(rs.getString("status"));
+                ws.setNote(rs.getString("note"));
+                list.add(ws);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // 🟢 Lấy lịch làm việc theo bác sĩ và khoảng thời gian
+    public List<WorkSchedule> getScheduleByDoctorAndRange(int doctorId, LocalDate start, LocalDate end) {
+        List<WorkSchedule> list = new ArrayList<>();
+        String sql = """
+        SELECT ws.schedule_id, ws.doctor_id, ws.staff_id, ws.shift_id, ws.work_date,
+               ws.start_time, ws.end_time, ws.status, ws.note,
+               s.ShiftName AS shift_name, s.StartTime AS s_start, s.EndTime AS s_end
+        FROM WorkSchedule ws
+        LEFT JOIN Shifts s ON ws.shift_id = s.ShiftID
+        WHERE ws.doctor_id = ? AND ws.work_date BETWEEN ? AND ?
+        ORDER BY ws.work_date ASC, ws.start_time ASC
+    """;
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, doctorId);
+            ps.setDate(2, Date.valueOf(start));
+            ps.setDate(3, Date.valueOf(end));
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                WorkSchedule ws = new WorkSchedule();
+                ws.setScheduleId(rs.getInt("schedule_id"));
+                ws.setDoctorId((Integer) rs.getObject("doctor_id"));
+                ws.setStaffId((Integer) rs.getObject("staff_id"));
+                ws.setShiftId((Integer) rs.getObject("shift_id"));
+                ws.setWorkDate(rs.getDate("work_date"));
+
+                ws.setShiftName(rs.getString("shift_name"));
+                ws.setStartTime(rs.getTime("s_start") != null ? rs.getTime("s_start") : rs.getTime("start_time"));
+                ws.setEndTime(rs.getTime("s_end") != null ? rs.getTime("s_end") : rs.getTime("end_time"));
+
+                ws.setStatus(rs.getString("status"));
+                ws.setNote(rs.getString("note"));
+                list.add(ws);
+            }
+
+            System.out.println("✅ getScheduleByDoctorAndRange: found " + list.size() + " record(s)");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

@@ -171,6 +171,14 @@
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/AdminCustomerServlet.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/ViewStaffServlet.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/AdminStaffServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/spa-booking-detail.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/spa-services-demo.html</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/AttendanceRecord.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/AttendanceDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/PayrollDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/PayrollRecord.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/StaffAttendanceController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/AdminSupplierServlet.java</file>
         </group>
     </open-files>
 </project-private>

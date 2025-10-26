@@ -449,4 +449,76 @@ public class WorkScheduleDAO {
         }
         return false;
     }
+
+    // 🟢 Xác định ca làm hiện tại của nhân viên theo thời gian thực
+    public WorkSchedule getCurrentShiftForStaff(int staffId) {
+        String sql = """
+            SELECT TOP 1 ws.*, s.ShiftName, s.Location, s.StartTime, s.EndTime
+            FROM WorkSchedule ws
+            JOIN Shifts s ON ws.Shift_ID = s.ShiftID
+            WHERE ws.Staff_ID = ? AND ws.Work_Date = CAST(GETDATE() AS DATE)
+            ORDER BY s.StartTime
+        """;
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, staffId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Time now = new Time(System.currentTimeMillis());
+                    Time start = rs.getTime("StartTime");
+                    Time end = rs.getTime("EndTime");
+
+                    // Nếu giờ hiện tại nằm trong ca hoặc sớm hơn 30p trước ca
+                    long diffBefore = (start.getTime() - now.getTime()) / (1000 * 60);
+                    if (now.after(start) && now.before(end) || (diffBefore <= 30 && diffBefore >= -30)) {
+                        WorkSchedule ws = new WorkSchedule();
+                        ws.setScheduleId(rs.getInt("Schedule_ID"));
+                        ws.setShiftId(rs.getInt("Shift_ID"));
+                        ws.setShiftName(rs.getString("ShiftName"));
+                        ws.setWorkDate(rs.getDate("Work_Date"));
+                        ws.setStartTime(start);
+                        ws.setEndTime(end);
+                        ws.setStatus(rs.getString("Status"));
+                        ws.setNote(rs.getString("Note"));
+                        ws.setStaffId(rs.getInt("Staff_ID"));
+                        ws.setDoctorId((Integer) rs.getObject("Doctor_ID"));
+                        ws.setShiftName(rs.getString("ShiftName"));
+                        ws.setNote(rs.getString("Location")); // Gắn location để JSP hiển thị
+                        return ws;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public WorkSchedule getCurrentShiftForToday(int staffId) {
+        String sql = """
+        SELECT TOP 1 * FROM WorkSchedule
+        WHERE staff_id = ? 
+          AND work_date = CAST(GETDATE() AS date)
+          AND CAST(GETDATE() AS time) BETWEEN start_time AND end_time
+          AND status = 'Registered'
+        ORDER BY start_time
+    """;
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, staffId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                WorkSchedule ws = new WorkSchedule();
+                ws.setScheduleId(rs.getInt("schedule_id"));
+                ws.setWorkDate(rs.getDate("work_date"));
+                ws.setStartTime(rs.getTime("start_time"));
+                ws.setEndTime(rs.getTime("end_time"));
+                ws.setStatus(rs.getString("status"));
+                ws.setNote(rs.getString("note"));
+                return ws;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

@@ -144,23 +144,55 @@
                         int quantity = spaCart.get(service.getServiceId());
                         BigDecimal subtotal = service.getPrice().multiply(BigDecimal.valueOf(quantity));
                         int serviceId = service.getServiceId();
+                        
+                        // Check if this is a boarding service
+                        boolean isBoardingService = serviceId >= 1000;
                 %>
-                <div class="flex items-center justify-between border-b pb-4" id="row-<%= serviceId%>">
+                <div class="flex items-center justify-between border-b pb-4 <%= isBoardingService ? "bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-green-400" : "" %>" id="row-<%= serviceId%>">
                     <div class="flex items-center space-x-4">
-                        <div class="w-24 h-24 bg-gradient-to-br from-orange-400 to-pink-400 rounded shadow flex items-center justify-center">
-                            <i class="fas fa-spa text-white text-3xl"></i>
+                        <div class="w-24 h-24 bg-gradient-to-br <%= isBoardingService ? "from-green-400 to-blue-400" : "from-orange-400 to-pink-400" %> rounded shadow flex items-center justify-center">
+                            <i class="fas <%= isBoardingService ? "fa-home" : "fa-spa" %> text-white text-3xl"></i>
                         </div>
                         <div>
-                            <div class="font-semibold text-lg"><%= service.getName()%></div>
+                            <div class="font-semibold text-lg <%= isBoardingService ? "text-green-700" : "" %>">
+                                <%= service.getName()%>
+                                <% if (isBoardingService) { %>
+                                    <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full ml-2">LƯU TRÚ</span>
+                                <% } %>
+                            </div>
                             <div class="text-sm text-gray-500">Mã DV: <%= serviceId%></div>
-                            <div class="text-xs text-green-600">⏱️ Thời gian: <%= service.getDuration()%> phút</div>
+                            <% if (isBoardingService) { %>
+                                <div class="text-xs text-blue-600">🏠 Dịch vụ lưu trú thú cưng</div>
+                            <% } else { %>
+                                <div class="text-xs text-green-600">⏱️ Thời gian: <%= service.getDuration()%> phút</div>
+                            <% } %>
                         </div>
                     </div>
-                    <div class="w-20 text-right font-semibold text-blue-600"><%= String.format("%.0f", service.getPrice())%>₫</div>
-                    <input type="number" min="1" value="<%= quantity%>" 
-                           data-service-id="<%= serviceId%>" class="quantity-input w-16 text-center border rounded py-1 px-2">
-                    <div class="w-24 text-right font-bold text-green-600" id="item-total-<%= serviceId%>"><%= String.format("%.0f", subtotal)%>₫</div>
-                    <button onclick="removeItem(<%= serviceId%>)" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-20 text-right font-semibold text-blue-600"><%= String.format("%.0f", service.getPrice())%>₫</div>
+                        <% if (isBoardingService) { %>
+                            <!-- Boarding services không cho phép thay đổi số lượng -->
+                            <div class="w-16 text-center text-sm text-gray-500">x1</div>
+                        <% } else { %>
+                            <!-- Spa services cho phép thay đổi số lượng -->
+                            <input type="number" min="1" value="<%= quantity%>" 
+                                   data-service-id="<%= serviceId%>" class="quantity-input w-16 text-center border rounded py-1 px-2">
+                        <% } %>
+                        <div class="w-24 text-right font-bold text-green-600" id="item-total-<%= serviceId%>"><%= String.format("%.0f", subtotal)%>₫</div>
+                        <div class="flex space-x-2">
+                            <% if (isBoardingService) { %>
+                                <button onclick="viewBoardingDetails(<%= serviceId%>)" class="text-blue-500 hover:text-blue-700" title="Xem chi tiết">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button onclick="editBoardingDetails(<%= serviceId%>)" class="text-orange-500 hover:text-orange-700" title="Sửa thông tin">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            <% } %>
+                            <button onclick="removeItem(<%= serviceId%>)" class="text-red-500 hover:text-red-700" title="Xóa">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <% }%>
 
@@ -192,12 +224,13 @@
                 </div>
 
                 <% if (currentUser != null) {%>
-                <form action="<%= request.getContextPath()%>/spa-booking" method="post" class="mt-6 space-y-4">
+                <form action="<%= request.getContextPath()%>/spa-booking" method="post" class="mt-6 space-y-4" onsubmit="return validateAppointmentForm()">
                     <input type="hidden" name="action" value="create-booking">
                     
                     <label class="block text-gray-700 font-semibold">Ngày hẹn:</label>
                     <input type="date" name="appointmentDate" required
-                           class="w-full border rounded px-4 py-2 mb-3" />
+                           class="w-full border rounded px-4 py-2 mb-3" 
+                           min="<%= java.time.LocalDate.now().toString() %>" />
                     
                     <label class="block text-gray-700 font-semibold">Giờ hẹn:</label>
                     <select name="appointmentTime" required class="w-full border rounded px-4 py-2 mb-3">
@@ -232,6 +265,55 @@
             <% }%>
         </div>
 
+        <!-- Modal for viewing boarding details -->
+        <div id="viewBoardingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-900">🏠 Chi tiết lưu trú</h3>
+                        <button onclick="closeViewModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="viewBoardingContent" class="space-y-3">
+                        <!-- Content will be populated by JavaScript -->
+                    </div>
+                    <div class="mt-6 text-center">
+                        <button onclick="closeViewModal()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for editing boarding details -->
+        <div id="editBoardingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+            <div class="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white max-h-screen overflow-y-auto">
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-gray-900">✏️ Sửa thông tin lưu trú</h3>
+                        <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="editBoardingForm" onsubmit="saveBoardingDetails(event, this.dataset.serviceId)">
+                        <div id="editBoardingContent" class="space-y-4">
+                            <!-- Content will be populated by JavaScript -->
+                        </div>
+                        <div class="mt-6 flex space-x-3">
+                            <button type="submit" class="flex-1 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                                💾 Lưu thay đổi
+                            </button>
+                            <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                                Hủy
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <script>
             function removeItem(serviceId) {
                 if (confirm('🗑️ Bạn có chắc chắn muốn xóa dịch vụ này?')) {
@@ -245,6 +327,153 @@
                         });
                     });
                 }
+            }
+            
+            // View boarding details
+            function viewBoardingDetails(serviceId) {
+                // Lấy thông tin boarding details từ session
+                const boardingDetails = getBoardingDetailsFromSession(serviceId);
+                if (!boardingDetails) {
+                    alert('Không tìm thấy thông tin chi tiết');
+                    return;
+                }
+                
+                // Populate view modal
+                const content = `
+                    <div class="space-y-2">
+                        <div><strong>Loại phòng:</strong> ${boardingDetails.roomType}</div>
+                        <div><strong>Giá/ngày:</strong> ${boardingDetails.pricePerDay.toLocaleString()}₫</div>
+                        <div><strong>Số ngày:</strong> ${boardingDetails.boardingDays} ngày</div>
+                        <div><strong>Ngày nhận:</strong> ${boardingDetails.checkInDate}</div>
+                        <div><strong>Ngày trả:</strong> ${boardingDetails.checkOutDate}</div>
+                        <div><strong>Giờ nhận:</strong> ${boardingDetails.checkInTime}</div>
+                        <div><strong>Giờ trả:</strong> ${boardingDetails.checkOutTime}</div>
+                        <div><strong>Thú cưng:</strong> ${boardingDetails.petInfo}</div>
+                        <div><strong>SĐT khẩn cấp 1:</strong> ${boardingDetails.emergencyPhone1}</div>
+                        <div><strong>SĐT khẩn cấp 2:</strong> ${boardingDetails.emergencyPhone2 || 'Chưa cung cấp'}</div>
+                        <div><strong>Ghi chú đặc biệt:</strong> ${boardingDetails.specialNotes || 'Không có'}</div>
+                    </div>
+                `;
+                
+                document.getElementById('viewBoardingContent').innerHTML = content;
+                document.getElementById('viewBoardingModal').classList.remove('hidden');
+            }
+            
+            // Edit boarding details
+            function editBoardingDetails(serviceId) {
+                // Lấy thông tin boarding details từ session
+                const boardingDetails = getBoardingDetailsFromSession(serviceId);
+                if (!boardingDetails) {
+                    alert('Không tìm thấy thông tin chi tiết');
+                    return;
+                }
+                
+                // Populate edit form
+                const content = `
+                    <input type="hidden" name="serviceId" value="${serviceId}">
+                    <input type="hidden" name="pricePerDay" value="${boardingDetails.pricePerDay}">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Ngày nhận:</label>
+                        <input type="date" name="checkInDate" value="${boardingDetails.checkInDate}" required
+                               class="w-full border rounded px-3 py-2">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Ngày trả:</label>
+                        <input type="date" name="checkOutDate" value="${boardingDetails.checkOutDate}" required
+                               class="w-full border rounded px-3 py-2">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Tên thú cưng:</label>
+                        <input type="text" name="petInfo" value="${boardingDetails.petInfo}" required
+                               class="w-full border rounded px-3 py-2">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">SĐT khẩn cấp 1:</label>
+                        <input type="tel" name="emergencyPhone1" value="${boardingDetails.emergencyPhone1}" required
+                               class="w-full border rounded px-3 py-2">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">SĐT khẩn cấp 2:</label>
+                        <input type="tel" name="emergencyPhone2" value="${boardingDetails.emergencyPhone2 || ''}"
+                               class="w-full border rounded px-3 py-2">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Ghi chú đặc biệt:</label>
+                        <textarea name="specialNotes" rows="3"
+                                  class="w-full border rounded px-3 py-2">${boardingDetails.specialNotes || ''}</textarea>
+                    </div>
+                `;
+                
+                document.getElementById('editBoardingContent').innerHTML = content;
+                document.getElementById('editBoardingForm').dataset.serviceId = serviceId;
+                document.getElementById('editBoardingModal').classList.remove('hidden');
+            }
+            
+            // Close modals
+            function closeViewModal() {
+                document.getElementById('viewBoardingModal').classList.add('hidden');
+            }
+            
+            function closeEditModal() {
+                document.getElementById('editBoardingModal').classList.add('hidden');
+            }
+            
+            // Get boarding details from session via AJAX
+            function getBoardingDetailsFromSession(serviceId) {
+                let boardingDetails = null;
+                $.ajax({
+                    url: '<%= request.getContextPath()%>/spa-booking',
+                    type: 'GET',
+                    data: {
+                        action: 'get-boarding-details',
+                        serviceId: serviceId
+                    },
+                    async: false, // Synchronous để có thể return kết quả
+                    success: function(response) {
+                        if (response.success) {
+                            boardingDetails = response.boardingDetails;
+                        }
+                    },
+                    error: function() {
+                        console.error('Lỗi khi lấy thông tin boarding details');
+                    }
+                });
+                return boardingDetails;
+            }
+            
+            // Save boarding details
+            function saveBoardingDetails(event, serviceId) {
+                event.preventDefault();
+                
+                const formData = new FormData(event.target);
+                formData.append('action', 'update-boarding-details');
+                formData.append('serviceId', serviceId);
+                
+                $.ajax({
+                    url: '<%= request.getContextPath()%>/spa-booking',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        if (response.success) {
+                            alert('✅ Cập nhật thông tin thành công!');
+                            closeEditModal();
+                            location.reload(); // Reload để cập nhật giá
+                        } else {
+                            alert('❌ Lỗi: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('❌ Có lỗi xảy ra khi cập nhật thông tin');
+                    }
+                });
             }
 
             function updateCartTotal() {
@@ -338,6 +567,28 @@
                     tomorrow.setDate(tomorrow.getDate() + 1);
                     dateInput.value = tomorrow.toISOString().split('T')[0];
                 }
+                
+                // Form validation function
+                window.validateAppointmentForm = function() {
+                    const appointmentDate = document.querySelector('input[name="appointmentDate"]').value;
+                    const appointmentTime = document.querySelector('select[name="appointmentTime"]').value;
+                    
+                    if (!appointmentDate || !appointmentTime) {
+                        alert('Vui lòng chọn đầy đủ ngày và giờ hẹn!');
+                        return false;
+                    }
+                    
+                    // Check if appointment is in the past
+                    const appointmentDateTime = new Date(appointmentDate + ' ' + appointmentTime);
+                    const now = new Date();
+                    
+                    if (appointmentDateTime <= now) {
+                        alert('Không thể đặt lịch cho thời gian đã qua. Vui lòng chọn ngày và giờ trong tương lai!');
+                        return false;
+                    }
+                    
+                    return true;
+                };
             });
         </script>
 

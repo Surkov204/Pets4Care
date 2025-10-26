@@ -63,6 +63,7 @@
         <url-pattern>/spa-service</url-pattern>
     </servlet-mapping>
 
+<<<<<<< Updated upstream
     <!-- Định nghĩa servlet cho CartServlet -->
     <servlet>
         <servlet-name>CartServlet</servlet-name>
@@ -171,6 +172,43 @@
         <url-pattern>/logingoogle</url-pattern>
     </servlet-mapping>
 
+=======
+    <!-- Định nghĩa servlet cho BoardingRoomServlet -->
+    <servlet>
+        <servlet-name>BoardingRoomServlet</servlet-name>
+        <servlet-class>controller.BoardingRoomServlet</servlet-class>
+    </servlet>
+
+    <!-- Ánh xạ servlet đến URL /boarding-room -->
+    <servlet-mapping>
+        <servlet-name>BoardingRoomServlet</servlet-name>
+        <url-pattern>/boarding-room</url-pattern>
+    </servlet-mapping>
+
+    <!-- Định nghĩa servlet cho BoardingRoomSimpleServlet -->
+    <servlet>
+        <servlet-name>BoardingRoomSimpleServlet</servlet-name>
+        <servlet-class>controller.BoardingRoomSimpleServlet</servlet-class>
+    </servlet>
+
+    <!-- Ánh xạ servlet đến URL /boarding-room-simple -->
+    <servlet-mapping>
+        <servlet-name>BoardingRoomSimpleServlet</servlet-name>
+        <url-pattern>/boarding-room-simple</url-pattern>
+    </servlet-mapping>
+
+    <!-- Định nghĩa servlet cho TestBoardingServlet -->
+    <servlet>
+        <servlet-name>TestBoardingServlet</servlet-name>
+        <servlet-class>controller.TestBoardingServlet</servlet-class>
+    </servlet>
+
+    <!-- Ánh xạ servlet đến URL /test-boarding -->
+    <servlet-mapping>
+        <servlet-name>TestBoardingServlet</servlet-name>
+        <url-pattern>/test-boarding</url-pattern>
+    </servlet-mapping>
+>>>>>>> Stashed changes
 
     <welcome-file-list>
         <welcome-file>home</welcome-file>

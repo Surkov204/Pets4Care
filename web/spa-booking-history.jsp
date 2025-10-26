@@ -3,11 +3,13 @@
 <%@page import="model.BookingServiceItem"%>
 <%@page import="java.util.List"%>
 <%@page import="java.util.ArrayList"%>
+<%@page import="java.util.Map"%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%
     Customer currentUser = (Customer) session.getAttribute("currentUser");
     List<Booking> spaBookings = (List<Booking>) request.getAttribute("spaBookings");
+    List<Map<String, Object>> boardingServices = (List<Map<String, Object>>) request.getAttribute("boardingServices");
     String errorMessage = (String) request.getAttribute("error");
     String successMessage = (String) request.getAttribute("success");
     
@@ -20,6 +22,7 @@
     if (session.getAttribute("successMessage") != null) session.removeAttribute("successMessage");
     
     if (spaBookings == null) spaBookings = new ArrayList<>();
+    if (boardingServices == null) boardingServices = new ArrayList<>();
 %>
 
 <!DOCTYPE html>
@@ -192,25 +195,116 @@
 
             <!-- Messages -->
             <% if (errorMessage != null) { %>
-            <div class="p-4 mb-6 rounded-md bg-red-100 border-l-4 border-red-500" role="alert">
+            <div id="errorAlert" class="p-4 mb-6 rounded-md bg-red-100 border-l-4 border-red-500" role="alert">
                 <p class="font-bold text-red-600">⚠️ Lỗi</p>
                 <p><%= errorMessage %></p>
             </div>
             <% } %>
 
             <% if (successMessage != null) { %>
-            <div class="p-4 mb-6 rounded-md bg-green-100 border-l-4 border-green-500" role="alert">
+            <div id="successAlert" class="p-4 mb-6 rounded-md bg-green-100 border-l-4 border-green-500" role="alert">
                 <p class="font-bold text-green-600">✅ Thành công</p>
                 <p><%= successMessage %></p>
             </div>
             <% } %>
 
-            <!-- Booking List -->
+
+            <!-- Boarding Services Section -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-green-600 mb-4">🏠 Dịch vụ Lưu trú</h2>
+                <% if (boardingServices != null && !boardingServices.isEmpty()) { %>
+                <div class="space-y-4">
+                    <% for (Map<String, Object> boarding : boardingServices) { %>
+                    <div class="bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-green-400 rounded-lg p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-green-700 mb-2">
+                                    <%= boarding.get("serviceName") %>
+                                </h3>
+                                <div class="flex items-center space-x-4 text-sm text-gray-600">
+                                    <span><i class="fas fa-calendar-alt mr-1"></i>Nhận: <%= boarding.get("checkInDate") %></span>
+                                    <span><i class="fas fa-calendar-check mr-1"></i>Trả: <%= boarding.get("checkOutDate") %></span>
+                                    <span><i class="fas fa-paw mr-1"></i><%= boarding.get("petInfo") %></span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-bold text-green-600">
+                                    <% 
+                                    Object totalPriceObj = boarding.get("totalPrice");
+                                    if (totalPriceObj instanceof java.math.BigDecimal) {
+                                        java.math.BigDecimal totalPrice = (java.math.BigDecimal) totalPriceObj;
+                                        out.print(String.format("%.0f", totalPrice.doubleValue()));
+                                    } else if (totalPriceObj instanceof Double) {
+                                        out.print(String.format("%.0f", (Double) totalPriceObj));
+                                    } else {
+                                        out.print("0");
+                                    }
+                                    %>₫
+                                </div>
+                                <div class="text-sm text-gray-500">Tổng cộng</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-2">
+                                <% 
+                                String status = (String) boarding.get("status");
+                                if (status == null) status = "pending";
+                                %>
+                                <span class="px-3 py-1 rounded-full text-sm font-medium
+                                    <% if ("pending".equals(status)) { %>bg-yellow-100 text-yellow-800<% } %>
+                                    <% if ("confirmed".equals(status)) { %>bg-green-100 text-green-800<% } %>
+                                    <% if ("cancelled".equals(status)) { %>bg-red-100 text-red-800<% } %>
+                                    <% if ("completed".equals(status)) { %>bg-blue-100 text-blue-800<% } %>">
+                                    <% if ("pending".equals(status)) { %><i class="fas fa-clock mr-1"></i>Chờ xác nhận<% } %>
+                                    <% if ("confirmed".equals(status)) { %><i class="fas fa-check mr-1"></i>Đã xác nhận<% } %>
+                                    <% if ("cancelled".equals(status)) { %><i class="fas fa-ban mr-1"></i>Đã hủy<% } %>
+                                    <% if ("completed".equals(status)) { %><i class="fas fa-check-circle mr-1"></i>Hoàn thành<% } %>
+                                </span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="viewBoardingDetails(<%= boarding.get("bookingId") %>)" 
+                                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
+                                    <i class="fas fa-eye mr-1"></i>Xem chi tiết
+                                </button>
+                                <% if (!"cancelled".equals(status)) { %>
+                                <button onclick="cancelBoardingBooking(<%= boarding.get("bookingId") %>)" 
+                                        class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition">
+                                    <i class="fas fa-ban mr-1"></i>Hủy
+                                </button>
+                                <% } else { %>
+                                <button onclick="deleteBoardingBooking(<%= boarding.get("bookingId") %>)" 
+                                        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
+                                    <i class="fas fa-trash mr-1"></i>Xóa khỏi danh sách
+                                </button>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+                <% } else { %>
+                <div class="text-center py-8 bg-gray-50 rounded-lg">
+                    <div class="text-4xl mb-3">🏠</div>
+                    <h3 class="text-lg font-semibold text-gray-600 mb-2">Chưa có dịch vụ lưu trú nào</h3>
+                    <p class="text-gray-500 mb-4">Bạn chưa đặt dịch vụ lưu trú nào cho thú cưng.</p>
+                    <a href="<%= request.getContextPath()%>/spa-service" class="btn-primary">
+                        <i class="fas fa-plus mr-2"></i>Đặt dịch vụ lưu trú
+                    </a>
+                </div>
+                <% } %>
+            </div>
+
+            <!-- Spa Bookings Section -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-orange-600 mb-4">💆 Lịch hẹn Spa</h2>
+            </div>
+
+            <!-- Spa Bookings List -->
             <% if (spaBookings.isEmpty()) { %>
-            <div class="text-center py-16">
-                <div class="text-6xl mb-4">📅</div>
-                <h3 class="text-2xl font-semibold text-gray-600 mb-2">Chưa có lịch hẹn nào</h3>
-                <p class="text-gray-500 mb-6">Bạn chưa có lịch hẹn spa nào. Hãy đặt lịch để thú cưng được chăm sóc!</p>
+            <div class="text-center py-8 bg-gray-50 rounded-lg">
+                <div class="text-4xl mb-3">💆</div>
+                <h3 class="text-lg font-semibold text-gray-600 mb-2">Chưa có lịch hẹn spa nào</h3>
+                <p class="text-gray-500 mb-4">Bạn chưa có lịch hẹn spa nào. Hãy đặt lịch để thú cưng được chăm sóc!</p>
                 <a href="<%= request.getContextPath()%>/spa-service" class="btn-primary">
                     <i class="fas fa-calendar-plus mr-2"></i>Đặt lịch ngay
                 </a>
@@ -291,8 +385,9 @@
                                     </button>
                                 </form>
                                 <% } else if ("cancelled".equals(booking.getStatus())) { %>
-                                <button class="btn-secondary" disabled>
-                                    <i class="fas fa-ban mr-1"></i>Đã hủy
+                                <button onclick="deleteSpaBooking(<%= booking.getBookingId() %>)" 
+                                        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
+                                    <i class="fas fa-trash mr-1"></i>Xóa khỏi danh sách
                                 </button>
                                 <% } else { %>
                                 <button class="btn-secondary" disabled>
@@ -304,6 +399,23 @@
                     </div>
                 </div>
                 <% } %>
+            </div>
+            <% } %>
+            
+            <!-- Empty State for Both Sections -->
+            <% if ((spaBookings == null || spaBookings.isEmpty()) && (boardingServices == null || boardingServices.isEmpty())) { %>
+            <div class="text-center py-16 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg">
+                <div class="text-8xl mb-6">🐾</div>
+                <h2 class="text-3xl font-bold text-gray-700 mb-4">Chào mừng đến với Petcity!</h2>
+                <p class="text-lg text-gray-600 mb-8">Bạn chưa có lịch hẹn nào. Hãy bắt đầu chăm sóc thú cưng ngay hôm nay!</p>
+                <div class="flex justify-center space-x-4">
+                    <a href="<%= request.getContextPath()%>/spa-service" class="btn-primary text-lg px-6 py-3">
+                        <i class="fas fa-spa mr-2"></i>Dịch vụ Spa
+                    </a>
+                    <a href="<%= request.getContextPath()%>/health-check-booking" class="btn-primary text-lg px-6 py-3">
+                        <i class="fas fa-stethoscope mr-2"></i>Khám sức khỏe
+                    </a>
+                </div>
             </div>
             <% } %>
         </div>
@@ -342,6 +454,32 @@
     <jsp:include page="chatbox.jsp"/>
     
     <script>
+        // Auto-hide success/error messages after 10 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const successAlert = document.getElementById('successAlert');
+            const errorAlert = document.getElementById('errorAlert');
+            
+            if (successAlert) {
+                setTimeout(function() {
+                    successAlert.style.transition = 'opacity 0.5s ease-out';
+                    successAlert.style.opacity = '0';
+                    setTimeout(function() {
+                        successAlert.remove();
+                    }, 500);
+                }, 10000); // 10 seconds
+            }
+            
+            if (errorAlert) {
+                setTimeout(function() {
+                    errorAlert.style.transition = 'opacity 0.5s ease-out';
+                    errorAlert.style.opacity = '0';
+                    setTimeout(function() {
+                        errorAlert.remove();
+                    }, 500);
+                }, 10000); // 10 seconds
+            }
+        });
+
         // User menu toggle
         document.addEventListener("DOMContentLoaded", function () {
             const btn = document.getElementById("userToggleBtn");
@@ -360,6 +498,776 @@
                 });
             }
         });
+        
+        // Boarding details functions
+        // Biến theo dõi thay đổi chưa lưu trong modal
+        let boardingModalDirty = false;
+        let boardingModalInitialSnapshot = '';
+
+        function viewBoardingDetails(bookingId) {
+            // Redirect to boarding detail page
+            window.location.href = '<%= request.getContextPath()%>/spa-booking?action=boarding-detail&id=' + bookingId;
+        }
+        
+        function viewBoardingDetailsOld(serviceId) {
+            fetch('<%= request.getContextPath()%>/spa-booking?action=get-boarding-details&serviceId=' + serviceId)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('Không thể tải chi tiết: ' + (data.message || 'Lỗi không xác định'));
+                        return;
+                    }
+
+                    const d = data.boardingDetails || {};
+                    const html =
+                        '<div id="boardingModalRoot" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">' +
+                          '<div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">' +
+                            '<form id="boardingEditForm" class="p-6" oninput="boardingModalDirty=true">' +
+                              '<div class="flex justify-between items-center mb-6">' +
+                                '<h3 class="text-2xl font-bold text-gray-800">🏠 Chi tiết lưu trú</h3>' +
+                                '<button type="button" onclick="closeViewModal()" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>' +
+                              '</div>' +
+
+                              '<input type="hidden" name="serviceId" value="' + serviceId + '">' +
+                              '<input type="hidden" name="action" value="update-boarding-details">' +
+                              '<input type="hidden" name="pricePerDay" value="' + (d.pricePerDay || 0) + '">' +
+
+                              '<div class="bg-gray-50 rounded-lg p-4 mb-4">' +
+                                '<h4 class="font-semibold text-gray-800 mb-2">Thông tin phòng</h4>' +
+                                '<div class="grid md:grid-cols-3 gap-3">' +
+                                  '<div><label class="text-sm text-gray-600">Loại phòng</label><input name="roomType" value="' + (d.roomType || '') + '" class="w-full border rounded px-3 py-2"></div>' +
+                                  '<div><label class="text-sm text-gray-600">Giá/ngày</label><input name="pricePerDayDisplay" value="' + (d.pricePerDay || 0) + '" class="w-full border rounded px-3 py-2" disabled></div>' +
+                                  '<div><label class="text-sm text-gray-600">Số ngày</label><input type="number" min="0" max="30" name="boardingDays" value="' + (d.boardingDays || 0) + '" class="w-full border rounded px-3 py-2"></div>' +
+                                '</div>' +
+                              '</div>' +
+
+                              '<div class="bg-blue-50 rounded-lg p-4 mb-4">' +
+                                '<h4 class="font-semibold text-gray-800 mb-2">Thời gian lưu trú</h4>' +
+                                '<div class="grid md:grid-cols-2 gap-3">' +
+                                  '<div><label class="text-sm text-gray-600">Ngày nhận</label><input type="date" name="checkInDate" value="' + (d.checkInDate || '') + '" class="w-full border rounded px-3 py-2"></div>' +
+                                  '<div><label class="text-sm text-gray-600">Ngày trả</label><input type="date" name="checkOutDate" value="' + (d.checkOutDate || '') + '" class="w-full border rounded px-3 py-2"></div>' +
+                                  '<div><label class="text-sm text-gray-600">Giờ nhận</label><input name="checkInTime" value="' + (d.checkInTime || '') + '" class="w-full border rounded px-3 py-2"></div>' +
+                                  '<div><label class="text-sm text-gray-600">Giờ trả</label><input name="checkOutTime" value="' + (d.checkOutTime || '') + '" class="w-full border rounded px-3 py-2"></div>' +
+                                '</div>' +
+                              '</div>' +
+
+                              '<div class="bg-green-50 rounded-lg p-4 mb-4">' +
+                                '<h4 class="font-semibold text-gray-800 mb-2">Thông tin thú cưng</h4>' +
+                                '<textarea name="petInfo" rows="3" class="w-full border rounded px-3 py-2" placeholder="Tên thú cưng, loài, giống...">' + (d.petInfo || '') + '</textarea>' +
+                                '<textarea name="specialNotes" rows="2" class="w-full border rounded px-3 py-2 mt-2" placeholder="Yêu cầu đặc biệt">' + (d.specialNotes || '') + '</textarea>' +
+                              '</div>' +
+
+                              '<div class="bg-yellow-50 rounded-lg p-4">' +
+                                '<h4 class="font-semibold text-gray-800 mb-2">Liên hệ khẩn cấp</h4>' +
+                                '<div class="grid md:grid-cols-2 gap-3">' +
+                                  '<div><label class="text-sm text-gray-600">SĐT 1</label><input name="emergencyPhone1" value="' + (d.emergencyPhone1 || '') + '" class="w-full border rounded px-3 py-2"></div>' +
+                                  '<div><label class="text-sm text-gray-600">SĐT 2</label><input name="emergencyPhone2" value="' + (d.emergencyPhone2 || '') + '" class="w-full border rounded px-3 py-2"></div>' +
+                                '</div>' +
+                              '</div>' +
+
+                              '<div class="mt-6 flex justify-end gap-3">' +
+                                '<button type="button" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600" onclick="closeViewModal()">Đóng</button>' +
+                                '<button type="button" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700" onclick="saveBoardingDetails(' + serviceId + ')">Lưu</button>' +
+                              '</div>' +
+                            '</form>' +
+                          '</div>' +
+                        '</div>';
+
+                    document.body.insertAdjacentHTML('beforeend', html);
+                    // Lưu snapshot ban đầu để so sánh thay đổi
+                    const form = document.getElementById('boardingEditForm');
+                    boardingModalInitialSnapshot = new URLSearchParams(new FormData(form)).toString();
+                    boardingModalDirty = false;
+                    
+                  })
+                  .catch(err => {
+                    console.error(err);
+                    alert('Có lỗi xảy ra khi tải chi tiết');
+                  });
+        }
+
+        function saveBoardingDetails(serviceId) {
+            const form = document.getElementById('boardingEditForm');
+            if (!form) return;
+            const formData = new FormData(form);
+
+            fetch('<%= request.getContextPath()%>/spa-booking', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' },
+                body: formData
+            })
+            .then(res => res.json().catch(() => ({})))
+            .then(res => {
+                // Chấp nhận cả phản hồi JSON hoặc chuyển hướng
+                boardingModalDirty = false;
+                closeViewModal(true);
+                // Reload để cập nhật lịch sử
+                window.location.href = '<%= request.getContextPath()%>/spa-booking?action=history';
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Không thể lưu thay đổi');
+            });
+        }
+        
+        function editBoardingDetails(serviceId) {
+            // Show confirmation dialog for cancellation
+            if (confirm('Bạn có chắc chắn muốn hủy lịch lưu trú này?')) {
+                // Create a form and submit it like spa bookings
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'remove-service';
+                form.appendChild(actionInput);
+                
+                const serviceIdInput = document.createElement('input');
+                serviceIdInput.type = 'hidden';
+                serviceIdInput.name = 'serviceId';
+                serviceIdInput.value = serviceId;
+                form.appendChild(serviceIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function closeViewModal(force) {
+            const modal = document.getElementById('boardingModalRoot') || document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
+            if (!modal) return;
+
+            if (!force && boardingModalDirty) {
+                const confirmSave = confirm('Bạn có thay đổi chưa lưu. Bạn có muốn lưu trước khi thoát?');
+                if (confirmSave) {
+                    // Gọi lưu, sau đó sẽ đóng modal trong saveBoardingDetails
+                    const form = document.getElementById('boardingEditForm');
+                    if (form) {
+                        const paramsNow = new URLSearchParams(new FormData(form)).toString();
+                        if (paramsNow !== boardingModalInitialSnapshot) {
+                            // Chỉ lưu nếu khác
+                            const serviceId = form.querySelector('input[name="serviceId"]').value;
+                            saveBoardingDetails(serviceId);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            modal.remove();
+            boardingModalDirty = false;
+        }
+        
+        
+        function cancelBoardingBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn hủy lịch lưu trú này?')) {
+                // Tạo form để hủy booking
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '<%= request.getContextPath()%>/spa-booking';
+            
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'cancel-boarding-booking';
+                form.appendChild(actionInput);
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function migrateSessionToDB() {
+            if (confirm('Bạn có chắc chắn muốn migrate dữ liệu từ session sang database? Dữ liệu session sẽ bị xóa sau khi migrate.')) {
+                // Tạo form để migrate
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'migrate-session-to-db';
+                form.appendChild(actionInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function deleteBoardingBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch lưu trú này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-boarding-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function deleteSpaBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch spa này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-spa-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+</body>
+</html>
+
+        function cancelBoardingBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn hủy lịch lưu trú này?')) {
+                // Tạo form để hủy booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'cancel-boarding-booking';
+                form.appendChild(actionInput);
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function migrateSessionToDB() {
+            if (confirm('Bạn có chắc chắn muốn migrate dữ liệu từ session sang database? Dữ liệu session sẽ bị xóa sau khi migrate.')) {
+                // Tạo form để migrate
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'migrate-session-to-db';
+                form.appendChild(actionInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function deleteBoardingBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch lưu trú này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-boarding-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function deleteSpaBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch spa này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-spa-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+</body>
+</html>
+
+                form.appendChild(actionInput);
+                
+                const serviceIdInput = document.createElement('input');
+                serviceIdInput.type = 'hidden';
+                serviceIdInput.name = 'serviceId';
+                serviceIdInput.value = serviceId;
+                form.appendChild(serviceIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function closeViewModal(force) {
+            const modal = document.getElementById('boardingModalRoot') || document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
+            if (!modal) return;
+
+            if (!force && boardingModalDirty) {
+                const confirmSave = confirm('Bạn có thay đổi chưa lưu. Bạn có muốn lưu trước khi thoát?');
+                if (confirmSave) {
+                    // Gọi lưu, sau đó sẽ đóng modal trong saveBoardingDetails
+                    const form = document.getElementById('boardingEditForm');
+                    if (form) {
+                        const paramsNow = new URLSearchParams(new FormData(form)).toString();
+                        if (paramsNow !== boardingModalInitialSnapshot) {
+                            // Chỉ lưu nếu khác
+                            const serviceId = form.querySelector('input[name="serviceId"]').value;
+                            saveBoardingDetails(serviceId);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            modal.remove();
+            boardingModalDirty = false;
+        }
+        
+        
+        function cancelBoardingBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn hủy lịch lưu trú này?')) {
+                // Tạo form để hủy booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'cancel-boarding-booking';
+                form.appendChild(actionInput);
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function deleteBoardingBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch lưu trú này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-boarding-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function deleteSpaBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch spa này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-spa-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+</body>
+</html>
+
+                input.type = 'hidden';
+                input.name = key;
+                input.value = testData[key];
+                form.appendChild(input);
+            });
+            
+            // Thêm action
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = 'create-test-boarding';
+            form.appendChild(actionInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+        
+        function cancelBoardingBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn hủy lịch lưu trú này?')) {
+                // Tạo form để hủy booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'cancel-boarding-booking';
+                form.appendChild(actionInput);
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function deleteBoardingBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch lưu trú này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-boarding-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function deleteSpaBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch spa này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-spa-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+</body>
+</html>
+
+        function cancelBoardingBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn hủy lịch lưu trú này?')) {
+                // Tạo form để hủy booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'cancel-boarding-booking';
+                form.appendChild(actionInput);
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function migrateSessionToDB() {
+            if (confirm('Bạn có chắc chắn muốn migrate dữ liệu từ session sang database? Dữ liệu session sẽ bị xóa sau khi migrate.')) {
+                // Tạo form để migrate
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'migrate-session-to-db';
+                form.appendChild(actionInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function deleteBoardingBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch lưu trú này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-boarding-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function deleteSpaBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch spa này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-spa-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+</body>
+</html>
+
+                form.appendChild(actionInput);
+                
+                const serviceIdInput = document.createElement('input');
+                serviceIdInput.type = 'hidden';
+                serviceIdInput.name = 'serviceId';
+                serviceIdInput.value = serviceId;
+                form.appendChild(serviceIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function closeViewModal(force) {
+            const modal = document.getElementById('boardingModalRoot') || document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
+            if (!modal) return;
+
+            if (!force && boardingModalDirty) {
+                const confirmSave = confirm('Bạn có thay đổi chưa lưu. Bạn có muốn lưu trước khi thoát?');
+                if (confirmSave) {
+                    // Gọi lưu, sau đó sẽ đóng modal trong saveBoardingDetails
+                    const form = document.getElementById('boardingEditForm');
+                    if (form) {
+                        const paramsNow = new URLSearchParams(new FormData(form)).toString();
+                        if (paramsNow !== boardingModalInitialSnapshot) {
+                            // Chỉ lưu nếu khác
+                            const serviceId = form.querySelector('input[name="serviceId"]').value;
+                            saveBoardingDetails(serviceId);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            modal.remove();
+            boardingModalDirty = false;
+        }
+        
+        
+        function cancelBoardingBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn hủy lịch lưu trú này?')) {
+                // Tạo form để hủy booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'cancel-boarding-booking';
+                form.appendChild(actionInput);
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function deleteBoardingBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch lưu trú này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-boarding-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function deleteSpaBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch spa này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-spa-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
     </script>
 </body>
 </html>

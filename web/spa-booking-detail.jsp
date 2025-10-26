@@ -1,6 +1,7 @@
 <%@page import="model.Customer"%>
 <%@page import="model.Booking"%>
 <%@page import="model.BookingServiceItem"%>
+<%@page import="model.Pet"%>
 <%@page import="java.util.List"%>
 <%@page import="java.util.ArrayList"%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
@@ -9,6 +10,7 @@
     Customer currentUser = (Customer) session.getAttribute("currentUser");
     Booking booking = (Booking) request.getAttribute("booking");
     List<BookingServiceItem> spaBookingDetails = (List<BookingServiceItem>) request.getAttribute("spaBookingDetails");
+    List<Pet> customerPets = (List<Pet>) request.getAttribute("customerPets");
     String errorMessage = (String) request.getAttribute("error");
     
     // Lấy thông báo từ session (cho redirect)
@@ -20,6 +22,7 @@
     if (session.getAttribute("successMessage") != null) session.removeAttribute("successMessage");
     
     if (spaBookingDetails == null) spaBookingDetails = new ArrayList<>();
+    if (customerPets == null) customerPets = new ArrayList<>();
 %>
 
 <!DOCTYPE html>
@@ -255,9 +258,9 @@
                                 <span class="text-gray-600">Dịch vụ:</span>
                                 <span class="font-semibold">
                                     <% 
-                                    String serviceName = booking.getServiceNames();
-                                    if (serviceName != null && !serviceName.trim().isEmpty()) {
-                                        out.print(serviceName);
+                                    String bookingServiceName = booking.getServiceNames();
+                                    if (bookingServiceName != null && !bookingServiceName.trim().isEmpty()) {
+                                        out.print(bookingServiceName);
                                     } else {
                                         out.print("Không có thông tin");
                                     }
@@ -322,6 +325,48 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Pet Information -->
+            <% if (customerPets != null && !customerPets.isEmpty()) { %>
+            <div class="detail-card bg-white border border-gray-200 mb-8">
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">🐾 Thông tin thú cưng</h3>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <% for (Pet pet : customerPets) { %>
+                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-center mb-3">
+                                <div class="text-2xl mr-3"><%= pet.getSpeciesEmoji() %></div>
+                                <div>
+                                    <h4 class="font-bold text-gray-800"><%= pet.getPetName() %></h4>
+                                    <p class="text-sm text-gray-600"><%= pet.getSpecies() %> - <%= pet.getBreed() %></p>
+                                </div>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Tuổi:</span>
+                                    <span class="font-semibold"><%= pet.getAgeText() %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Giới tính:</span>
+                                    <span class="font-semibold"><%= pet.getGenderDisplayName() %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Sức khỏe:</span>
+                                    <span class="font-semibold text-green-600"><%= pet.getHealthStatus() %></span>
+                                </div>
+                                <% if (pet.getDescription() != null && !pet.getDescription().trim().isEmpty()) { %>
+                                <div class="mt-2">
+                                    <span class="text-gray-600">Mô tả:</span>
+                                    <p class="text-sm text-gray-700 mt-1"><%= pet.getDescription() %></p>
+                                </div>
+                                <% } %>
+                            </div>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% } %>
 
             <!-- Services -->
             <div class="detail-card bg-white border border-gray-200 mb-8">

@@ -1,9 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
         <title>🐾 Staff Dashboard | Pet4Care</title>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/staff.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <style>
@@ -320,11 +323,41 @@
                 font-size: 14px;
                 margin-bottom: 20px;
             }
+            .btn-checkin {
+                background: linear-gradient(135deg, #22c55e, #16a34a);
+                color: #fff;
+                font-size: 18px;
+                padding: 14px 40px;
+                border: none;
+                border-radius: 40px;
+                cursor: pointer;
+                transition: 0.3s ease;
+                box-shadow: 0 5px 12px rgba(34,197,94,0.4);
+            }
+            .btn-checkin:hover {
+                background: linear-gradient(135deg, #16a34a, #15803d);
+                transform: scale(1.03);
+            }
 
+            .btn-checkout {
+                background: linear-gradient(135deg, #facc15, #eab308);
+                color: #333;
+                font-size: 18px;
+                padding: 14px 40px;
+                border: none;
+                border-radius: 40px;
+                cursor: pointer;
+                transition: 0.3s ease;
+                box-shadow: 0 5px 12px rgba(250,204,21,0.4);
+            }
+            .btn-checkout:hover {
+                background: linear-gradient(135deg, #eab308, #ca8a04);
+                transform: scale(1.03);
+            }
         </style>
     </head>
     <body>
-
+        <% System.out.println("[JSP DEBUG] sessionScope.isCheckedIn = " + session.getAttribute("isCheckedIn"));%>
         <header class="staff-header">
             <c:if test="${not empty sessionScope.swapSuccess}">
                 <div style="background:#d1fae5;color:#065f46;padding:10px;border-radius:10px;margin:10px 0;">
@@ -374,7 +407,6 @@
                     <li><a href="${pageContext.request.contextPath}/staff/mySchedule"><i class="fas fa-calendar-alt"></i> My Work Schedule</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-users"></i> Customer Profile</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/services-booking"><i class="fas fa-list"></i> Services Booking</a></li>
-                    <li><a href="${pageContext.request.contextPath}/staff/requestShift.jsp"><i class="fas fa-exchange-alt"></i> Request Shift</a></li>
                     <li class="chat-item">
                         <a href="${pageContext.request.contextPath}/staff/chatCustomer" id="chatMenuItem">
                             <i class="fas fa-comments"></i> Chat with Customer
@@ -393,31 +425,23 @@
                 </section>
                 <!-- Attendance & Payroll Section -->
                 <section class="attendance-section">
-
                     <!-- Card bên trái: Check-in / Check-out -->
                     <div class="attendance-card">
                         <h3><i class="fas fa-clock"></i> Chấm công</h3>
-                        <p class="attendance-subtext">
-                        <c:choose>
-                            <c:when test="${isCheckedIn}">
-                                Bạn đang trong ca làm việc. Khi kết thúc, hãy bấm "Check Out".
-                            </c:when>
-                            <c:otherwise>
-                                Bấm nút bên dưới để bắt đầu ca làm hôm nay.
-                            </c:otherwise>
-                        </c:choose>
-                        </p>
 
-                        <form action="${pageContext.request.contextPath}/staff/attendance" method="post" class="attendance-actions">
-                            <input type="hidden" name="action" value="toggle" />
-                            <button type="submit" class="btn-toggle">
-                                <c:choose>
-                                    <c:when test="${isCheckedIn}">Check Out</c:when>
-                                    <c:otherwise>Check In</c:otherwise>
-                                </c:choose>
-                            </button>
+                        <form id="attendanceForm">
+                            <c:choose>
+                                <c:when test="${isCheckedIn}">
+                                    <button type="button" id="attendanceButton" class="btn-checkout">Check-out</button>
+                                    <p id="attendanceStatus" class="attendance-subtext">Bạn đang trong ca làm.</p>
+                                </c:when>
+                                <c:otherwise>
+                                    <button type="button" id="attendanceButton" class="btn-checkin">Check-in</button>
+                                    <p id="attendanceStatus" class="attendance-subtext">Bạn chưa bắt đầu ca làm.</p>
+                                </c:otherwise>
+                            </c:choose>
                         </form>
-                    </div>  
+                    </div>
 
                     <!-- Card bên phải: Bảng lương -->
                     <div class="salary-card">
@@ -442,18 +466,18 @@
                                 </tr>
                             </thead>
                             <tbody>
-                            <c:forEach var="p" items="${payrollList}">
-                                <tr>
-                                    <td>${p.periodStart} → ${p.periodEnd}</td>
-                                    <td>${p.totalHours}</td>
-                                    <td>${p.hourlyRate}</td>
-                                    <td><b>${p.totalSalary}</b></td>
-                                    <td>${p.createdAt}</td>
-                                </tr>
-                            </c:forEach>
-                            <c:if test="${empty payrollList}">
-                                <tr><td colspan="5" class="empty-msg">Chưa có dữ liệu lương.</td></tr>
-                            </c:if>
+                                <c:forEach var="p" items="${payrollList}">
+                                    <tr>
+                                        <td>${p.periodStart} → ${p.periodEnd}</td>
+                                        <td>${p.totalHours}</td>
+                                        <td>${p.hourlyRate}</td>
+                                        <td><b>${p.totalSalary}</b></td>
+                                        <td>${p.createdAt}</td>
+                                    </tr>
+                                </c:forEach>
+                                <c:if test="${empty payrollList}">
+                                    <tr><td colspan="5" class="empty-msg">Chưa có dữ liệu lương.</td></tr>
+                                </c:if>
                             </tbody>
                         </table>
                     </div>
@@ -627,10 +651,50 @@
                             .catch(err => console.error("❌ Lỗi gửi phản hồi:", err));
                 }
             });
+            document.addEventListener("DOMContentLoaded", () => {
+                const btn = document.getElementById("attendanceButton");
+
+                btn.addEventListener("click", async () => {
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append("action", "toggle");
+
+                        const res = await fetch("${pageContext.request.contextPath}/staff/attendance", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                            body: formData.toString()
+                        });
+
+                        const data = await res.json();
+
+                        if (data.status === "error") {
+                            Swal.fire({
+                                icon: "warning",
+                                title: "Thông báo",
+                                text: data.message,
+                                confirmButtonText: "OK"
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Thành công!",
+                                text: data.message,
+                                confirmButtonText: "OK"
+                            }).then(() => location.reload());
+                        }
+                    } catch (err) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Lỗi hệ thống",
+                            text: "Không thể kết nối máy chủ. Hãy thử lại sau.",
+                            confirmButtonText: "OK"
+                        });
+                    }
+                });
+            });
             updateNotifyBadge();
             updateChatBadge();
             setInterval(updateChatBadge, 5000);
         </script>
-
     </body>
 </html>

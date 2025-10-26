@@ -48,7 +48,6 @@
             <img src="https://img.vietqr.io/image/VietinBank-0916134642-compact.png?amount=<%= (int)(totalAmount * 1000) %>&addInfo=DH<%= order.getOrderId() %>"
                 class="w-60 mx-auto rounded shadow mb-6" alt="QR Code chuyển khoản">
 
-
             <form action="<%= request.getContextPath() %>/confirmpaymentservlet" method="post">
                 <input type="hidden" name="orderId" value="<%= order.getOrderId() %>">
                 <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded">
@@ -57,6 +56,19 @@
             </form>
 
             <p class="text-sm text-gray-500 mt-4">Sau khi xác nhận, đơn hàng sẽ được cập nhật trạng thái "Đã thanh toán".</p>
+        <% } else if ("PayOS".equalsIgnoreCase(method) && order != null) { %>
+            <div class="my-6">
+                <h2 class="text-xl font-semibold text-gray-700 mb-2">💳 Thanh toán online với PayOS</h2>
+                <p class="text-gray-600 mb-4">Bạn sẽ được chuyển hướng đến trang thanh toán an toàn của PayOS.</p>
+                <p class="text-sm text-gray-500 mb-4">Hỗ trợ thanh toán qua thẻ ATM, thẻ tín dụng, ví điện tử...</p>
+            </div>
+
+            <a href="<%= request.getContextPath() %>/payos/create-payment?orderId=<%= order.getOrderId() %>" 
+               class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded inline-block">
+                🚀 Thanh toán ngay với PayOS
+            </a>
+
+            <p class="text-sm text-gray-500 mt-4">Sau khi thanh toán thành công, đơn hàng sẽ được tự động cập nhật trạng thái.</p>
         <% } else if ("Tiền mặt".equalsIgnoreCase(method)) { %>
             <p class="mt-6 text-green-600 font-semibold">🛍 Bạn đã chọn thanh toán tiền mặt khi nhận hàng.</p>
         <% } %>

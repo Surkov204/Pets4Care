@@ -3,7 +3,6 @@ package controller;
 import com.google.gson.Gson;
 import dao.ProductDAO;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import model.CartItem;
 import model.Product;
@@ -12,7 +11,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-@WebServlet("/cartservlet")
 public class CartServlet extends HttpServlet {
 
     @Override

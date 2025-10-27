@@ -39,7 +39,7 @@ public class WorkScheduleController extends HttpServlet {
             dao.deleteSchedule(id);
 
             // 🔁 Redirect về danh sách sau khi xóa
-            response.sendRedirect(request.getContextPath() + "/schedule?action=list");
+               response.sendRedirect(request.getContextPath() + "/admin/manage-staff");
         } else if (action.equals("new")) {
             // ✅ Chuyển tới form thêm mới lịch làm việc
             request.getRequestDispatcher("/admin/scheduleForm.jsp").forward(request, response);
@@ -78,6 +78,5 @@ public class WorkScheduleController extends HttpServlet {
         // 🔁 Quay lại danh sách
         response.sendRedirect(request.getContextPath() + "/schedule?action=list");
     }
-
 
 }

@@ -790,5 +790,48 @@ public List<Booking> getAllBookings() {
             return false;
         }
     }
+    
+    public List<Booking> getAllBookingsForStaffView() {
+        List<Booking> list = new ArrayList<>();
+        String sql = """
+        SELECT 
+            b.booking_id,
+            b.customer_id,
+            c.name AS customer_name,
+            b.pet_id,
+            p.pet_name AS pet_name,
+            b.status,
+            (
+                SELECT STRING_AGG(ps.name, ', ')
+                FROM Booking_Service bs
+                JOIN PetService ps ON bs.service_id = ps.service_id
+                WHERE bs.booking_id = b.booking_id
+            ) AS service_names
+        FROM Booking b
+        LEFT JOIN Customer c ON b.customer_id = c.customer_id
+        LEFT JOIN Pet p ON b.pet_id = p.id
+        ORDER BY b.appointment_start DESC
+    """;
+
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Booking b = new Booking();
+                b.setBookingId(rs.getInt("booking_id"));
+                b.setCustomerId(rs.getInt("customer_id"));
+                b.setCustomerName(rs.getString("customer_name"));
+                b.setPetId(rs.getInt("pet_id"));
+                b.setPetName(rs.getString("pet_name"));
+                b.setStatus(rs.getString("status"));
+                b.setServiceNames(rs.getString("service_names"));
+                list.add(b);
+            }
+
+            System.out.println("[DEBUG] >>> FINISHED getAllBookingsForStaffView(): " + list.size());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }
 

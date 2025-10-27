@@ -26,18 +26,14 @@ public class ShiftController extends HttpServlet {
 
             // 🔧 Sửa đúng đường dẫn thực tế của JSP
             request.getRequestDispatcher("/admin/manageShift.jsp").forward(request, response);
-        }
-
-        else if (action.equals("delete")) {
+        } else if (action.equals("delete")) {
             // ✅ Xóa ca làm
             int id = Integer.parseInt(request.getParameter("id"));
             dao.deleteShift(id);
 
             // 🔁 Redirect về danh sách
             response.sendRedirect(request.getContextPath() + "/shift?action=list");
-        }
-
-        else if (action.equals("edit")) {
+        } else if (action.equals("edit")) {
             // ✅ Lấy thông tin ca làm để chỉnh sửa
             int id = Integer.parseInt(request.getParameter("id"));
             Shift s = dao.getShiftById(id);
@@ -45,9 +41,7 @@ public class ShiftController extends HttpServlet {
 
             // 🔧 Chuyển đến form sửa
             request.getRequestDispatcher("/admin/shiftForm.jsp").forward(request, response);
-        }
-
-        else if (action.equals("new")) {
+        } else if (action.equals("new")) {
             // ✅ Chuyển đến form thêm mới
             request.getRequestDispatcher("/admin/shiftForm.jsp").forward(request, response);
         }
@@ -79,6 +73,7 @@ public class ShiftController extends HttpServlet {
         }
 
         // 🔁 Quay lại danh sách sau khi lưu
-        response.sendRedirect(request.getContextPath() + "/shift?action=list");
+        response.sendRedirect(request.getContextPath() + "/admin/manage-staff");
+        request.getRequestDispatcher("/admin/shiftForm.jsp").forward(request, response);
     }
 }

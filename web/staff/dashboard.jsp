@@ -380,7 +380,9 @@
                 </div>
                 <div class="avatar-dropdown">
                     <div class="avatar" onclick="toggleDropdown()">
-                        <img src="${pageContext.request.contextPath}/images/staff-avatar.png" alt="Staff">
+                        <img src="${pageContext.request.contextPath}/${sessionScope.staff.avatar != null ? sessionScope.staff.avatar : 'images/staff-avatar.png'}" 
+                             alt="Staff"
+                             style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
                         <span>${sessionScope.staff.name}</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
@@ -680,7 +682,24 @@
                                 title: "Thành công!",
                                 text: data.message,
                                 confirmButtonText: "OK"
-                            }).then(() => location.reload());
+                            }).then(() => {
+                                const btn = document.getElementById("attendanceButton");
+                                const status = document.getElementById("attendanceStatus");
+
+                                if (btn.classList.contains("btn-checkin")) {
+                                    // Đổi từ check-in sang check-out (xanh → vàng)
+                                    btn.classList.remove("btn-checkin");
+                                    btn.classList.add("btn-checkout");
+                                    btn.textContent = "Check-out";
+                                    status.textContent = "Bạn đang trong ca làm.";
+                                } else {
+                                    // Đổi từ check-out sang check-in (vàng → xanh)
+                                    btn.classList.remove("btn-checkout");
+                                    btn.classList.add("btn-checkin");
+                                    btn.textContent = "Check-in";
+                                    status.textContent = "Bạn chưa bắt đầu ca làm.";
+                                }
+                            });
                         }
                     } catch (err) {
                         Swal.fire({

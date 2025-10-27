@@ -162,16 +162,322 @@ public static String generateChecksum(String amount, String orderCode, String re
 
     
     /**
-     * Xác thực webhook signature
-     * Note: This method is kept for backward compatibility but may need updates
-     * based on your webhook verification requirements
+     * Xác thực webhook signature cho payment-requests
+     * Sử dụng thuật toán HMAC_SHA256 với data dạng key1=value1&key2=value2...
+     * Dữ liệu sắp xếp theo key thứ tự alphabet
+     */
+    public static boolean verifyPaymentRequestSignature(JsonObject webhookData, String expectedSignature) {
+        try {
+            System.out.println("🔐 ===== VERIFYING PAYMENT REQUEST SIGNATURE =====");
+            
+            if (!webhookData.has("data") || !webhookData.has("signature")) {
+                System.err.println("❌ Webhook data missing 'data' or 'signature' field");
+                return false;
+            }
+            
+            JsonObject data = webhookData.getAsJsonObject("data");
+            String checksumKey = PayOSConfig.getChecksumKey();
+            
+            if (checksumKey == null || checksumKey.isEmpty()) {
+                System.err.println("❌ Checksum key is not configured");
+                return false;
+            }
+            
+            System.out.println("📋 Webhook data: " + data.toString());
+            System.out.println("🔑 Expected signature: " + expectedSignature);
+            
+            // Tạo signature từ data object
+            String computedSignature = generatePaymentRequestSignature(data, checksumKey);
+            System.out.println("🔐 Computed signature: " + computedSignature);
+            
+            boolean isValid = computedSignature.equals(expectedSignature);
+            System.out.println("✅ Signature verification result: " + isValid);
+            System.out.println("🔐 ===== PAYMENT REQUEST SIGNATURE VERIFICATION COMPLETE =====");
+            
+            return isValid;
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERROR verifying payment request signature: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Tạo signature cho payment-requests webhook data
+     */
+    private static String generatePaymentRequestSignature(JsonObject data, String checksumKey) {
+        try {
+            // Sắp xếp keys theo alphabet
+            java.util.TreeMap<String, Object> sortedMap = new java.util.TreeMap<>();
+            
+            for (Map.Entry<String, com.google.gson.JsonElement> entry : data.entrySet()) {
+                String key = entry.getKey();
+                com.google.gson.JsonElement value = entry.getValue();
+                
+                Object valueObj;
+                if (value.isJsonNull()) {
+                    valueObj = "";
+                } else if (value.isJsonArray()) {
+                    // Xử lý array - sắp xếp các object trong array
+                    com.google.gson.JsonArray array = value.getAsJsonArray();
+                    java.util.List<Object> sortedArray = new java.util.ArrayList<>();
+                    for (com.google.gson.JsonElement element : array) {
+                        if (element.isJsonObject()) {
+                            java.util.TreeMap<String, Object> sortedElement = new java.util.TreeMap<>();
+                            for (Map.Entry<String, com.google.gson.JsonElement> elemEntry : element.getAsJsonObject().entrySet()) {
+                                sortedElement.put(elemEntry.getKey(), getValueFromJsonElement(elemEntry.getValue()));
+                            }
+                            sortedArray.add(sortedElement);
+                        } else {
+                            sortedArray.add(getValueFromJsonElement(element));
+                        }
+                    }
+                    valueObj = sortedArray;
+                } else if (value.isJsonObject()) {
+                    // Xử lý nested object - sắp xếp keys
+                    java.util.TreeMap<String, Object> sortedNested = new java.util.TreeMap<>();
+                    for (Map.Entry<String, com.google.gson.JsonElement> nestedEntry : value.getAsJsonObject().entrySet()) {
+                        sortedNested.put(nestedEntry.getKey(), getValueFromJsonElement(nestedEntry.getValue()));
+                    }
+                    valueObj = sortedNested;
+                } else {
+                    valueObj = getValueFromJsonElement(value);
+                }
+                
+                sortedMap.put(key, valueObj);
+            }
+            
+            // Tạo query string dạng key1=value1&key2=value2...
+            java.util.List<String> queryParts = new java.util.ArrayList<>();
+            for (Map.Entry<String, Object> entry : sortedMap.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                
+                String valueStr;
+                if (value == null || "null".equals(String.valueOf(value)) || "undefined".equals(String.valueOf(value))) {
+                    valueStr = "";
+                } else if (value instanceof java.util.List || value instanceof java.util.Map) {
+                    // Convert to JSON string for arrays and objects
+                    Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+                    valueStr = gson.toJson(value);
+                } else {
+                    valueStr = String.valueOf(value);
+                }
+                
+                queryParts.add(key + "=" + valueStr);
+            }
+            
+            String queryString = String.join("&", queryParts);
+            System.out.println("📝 Query string for signature: " + queryString);
+            
+            // Tạo HMAC-SHA256 signature
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(checksumKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            mac.init(secretKeySpec);
+            
+            byte[] hash = mac.doFinal(queryString.getBytes(StandardCharsets.UTF_8));
+            
+            // Convert to hex
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            
+            return hexString.toString();
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERROR generating payment request signature: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Xác thực webhook signature cho payouts
+     * Sử dụng thuật toán HMAC_SHA256 với data dạng key1=value1&key2=value2...
+     * Dữ liệu sắp xếp theo key thứ tự alphabet, arrays không được sắp xếp
+     */
+    public static boolean verifyPayoutSignature(JsonObject webhookData, String expectedSignature) {
+        try {
+            System.out.println("🔐 ===== VERIFYING PAYOUT SIGNATURE =====");
+            
+            if (!webhookData.has("data") || !webhookData.has("signature")) {
+                System.err.println("❌ Webhook data missing 'data' or 'signature' field");
+                return false;
+            }
+            
+            JsonObject data = webhookData.getAsJsonObject("data");
+            String checksumKey = PayOSConfig.getChecksumKey();
+            
+            if (checksumKey == null || checksumKey.isEmpty()) {
+                System.err.println("❌ Checksum key is not configured");
+                return false;
+            }
+            
+            System.out.println("📋 Payout data: " + data.toString());
+            System.out.println("🔑 Expected signature: " + expectedSignature);
+            
+            // Tạo signature từ data object
+            String computedSignature = generatePayoutSignature(data, checksumKey);
+            System.out.println("🔐 Computed signature: " + computedSignature);
+            
+            boolean isValid = computedSignature.equals(expectedSignature);
+            System.out.println("✅ Signature verification result: " + isValid);
+            System.out.println("🔐 ===== PAYOUT SIGNATURE VERIFICATION COMPLETE =====");
+            
+            return isValid;
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERROR verifying payout signature: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Tạo signature cho payouts webhook data
+     */
+    private static String generatePayoutSignature(JsonObject data, String checksumKey) {
+        try {
+            // Sắp xếp keys theo alphabet, nhưng giữ nguyên thứ tự arrays
+            java.util.TreeMap<String, Object> sortedMap = new java.util.TreeMap<>();
+            
+            for (Map.Entry<String, com.google.gson.JsonElement> entry : data.entrySet()) {
+                String key = entry.getKey();
+                com.google.gson.JsonElement value = entry.getValue();
+                
+                Object valueObj;
+                if (value.isJsonNull()) {
+                    valueObj = "";
+                } else if (value.isJsonArray()) {
+                    // Xử lý array - KHÔNG sắp xếp các phần tử trong array
+                    com.google.gson.JsonArray array = value.getAsJsonArray();
+                    java.util.List<Object> arrayList = new java.util.ArrayList<>();
+                    for (com.google.gson.JsonElement element : array) {
+                        if (element.isJsonObject()) {
+                            java.util.TreeMap<String, Object> sortedElement = new java.util.TreeMap<>();
+                            for (Map.Entry<String, com.google.gson.JsonElement> elemEntry : element.getAsJsonObject().entrySet()) {
+                                sortedElement.put(elemEntry.getKey(), getValueFromJsonElement(elemEntry.getValue()));
+                            }
+                            arrayList.add(sortedElement);
+                        } else {
+                            arrayList.add(getValueFromJsonElement(element));
+                        }
+                    }
+                    valueObj = arrayList;
+                } else if (value.isJsonObject()) {
+                    // Xử lý nested object - sắp xếp keys
+                    java.util.TreeMap<String, Object> sortedNested = new java.util.TreeMap<>();
+                    for (Map.Entry<String, com.google.gson.JsonElement> nestedEntry : value.getAsJsonObject().entrySet()) {
+                        sortedNested.put(nestedEntry.getKey(), getValueFromJsonElement(nestedEntry.getValue()));
+                    }
+                    valueObj = sortedNested;
+                } else {
+                    valueObj = getValueFromJsonElement(value);
+                }
+                
+                sortedMap.put(key, valueObj);
+            }
+            
+            // Tạo query string dạng key1=value1&key2=value2... với encodeURI
+            java.util.List<String> queryParts = new java.util.ArrayList<>();
+            for (Map.Entry<String, Object> entry : sortedMap.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                
+                String valueStr;
+                if (value == null || "null".equals(String.valueOf(value)) || "undefined".equals(String.valueOf(value))) {
+                    valueStr = "";
+                } else if (value instanceof java.util.List || value instanceof java.util.Map) {
+                    // Convert to JSON string for arrays and objects
+                    Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+                    valueStr = gson.toJson(value);
+                } else {
+                    valueStr = String.valueOf(value);
+                }
+                
+                // Encode URI components như trong JavaScript
+                String encodedKey = java.net.URLEncoder.encode(key, StandardCharsets.UTF_8.toString());
+                String encodedValue = java.net.URLEncoder.encode(valueStr, StandardCharsets.UTF_8.toString());
+                queryParts.add(encodedKey + "=" + encodedValue);
+            }
+            
+            String queryString = String.join("&", queryParts);
+            System.out.println("📝 Query string for payout signature: " + queryString);
+            
+            // Tạo HMAC-SHA256 signature
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(checksumKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            mac.init(secretKeySpec);
+            
+            byte[] hash = mac.doFinal(queryString.getBytes(StandardCharsets.UTF_8));
+            
+            // Convert to hex
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            
+            return hexString.toString();
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERROR generating payout signature: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Helper method để lấy giá trị từ JsonElement
+     */
+    private static Object getValueFromJsonElement(com.google.gson.JsonElement element) {
+        if (element.isJsonNull()) {
+            return "";
+        } else if (element.isJsonPrimitive()) {
+            com.google.gson.JsonPrimitive primitive = element.getAsJsonPrimitive();
+            if (primitive.isString()) {
+                return primitive.getAsString();
+            } else if (primitive.isNumber()) {
+                return primitive.getAsNumber();
+            } else if (primitive.isBoolean()) {
+                return primitive.getAsBoolean();
+            }
+        }
+        return element.toString();
+    }
+    
+    /**
+     * Xác thực webhook signature (backward compatibility)
+     * Tự động detect loại webhook và sử dụng phương thức phù hợp
      */
     public static boolean verifyWebhookSignature(String data, String signature) {
         try {
-            // This would need to be implemented based on actual PayOS webhook format
-            System.err.println("⚠️ verifyWebhookSignature needs proper implementation");
+            System.out.println("🔐 ===== VERIFYING WEBHOOK SIGNATURE =====");
+            
+            JsonObject webhookData = JsonParser.parseString(data).getAsJsonObject();
+            
+            // Kiểm tra xem có phải payout webhook không
+            if (webhookData.has("data")) {
+                JsonObject dataObj = webhookData.getAsJsonObject("data");
+                if (dataObj.has("payouts")) {
+                    System.out.println("📊 Detected payout webhook");
+                    return verifyPayoutSignature(webhookData, signature);
+                } else {
+                    System.out.println("💳 Detected payment request webhook");
+                    return verifyPaymentRequestSignature(webhookData, signature);
+                }
+            }
+            
+            System.err.println("❌ Unknown webhook format");
             return false;
+            
         } catch (Exception e) {
+            System.err.println("❌ ERROR verifying webhook signature: " + e.getMessage());
             e.printStackTrace();
             return false;
         }

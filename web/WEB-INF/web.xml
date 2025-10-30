@@ -170,8 +170,7 @@
         <servlet-name>GoogleLoginServlet</servlet-name>
         <url-pattern>/logingoogle</url-pattern>
     </servlet-mapping>
-
-
+    
     <welcome-file-list>
         <welcome-file>home</welcome-file>
     </welcome-file-list>

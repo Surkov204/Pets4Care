@@ -1,3 +1,4 @@
+
 import dao.ShiftRequestDAO;
 import dao.NotificationDAO;
 import jakarta.servlet.ServletException;
@@ -20,7 +21,7 @@ public class AdminApproveShiftRequestController extends HttpServlet {
         String idStr = request.getParameter("id");
 
         if (idStr == null || idStr.isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/shift-request");
+            response.sendRedirect(request.getContextPath() + "/admin/manage-staff.jsp");
             return;
         }
 
@@ -30,7 +31,7 @@ public class AdminApproveShiftRequestController extends HttpServlet {
         ShiftRequest req = shiftDAO.getById(requestId);
         if (req == null) {
             session.setAttribute("errorMessage", "❌ Không tìm thấy yêu cầu #" + requestId);
-            response.sendRedirect(request.getContextPath() + "/shift-request");
+            response.sendRedirect(request.getContextPath() + "/admin/manage-staff.jsp");
             return;
         }
 
@@ -54,6 +55,6 @@ public class AdminApproveShiftRequestController extends HttpServlet {
             session.setAttribute("errorMessage", "⚠️ Xử lý thất bại cho yêu cầu #" + requestId);
         }
 
-        response.sendRedirect(request.getContextPath() + "/shift-request");
+        response.sendRedirect(request.getContextPath() + "/admin/manage-staff.jsp");
     }
 }

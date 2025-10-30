@@ -43,7 +43,7 @@
                     opacity: 1;
                 }
             }
-            
+
             @keyframes slideOutRight {
                 from {
                     transform: translateX(0);
@@ -54,7 +54,7 @@
                     opacity: 0;
                 }
             }
-            
+
             .slideshow {
                 position: relative;
                 width: 800px;
@@ -128,11 +128,11 @@
             if (loginSuccess != null) {
         %>
         <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: linear-gradient(135deg, #38a169, #48bb78); color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 300px; animation: slideInRight 0.5s ease-out;">
-            <i class="fas fa-check-circle"></i> <%= loginSuccess %>
+            <i class="fas fa-check-circle"></i> <%= loginSuccess%>
         </div>
         <script>
             // Tự động ẩn thông báo sau 3 giây
-            setTimeout(function() {
+            setTimeout(function () {
                 const notification = document.querySelector('div[style*="position: fixed"]');
                 if (notification) {
                     notification.style.animation = 'slideOutRight 0.5s ease-out';
@@ -145,7 +145,7 @@
                 session.removeAttribute("loginSuccess");
             }
         %>
-        
+
         <!-- Top Bar -->
         <div class="top-bar">
             <div class="left">
@@ -180,7 +180,7 @@
                 <div>
                     <% if (currentUser == null) { %>
                     <a href="login.jsp" class="text-sm hover:underline">👤 Đăng Ký | Đăng Nhập</a>
-                    <% } else { %>
+                    <% } else {%>
                     <div class="relative inline-block text-left">
                         <button type="button" id="userToggleBtn"
                                 class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
@@ -208,7 +208,7 @@
                             </div>
                         </div>
                     </div>
-                    <% } %>
+                    <% }%>
                 </div>
                 <div class="cart-fixed">
                     <a href="<%= request.getContextPath()%>/cart/cart.jsp">
@@ -221,42 +221,42 @@
             </div>
         </header>
 
-                    <style>
-  .cart-fixed {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background-color: #fff;
-    padding: 8px 14px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    z-index: 1000;
-    font-weight: 600;
-    color: #333;
-  }
+        <style>
+            .cart-fixed {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background-color: #fff;
+                padding: 8px 14px;
+                border-radius: 8px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                z-index: 1000;
+                font-weight: 600;
+                color: #333;
+            }
 
-  .cart-fixed a {
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
+            .cart-fixed a {
+                text-decoration: none;
+                color: inherit;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
 
-  .cart-fixed i {
-    color: #f97316; /* Cam pastel */
-  }
+            .cart-fixed i {
+                color: #f97316; /* Cam pastel */
+            }
 
-  /* Responsive nhỏ hơn */
-  @media (max-width: 768px) {
-    .cart-fixed {
-      top: unset;
-      bottom: 20px;
-      right: 10px;
-      padding: 10px 12px;
-    }
-  }
-</style>
+            /* Responsive nhỏ hơn */
+            @media (max-width: 768px) {
+                .cart-fixed {
+                    top: unset;
+                    bottom: 20px;
+                    right: 10px;
+                    padding: 10px 12px;
+                }
+            }
+        </style>
 
 
         <!-- Navigation -->
@@ -606,7 +606,7 @@
             }
         </script>
 
-        <jsp:include page="chatbox.jsp"/>
         <jsp:include page="customer-chat.jsp" />
+        <jsp:include page="chatbot.jsp" />
     </body>
 </html>

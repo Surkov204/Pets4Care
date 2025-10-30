@@ -116,9 +116,9 @@
 
                 <!-- Trạng thái màu -->
                 <td style="
-                    color: ${r.status eq 'ApprovedByAdmin' ? '#4CAF50' :
+                    color: ${r.status eq 'Approved' ? '#4CAF50' :
                              (r.status eq 'Rejected' ? '#F44336' :
-                             (r.status eq 'AcceptedByTo' ? '#2196F3' : '#FF9800'))};
+                             (r.status eq 'N.A' ? '#2196F3' : '#FF9800'))};
                     font-weight: bold;">
                     ${r.status}
                 </td>

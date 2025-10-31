@@ -10,9 +10,9 @@ import java.sql.SQLException;
 
 public class DBConnection {
     public static String driverName = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
-    public static String dbURL = "jdbc:sqlserver://localhost:1433;databaseName=SHOP_PET_Database;encrypt=false;trustServerCertificate=true";
+    public static String dbURL = "jdbc:sqlserver://localhost:1433;databaseName=SHOP_PET_Database;encrypt=false;trustServerCertificate=true;integratedSecurity=false";
     public static String userDB = "sa";
-    public static String passDB = "12345";
+    public static String passDB = "123";
     
     public static Connection getConnection(){
         Connection con = null;

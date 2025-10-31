@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="model.Customer, dao.UserDao, model.Order, java.util.*" %>
+<%@ page import="model.Customer, dao.UserDAO, model.Order, java.util.*" %>
 <%@ page session="true" %>
 <!DOCTYPE html>
 <html>
@@ -17,7 +17,7 @@
         return;
     }
 
-    List<Order> orders = new UserDao().getOrdersByCustomerId(customer.getCustomerId());
+    List<Order> orders = new UserDAO().getOrdersByCustomerId(customer.getCustomerId());
 %>
 
 <h2 class="text-2xl font-bold mb-6">📦 Lịch sử đơn hàng của <%= customer.getName() %></h2>

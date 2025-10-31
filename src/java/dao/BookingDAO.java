@@ -127,6 +127,41 @@ public List<Booking> getAllBookings() {
     }
 
     // =========================
+    // AVAILABILITY CHECK (SPA)
+    // =========================
+    /**
+     * Kiểm tra khung giờ có bị trùng với bất kỳ booking Spa nào đang active hay không
+     * Logic overlap: NOT (end <= existing_start OR start >= existing_end)
+     */
+    public boolean isSpaTimeSlotAvailable(java.sql.Timestamp start, java.sql.Timestamp end) {
+        final String sql =
+            "SELECT COUNT(*) AS cnt\n" +
+            "FROM dbo.Booking b\n" +
+            "JOIN dbo.Booking_Service bs ON bs.booking_id = b.booking_id\n" +
+            "JOIN dbo.PetService ps ON ps.service_id = bs.service_id\n" +
+            "WHERE ps.type = 'spa'\n" +
+            "  AND b.status IN ('pending','confirmed')\n" +
+            "  AND NOT (b.appointment_end <= ? OR b.appointment_start >= ?)";
+
+        try (java.sql.Connection conn = DBConnection.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTimestamp(1, start);
+            ps.setTimestamp(2, end);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int cnt = rs.getInt("cnt");
+                    return cnt == 0;
+                }
+            }
+        } catch (java.sql.SQLException e) {
+            logger.severe("Error checking spa time slot availability: " + e.getMessage());
+            e.printStackTrace();
+        }
+        // Nếu lỗi, trả về true để không chặn luồng đặt (an toàn mềm)
+        return true;
+    }
+
+    // =========================
     // GET BY CUSTOMER
     // =========================
     @Override
@@ -786,6 +821,29 @@ public List<Booking> getAllBookings() {
             
         } catch (SQLException e) {
             logger.severe("Error updating booking note: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Cập nhật appointment_start và note của booking
+     */
+    public boolean updateBooking(int bookingId, Timestamp appointmentStart, String note) {
+        String sql = "UPDATE dbo.Booking SET appointment_start = ?, note = ? WHERE booking_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setTimestamp(1, appointmentStart);
+            ps.setString(2, note);
+            ps.setInt(3, bookingId);
+            
+            int rowsUpdated = ps.executeUpdate();
+            return rowsUpdated > 0;
+            
+        } catch (Exception e) {
+            logger.severe("Exception khi cập nhật booking ID " + bookingId + ": " + e.getMessage());
             e.printStackTrace();
             return false;
         }

@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class PayOSUtils {
     
     /**
-     * Tạo HTTP request đến PayOS API
+     * Tạo HTTP request đến PayOS API (dùng base URL mặc định từ config)
      */
     public static String makePayOSRequest(String endpoint, String method, String requestBody, Map<String, String> headers) throws IOException {
         String url = PayOSConfig.getBaseUrl() + endpoint;
@@ -83,6 +83,51 @@ public class PayOSUtils {
             throw new IOException("PayOS API Error: " + responseCode + " - " + responseBody);
         }
     }
+
+    /**
+     * Tạo HTTP request đến PayOS API với base URL truyền vào (dùng cho fallback domain)
+     */
+    public static String makePayOSRequestWithBase(String baseUrl, String endpoint, String method, String requestBody, Map<String, String> headers) throws IOException {
+        String url = baseUrl + endpoint;
+        System.out.println("🔗 PayOS URL (custom base): " + url);
+        System.out.println("📤 Request Method: " + method);
+        System.out.println("📋 Request Body: " + requestBody);
+
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        conn.setRequestMethod(method);
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("x-client-id", PayOSConfig.getClientId());
+        conn.setRequestProperty("x-api-key", PayOSConfig.getApiKey());
+
+        if (headers != null) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                conn.setRequestProperty(entry.getKey(), entry.getValue());
+            }
+        }
+
+        if ("POST".equals(method) && requestBody != null) {
+            conn.setDoOutput(true);
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = requestBody.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+            }
+        }
+
+        int responseCode = conn.getResponseCode();
+        StringBuilder response = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(
+                responseCode >= 200 && responseCode < 300 ? conn.getInputStream() : conn.getErrorStream()))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                response.append(line);
+            }
+        }
+        String responseBody = response.toString();
+        if (responseCode >= 200 && responseCode < 300) {
+            return responseBody;
+        }
+        throw new IOException("PayOS API Error: " + responseCode + " - " + responseBody);
+    }
     
     /**
      * Tạo checksum cho PayOS sử dụng HMAC-SHA256
@@ -107,50 +152,57 @@ public static String generateChecksum(String amount, String orderCode, String re
         String checksumKey = PayOSConfig.getChecksumKey();
         System.out.println("🔑 Checksum Key: " + (checksumKey != null ? checksumKey.substring(0, Math.min(10, checksumKey.length())) + "..." : "NULL"));
 
-        // 1️⃣ Tạo JSON theo thứ tự alphabet bắt buộc
-        java.util.LinkedHashMap<String, Object> sortedMap = new java.util.LinkedHashMap<>();
-        sortedMap.put("amount", Integer.parseInt(amount));
+        // 1️⃣ Tạo signature theo format PayOS: key1=value1&key2=value2... (sắp xếp theo alphabet)
+        java.util.TreeMap<String, String> sortedMap = new java.util.TreeMap<>();
+        sortedMap.put("amount", amount);
         sortedMap.put("cancelUrl", cancelUrl);
         sortedMap.put("description", description);
-        sortedMap.put("items", new com.google.gson.JsonArray());
-        sortedMap.put("orderCode", Integer.parseInt(orderCode));
+        sortedMap.put("orderCode", orderCode);
         sortedMap.put("returnUrl", returnUrl);
 
         System.out.println("📋 Sorted Map: " + sortedMap);
 
-        com.google.gson.Gson gson = new com.google.gson.GsonBuilder().disableHtmlEscaping().create();
-        String jsonString = gson.toJson(sortedMap).trim();
+        // Tạo string theo format key=value&key=value
+        StringBuilder signatureData = new StringBuilder();
+        boolean first = true;
+        for (java.util.Map.Entry<String, String> entry : sortedMap.entrySet()) {
+            if (!first) {
+                signatureData.append('&');
+            }
+            signatureData.append(entry.getKey()).append('=').append(entry.getValue());
+            first = false;
+        }
+        
+        System.out.println("📋 Signature Data: " + signatureData.toString());
+        System.out.println("📏 Signature Data length: " + signatureData.length() + " characters");
 
-        System.out.println("🔍 JSON to sign (raw): " + jsonString);
-        System.out.println("📏 JSON length: " + jsonString.length() + " characters");
-        System.out.println("🔤 JSON bytes: " + java.util.Arrays.toString(jsonString.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-
-        // 2️⃣ Base64 encode JSON string (PayOS v2.2 requirement)
-        String base64Data = java.util.Base64.getEncoder().encodeToString(jsonString.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        System.out.println("🔐 Base64 encoded JSON: " + base64Data);
-        System.out.println("📏 Base64 length: " + base64Data.length() + " characters");
-
-        // 3️⃣ Ký HMAC-SHA256 trên Base64(JSON) - PayOS v2.2 standard
+        // 2️⃣ Ký HMAC-SHA256 trên signature data
         javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
         javax.crypto.spec.SecretKeySpec secretKeySpec =
                 new javax.crypto.spec.SecretKeySpec(checksumKey.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256");
         mac.init(secretKeySpec);
 
-        byte[] hash = mac.doFinal(base64Data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        byte[] hash = mac.doFinal(signatureData.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
         System.out.println("🔐 HMAC hash bytes: " + java.util.Arrays.toString(hash));
 
-        // 4️⃣ Convert sang HEX
+        // 3️⃣ Convert sang HEX (theo tài liệu PayOS)
         StringBuilder hexString = new StringBuilder();
         for (byte b : hash) {
             String hex = Integer.toHexString(0xff & b);
             if (hex.length() == 1) hexString.append('0');
             hexString.append(hex);
         }
-
         String signature = hexString.toString();
         System.out.println("✅ Generated HMAC-SHA256 signature (HEX): " + signature);
         System.out.println("📏 Signature length: " + signature.length() + " characters");
         System.out.println("🔐 ===== CHECKSUM GENERATION COMPLETE =====");
+        
+        // Debug: Log all steps for verification
+        System.out.println("🔍 DEBUG SIGNATURE GENERATION:");
+        System.out.println("   1. Signature Data: " + signatureData);
+        System.out.println("   2. Checksum Key: " + (checksumKey != null ? checksumKey.substring(0, Math.min(20, checksumKey.length())) + "..." : "NULL"));
+        System.out.println("   3. Final Signature: " + signature);
+        
         return signature;
 
     } catch (Exception e) {
@@ -162,374 +214,62 @@ public static String generateChecksum(String amount, String orderCode, String re
 
     
     /**
-     * Xác thực webhook signature cho payment-requests
-     * Sử dụng thuật toán HMAC_SHA256 với data dạng key1=value1&key2=value2...
-     * Dữ liệu sắp xếp theo key thứ tự alphabet
-     * Theo tài liệu PayOS: https://payos.vn/docs/webhook
-     */
-    public static boolean verifyPaymentRequestSignature(JsonObject webhookData, String expectedSignature) {
-        try {
-            System.out.println("🔐 ===== VERIFYING PAYMENT REQUEST SIGNATURE =====");
-            
-            if (!webhookData.has("data")) {
-                System.err.println("❌ Webhook data missing 'data' field");
-                return false;
-            }
-            
-            // Extract signature from webhook data if not provided
-            String actualSignature = expectedSignature;
-            if ((actualSignature == null || actualSignature.isEmpty()) && webhookData.has("signature")) {
-                actualSignature = webhookData.get("signature").getAsString();
-            }
-            
-            if (actualSignature == null || actualSignature.isEmpty()) {
-                System.err.println("❌ Webhook signature is missing");
-                return false;
-            }
-            
-            JsonObject data = webhookData.getAsJsonObject("data");
-            String checksumKey = PayOSConfig.getChecksumKey();
-            
-            if (checksumKey == null || checksumKey.isEmpty()) {
-                System.err.println("❌ Checksum key is not configured");
-                return false;
-            }
-            
-            System.out.println("📋 Webhook data: " + data.toString());
-            System.out.println("🔑 Expected signature: " + actualSignature);
-            
-            // Tạo signature từ data object theo chuẩn PayOS
-            String computedSignature = generatePaymentRequestSignature(data, checksumKey);
-            System.out.println("🔐 Computed signature: " + computedSignature);
-            
-            boolean isValid = computedSignature != null && computedSignature.equalsIgnoreCase(actualSignature);
-            System.out.println("✅ Signature verification result: " + isValid);
-            
-            if (!isValid) {
-                System.err.println("❌ Signature mismatch!");
-                System.err.println("   Expected: " + actualSignature);
-                System.err.println("   Computed: " + computedSignature);
-            }
-            
-            System.out.println("🔐 ===== PAYMENT REQUEST SIGNATURE VERIFICATION COMPLETE =====");
-            
-            return isValid;
-            
-        } catch (Exception e) {
-            System.err.println("❌ ERROR verifying payment request signature: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-    
-    /**
-     * Tạo signature cho payment-requests webhook data
-     * Theo tài liệu PayOS: data tạo signature dạng key1=value1&key2=value2...
-     * Dữ liệu sắp xếp theo key thứ tự alphabet
-     */
-    private static String generatePaymentRequestSignature(JsonObject data, String checksumKey) {
-        try {
-            System.out.println("🔐 ===== GENERATING PAYMENT REQUEST SIGNATURE =====");
-            System.out.println("📋 Input data: " + data.toString());
-            
-            // Sắp xếp keys theo alphabet
-            java.util.TreeMap<String, Object> sortedMap = new java.util.TreeMap<>();
-            
-            for (Map.Entry<String, com.google.gson.JsonElement> entry : data.entrySet()) {
-                String key = entry.getKey();
-                com.google.gson.JsonElement value = entry.getValue();
-                
-                Object valueObj;
-                if (value.isJsonNull()) {
-                    valueObj = "";
-                } else if (value.isJsonArray()) {
-                    // Xử lý array - sắp xếp các object trong array
-                    com.google.gson.JsonArray array = value.getAsJsonArray();
-                    java.util.List<Object> sortedArray = new java.util.ArrayList<>();
-                    for (com.google.gson.JsonElement element : array) {
-                        if (element.isJsonObject()) {
-                            java.util.TreeMap<String, Object> sortedElement = new java.util.TreeMap<>();
-                            for (Map.Entry<String, com.google.gson.JsonElement> elemEntry : element.getAsJsonObject().entrySet()) {
-                                sortedElement.put(elemEntry.getKey(), getValueFromJsonElement(elemEntry.getValue()));
-                            }
-                            sortedArray.add(sortedElement);
-                        } else {
-                            sortedArray.add(getValueFromJsonElement(element));
-                        }
-                    }
-                    valueObj = sortedArray;
-                } else if (value.isJsonObject()) {
-                    // Xử lý nested object - sắp xếp keys
-                    java.util.TreeMap<String, Object> sortedNested = new java.util.TreeMap<>();
-                    for (Map.Entry<String, com.google.gson.JsonElement> nestedEntry : value.getAsJsonObject().entrySet()) {
-                        sortedNested.put(nestedEntry.getKey(), getValueFromJsonElement(nestedEntry.getValue()));
-                    }
-                    valueObj = sortedNested;
-                } else {
-                    valueObj = getValueFromJsonElement(value);
-                }
-                
-                sortedMap.put(key, valueObj);
-            }
-            
-            System.out.println("📋 Sorted map: " + sortedMap);
-            
-            // Tạo query string dạng key1=value1&key2=value2...
-            java.util.List<String> queryParts = new java.util.ArrayList<>();
-            for (Map.Entry<String, Object> entry : sortedMap.entrySet()) {
-                String key = entry.getKey();
-                Object value = entry.getValue();
-                
-                String valueStr;
-                if (value == null || "null".equals(String.valueOf(value)) || "undefined".equals(String.valueOf(value))) {
-                    valueStr = "";
-                } else if (value instanceof java.util.List || value instanceof java.util.Map) {
-                    // Convert to JSON string for arrays and objects
-                    Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-                    valueStr = gson.toJson(value);
-                } else {
-                    valueStr = String.valueOf(value);
-                }
-                
-                queryParts.add(key + "=" + valueStr);
-            }
-            
-            String queryString = String.join("&", queryParts);
-            System.out.println("📝 Query string for signature: " + queryString);
-            
-            // Tạo HMAC-SHA256 signature
-            Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(checksumKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            mac.init(secretKeySpec);
-            
-            byte[] hash = mac.doFinal(queryString.getBytes(StandardCharsets.UTF_8));
-            
-            // Convert to hex
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            
-            String signature = hexString.toString();
-            System.out.println("✅ Generated signature: " + signature);
-            System.out.println("🔐 ===== PAYMENT REQUEST SIGNATURE GENERATION COMPLETE =====");
-            
-            return signature;
-            
-        } catch (Exception e) {
-            System.err.println("❌ ERROR generating payment request signature: " + e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
-    
-    /**
-     * Xác thực webhook signature cho payouts
-     * Sử dụng thuật toán HMAC_SHA256 với data dạng key1=value1&key2=value2...
-     * Dữ liệu sắp xếp theo key thứ tự alphabet, arrays không được sắp xếp
-     * Theo tài liệu PayOS: https://payos.vn/docs/webhook
-     */
-    public static boolean verifyPayoutSignature(JsonObject webhookData, String expectedSignature) {
-        try {
-            System.out.println("🔐 ===== VERIFYING PAYOUT SIGNATURE =====");
-            
-            if (!webhookData.has("data")) {
-                System.err.println("❌ Webhook data missing 'data' field");
-                return false;
-            }
-            
-            // Extract signature from webhook data if not provided
-            String actualSignature = expectedSignature;
-            if ((actualSignature == null || actualSignature.isEmpty()) && webhookData.has("signature")) {
-                actualSignature = webhookData.get("signature").getAsString();
-            }
-            
-            if (actualSignature == null || actualSignature.isEmpty()) {
-                System.err.println("❌ Webhook signature is missing");
-                return false;
-            }
-            
-            JsonObject data = webhookData.getAsJsonObject("data");
-            String checksumKey = PayOSConfig.getChecksumKey();
-            
-            if (checksumKey == null || checksumKey.isEmpty()) {
-                System.err.println("❌ Checksum key is not configured");
-                return false;
-            }
-            
-            System.out.println("📋 Payout data: " + data.toString());
-            System.out.println("🔑 Expected signature: " + actualSignature);
-            
-            // Tạo signature từ data object theo chuẩn PayOS
-            String computedSignature = generatePayoutSignature(data, checksumKey);
-            System.out.println("🔐 Computed signature: " + computedSignature);
-            
-            boolean isValid = computedSignature != null && computedSignature.equalsIgnoreCase(actualSignature);
-            System.out.println("✅ Signature verification result: " + isValid);
-            
-            if (!isValid) {
-                System.err.println("❌ Signature mismatch!");
-                System.err.println("   Expected: " + actualSignature);
-                System.err.println("   Computed: " + computedSignature);
-            }
-            
-            System.out.println("🔐 ===== PAYOUT SIGNATURE VERIFICATION COMPLETE =====");
-            
-            return isValid;
-            
-        } catch (Exception e) {
-            System.err.println("❌ ERROR verifying payout signature: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-    
-    /**
-     * Tạo signature cho payouts webhook data
-     */
-    private static String generatePayoutSignature(JsonObject data, String checksumKey) {
-        try {
-            // Sắp xếp keys theo alphabet, nhưng giữ nguyên thứ tự arrays
-            java.util.TreeMap<String, Object> sortedMap = new java.util.TreeMap<>();
-            
-            for (Map.Entry<String, com.google.gson.JsonElement> entry : data.entrySet()) {
-                String key = entry.getKey();
-                com.google.gson.JsonElement value = entry.getValue();
-                
-                Object valueObj;
-                if (value.isJsonNull()) {
-                    valueObj = "";
-                } else if (value.isJsonArray()) {
-                    // Xử lý array - KHÔNG sắp xếp các phần tử trong array
-                    com.google.gson.JsonArray array = value.getAsJsonArray();
-                    java.util.List<Object> arrayList = new java.util.ArrayList<>();
-                    for (com.google.gson.JsonElement element : array) {
-                        if (element.isJsonObject()) {
-                            java.util.TreeMap<String, Object> sortedElement = new java.util.TreeMap<>();
-                            for (Map.Entry<String, com.google.gson.JsonElement> elemEntry : element.getAsJsonObject().entrySet()) {
-                                sortedElement.put(elemEntry.getKey(), getValueFromJsonElement(elemEntry.getValue()));
-                            }
-                            arrayList.add(sortedElement);
-                        } else {
-                            arrayList.add(getValueFromJsonElement(element));
-                        }
-                    }
-                    valueObj = arrayList;
-                } else if (value.isJsonObject()) {
-                    // Xử lý nested object - sắp xếp keys
-                    java.util.TreeMap<String, Object> sortedNested = new java.util.TreeMap<>();
-                    for (Map.Entry<String, com.google.gson.JsonElement> nestedEntry : value.getAsJsonObject().entrySet()) {
-                        sortedNested.put(nestedEntry.getKey(), getValueFromJsonElement(nestedEntry.getValue()));
-                    }
-                    valueObj = sortedNested;
-                } else {
-                    valueObj = getValueFromJsonElement(value);
-                }
-                
-                sortedMap.put(key, valueObj);
-            }
-            
-            // Tạo query string dạng key1=value1&key2=value2... với encodeURI
-            java.util.List<String> queryParts = new java.util.ArrayList<>();
-            for (Map.Entry<String, Object> entry : sortedMap.entrySet()) {
-                String key = entry.getKey();
-                Object value = entry.getValue();
-                
-                String valueStr;
-                if (value == null || "null".equals(String.valueOf(value)) || "undefined".equals(String.valueOf(value))) {
-                    valueStr = "";
-                } else if (value instanceof java.util.List || value instanceof java.util.Map) {
-                    // Convert to JSON string for arrays and objects
-                    Gson gson = new GsonBuilder().disableHtmlEscaping().create();
-                    valueStr = gson.toJson(value);
-                } else {
-                    valueStr = String.valueOf(value);
-                }
-                
-                // Encode URI components như trong JavaScript
-                String encodedKey = java.net.URLEncoder.encode(key, StandardCharsets.UTF_8.toString());
-                String encodedValue = java.net.URLEncoder.encode(valueStr, StandardCharsets.UTF_8.toString());
-                queryParts.add(encodedKey + "=" + encodedValue);
-            }
-            
-            String queryString = String.join("&", queryParts);
-            System.out.println("📝 Query string for payout signature: " + queryString);
-            
-            // Tạo HMAC-SHA256 signature
-            Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(checksumKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            mac.init(secretKeySpec);
-            
-            byte[] hash = mac.doFinal(queryString.getBytes(StandardCharsets.UTF_8));
-            
-            // Convert to hex
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            
-            return hexString.toString();
-            
-        } catch (Exception e) {
-            System.err.println("❌ ERROR generating payout signature: " + e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
-    
-    /**
-     * Helper method để lấy giá trị từ JsonElement
-     */
-    private static Object getValueFromJsonElement(com.google.gson.JsonElement element) {
-        if (element.isJsonNull()) {
-            return "";
-        } else if (element.isJsonPrimitive()) {
-            com.google.gson.JsonPrimitive primitive = element.getAsJsonPrimitive();
-            if (primitive.isString()) {
-                return primitive.getAsString();
-            } else if (primitive.isNumber()) {
-                return primitive.getAsNumber();
-            } else if (primitive.isBoolean()) {
-                return primitive.getAsBoolean();
-            }
-        }
-        return element.toString();
-    }
-    
-    /**
-     * Xác thực webhook signature (backward compatibility)
-     * Tự động detect loại webhook và sử dụng phương thức phù hợp
+     * Xác thực webhook signature từ PayOS
+     * PayOS gửi signature trong header x-payos-signature
      */
     public static boolean verifyWebhookSignature(String data, String signature) {
         try {
             System.out.println("🔐 ===== VERIFYING WEBHOOK SIGNATURE =====");
+            System.out.println("📝 Data to verify: " + data);
+            System.out.println("🔑 Signature from PayOS: " + signature);
             
-            JsonObject webhookData = JsonParser.parseString(data).getAsJsonObject();
-            
-            // Extract signature from webhook data if not provided in header
-            String actualSignature = signature;
-            if ((actualSignature == null || actualSignature.isEmpty()) && webhookData.has("signature")) {
-                actualSignature = webhookData.get("signature").getAsString();
+            if (data == null || data.trim().isEmpty()) {
+                System.err.println("❌ Empty data to verify");
+                return false;
             }
             
-            // Kiểm tra xem có phải payout webhook không
-            if (webhookData.has("data")) {
-                JsonObject dataObj = webhookData.getAsJsonObject("data");
-                if (dataObj.has("payouts")) {
-                    System.out.println("📊 Detected payout webhook");
-                    return verifyPayoutSignature(webhookData, actualSignature);
-                } else {
-                    System.out.println("💳 Detected payment request webhook");
-                    return verifyPaymentRequestSignature(webhookData, actualSignature);
-                }
+            if (signature == null || signature.trim().isEmpty()) {
+                System.err.println("❌ Empty signature");
+                return false;
             }
             
-            System.err.println("❌ Unknown webhook format");
-            return false;
+            String checksumKey = PayOSConfig.getChecksumKey();
+            if (checksumKey == null || checksumKey.trim().isEmpty()) {
+                System.err.println("❌ Checksum key not configured");
+                return false;
+            }
+            
+            System.out.println("🔑 Using checksum key: " + (checksumKey.length() > 10 ? checksumKey.substring(0, 10) + "..." : checksumKey));
+            
+            // PayOS webhook signature verification:
+            // 1. Tạo HMAC-SHA256 của raw data với checksum key
+            // 2. Convert sang hex string
+            // 3. So sánh với signature từ PayOS
+            
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+            javax.crypto.spec.SecretKeySpec secretKeySpec = 
+                new javax.crypto.spec.SecretKeySpec(checksumKey.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256");
+            mac.init(secretKeySpec);
+            
+            byte[] hash = mac.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            
+            // Convert to hex
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            
+            String calculatedSignature = hexString.toString();
+            System.out.println("🔐 Calculated signature: " + calculatedSignature);
+            System.out.println("🔐 PayOS signature: " + signature);
+            
+            boolean isValid = calculatedSignature.equals(signature);
+            System.out.println("✅ Signature verification result: " + isValid);
+            System.out.println("🔐 ===== WEBHOOK SIGNATURE VERIFICATION COMPLETE =====");
+            
+            return isValid;
             
         } catch (Exception e) {
             System.err.println("❌ ERROR verifying webhook signature: " + e.getMessage());
@@ -563,9 +303,9 @@ public static String generateChecksum(String amount, String orderCode, String re
             System.out.println("   returnUrl: " + returnUrl);
             System.out.println("   cancelUrl: " + cancelUrl);
             
-            // PayOS v2 expects amount in VND (convert from logical price format)
-            // E.g., amount = 3.99 (logical) → amountInVND = 3990 (actual VND)
-            int amountInVND = (int)Math.round(amount * 1000);
+            // PayOS v2 expects amount in VND (use actual amount directly)
+            // E.g., amount = 100000 (actual price) → amountInVND = 100000 (VND)
+            int amountInVND = (int)Math.round(amount);
             
             System.out.println("💰 Amount conversion: " + amount + " → " + amountInVND + " VND");
             

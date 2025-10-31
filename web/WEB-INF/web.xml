@@ -1,178 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
 
-    <!-- Định nghĩa servlet cho OrderServlet -->
+    <!-- Order -->
     <servlet>
         <servlet-name>OrderServlet</servlet-name>
         <servlet-class>controller.OrderServlet</servlet-class>
     </servlet>
-
-    <!-- Ánh xạ servlet đến URL /orderservlet -->
     <servlet-mapping>
         <servlet-name>OrderServlet</servlet-name>
         <url-pattern>/orderservlet</url-pattern>
     </servlet-mapping>
-
-    <!-- Ánh xạ servlet đến URL /admin/manage-order -->
     <servlet-mapping>
         <servlet-name>OrderServlet</servlet-name>
         <url-pattern>/admin/manage-order</url-pattern>
     </servlet-mapping>
 
-    <!-- Định nghĩa servlet cho ToyDetailServlet -->
+    <!-- Toy Detail -->
     <servlet>
         <servlet-name>ToyDetailServlet</servlet-name>
         <servlet-class>controller.ToyDetailServlet</servlet-class>
     </servlet>
-
-    <!-- Ánh xạ servlet đến URL /toydetailservlet -->
     <servlet-mapping>
         <servlet-name>ToyDetailServlet</servlet-name>
         <url-pattern>/toydetailservlet</url-pattern>
     </servlet-mapping>
 
-    <!-- Định nghĩa servlet cho SpaBookingServlet -->
+    <!-- Spa Booking -->
     <servlet>
         <servlet-name>SpaBookingServlet</servlet-name>
         <servlet-class>controller.SpaBookingServlet</servlet-class>
     </servlet>
-
-    <!-- Ánh xạ servlet đến URL /spa-booking -->
     <servlet-mapping>
         <servlet-name>SpaBookingServlet</servlet-name>
         <url-pattern>/spa-booking</url-pattern>
     </servlet-mapping>
-
-    <!-- Ánh xạ servlet đến URL /spa-cart -->
     <servlet-mapping>
         <servlet-name>SpaBookingServlet</servlet-name>
         <url-pattern>/spa-cart</url-pattern>
     </servlet-mapping>
 
-    <!-- Định nghĩa servlet cho SpaServiceServlet -->
+    <!-- Spa Service -->
     <servlet>
         <servlet-name>SpaServiceServlet</servlet-name>
         <servlet-class>controller.SpaServiceServlet</servlet-class>
     </servlet>
-
-    <!-- Ánh xạ servlet đến URL /spa-service -->
     <servlet-mapping>
         <servlet-name>SpaServiceServlet</servlet-name>
         <url-pattern>/spa-service</url-pattern>
     </servlet-mapping>
 
-    <!-- Định nghĩa servlet cho CartServlet -->
+    <!-- Cart -->
     <servlet>
         <servlet-name>CartServlet</servlet-name>
         <servlet-class>controller.CartServlet</servlet-class>
     </servlet>
-
-    <!-- Ánh xạ servlet đến URL /cartservlet -->
     <servlet-mapping>
         <servlet-name>CartServlet</servlet-name>
         <url-pattern>/cartservlet</url-pattern>
     </servlet-mapping>
 
-    <!-- Định nghĩa servlet cho ConfirmPaymentServlet -->
+    <!-- Payment / PayOS -->
     <servlet>
         <servlet-name>ConfirmPaymentServlet</servlet-name>
         <servlet-class>controller.ConfirmPaymentServlet</servlet-class>
     </servlet>
-
-    <!-- Ánh xạ servlet đến URL /confirmpaymentservlet -->
     <servlet-mapping>
         <servlet-name>ConfirmPaymentServlet</servlet-name>
         <url-pattern>/confirmpaymentservlet</url-pattern>
     </servlet-mapping>
 
-    <!-- Định nghĩa servlet cho PayOSController -->
     <servlet>
         <servlet-name>PayOSController</servlet-name>
         <servlet-class>controller.PayOSController</servlet-class>
     </servlet>
-
-    <!-- Ánh xạ servlet đến URL /payos/* -->
     <servlet-mapping>
         <servlet-name>PayOSController</servlet-name>
         <url-pattern>/payos/*</url-pattern>
     </servlet-mapping>
 
-    <!-- Định nghĩa servlet cho PayOSWebhookServlet -->
     <servlet>
         <servlet-name>PayOSWebhookServlet</servlet-name>
         <servlet-class>controller.PayOSWebhookServlet</servlet-class>
     </servlet>
-
-    <!-- Ánh xạ servlet đến URL /payos/webhook -->
     <servlet-mapping>
         <servlet-name>PayOSWebhookServlet</servlet-name>
         <url-pattern>/payos/webhook</url-pattern>
     </servlet-mapping>
 
-    <!-- Định nghĩa servlet cho LoginServlet -->
+    <!-- Auth -->
     <servlet>
         <servlet-name>LoginServlet</servlet-name>
         <servlet-class>controller.LoginServlet</servlet-class>
     </servlet>
-
-    <!-- Ánh xạ servlet đến URL /login -->
     <servlet-mapping>
         <servlet-name>LoginServlet</servlet-name>
         <url-pattern>/login</url-pattern>
     </servlet-mapping>
 
-    <!-- Định nghĩa servlet cho HomeController -->
-    <servlet>
-        <servlet-name>HomeController</servlet-name>
-        <servlet-class>controller.HomeController</servlet-class>
-    </servlet>
-
-    <!-- Ánh xạ servlet đến URL /home -->
-    <servlet-mapping>
-        <servlet-name>HomeController</servlet-name>
-        <url-pattern>/home</url-pattern>
-    </servlet-mapping>
-
-    <!-- Định nghĩa servlet cho RegisterServlet -->
     <servlet>
         <servlet-name>RegisterServlet</servlet-name>
         <servlet-class>controller.RegisterServlet</servlet-class>
     </servlet>
-
-    <!-- Ánh xạ servlet đến URL /register -->
     <servlet-mapping>
         <servlet-name>RegisterServlet</servlet-name>
         <url-pattern>/register</url-pattern>
     </servlet-mapping>
 
-    <!-- Định nghĩa servlet cho LogoutServlet -->
     <servlet>
         <servlet-name>LogoutServlet</servlet-name>
         <servlet-class>controller.LogoutServlet</servlet-class>
     </servlet>
-
-    <!-- Ánh xạ servlet đến URL /logout -->
     <servlet-mapping>
         <servlet-name>LogoutServlet</servlet-name>
         <url-pattern>/logout</url-pattern>
     </servlet-mapping>
 
-    <!-- Định nghĩa servlet cho GoogleLoginServlet -->
     <servlet>
         <servlet-name>GoogleLoginServlet</servlet-name>
         <servlet-class>controller.GoogleLoginServlet</servlet-class>
     </servlet>
-
-    <!-- Ánh xạ servlet đến URL /logingoogle -->
     <servlet-mapping>
         <servlet-name>GoogleLoginServlet</servlet-name>
         <url-pattern>/logingoogle</url-pattern>
     </servlet-mapping>
 
+    <!-- Boarding -->
+    <servlet>
+        <servlet-name>BoardingRoomServlet</servlet-name>
+        <servlet-class>controller.BoardingRoomServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>BoardingRoomServlet</servlet-name>
+        <url-pattern>/boarding-room</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>BoardingRoomSimpleServlet</servlet-name>
+        <servlet-class>controller.BoardingRoomSimpleServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>BoardingRoomSimpleServlet</servlet-name>
+        <url-pattern>/boarding-room-simple</url-pattern>
+    </servlet-mapping>
+
+
+    <servlet>
+        <servlet-name>HomeController</servlet-name>
+        <servlet-class>controller.HomeController</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>HomeController</servlet-name>
+        <url-pattern>/home</url-pattern>
+    </servlet-mapping>
+
+
 
     <welcome-file-list>
-        <welcome-file>home</welcome-file>
+        <!-- Khuyên dùng index.jsp rồi forward sang /home để chắc chắn -->
+        <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
+
 </web-app>

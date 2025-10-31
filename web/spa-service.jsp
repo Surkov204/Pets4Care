@@ -499,9 +499,6 @@
             <p>© 2025 Petcity. Bản quyền thuộc về G5. ❤️ Made with love for pets</p>
         </div>
     </footer>
-
-    <jsp:include page="chatbox.jsp"/>
-    
     <script>
         // User menu toggle
         document.addEventListener("DOMContentLoaded", function () {

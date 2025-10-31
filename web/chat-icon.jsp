@@ -5,7 +5,7 @@
                           'width=420,height=600,left=1000,top=100,resizable=no,scrollbars=no,status=no')"
      style="position:fixed;
             bottom:25px;
-            right:25px;
+            left:25px;
             width:60px;
             height:60px;
             background:#38bdf8;

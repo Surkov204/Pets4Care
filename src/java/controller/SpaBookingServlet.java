@@ -25,6 +25,7 @@ import model.Customer;
 import model.Pet;
 import model.PetServiceModel;
 import service.SpaBookingService;
+import service.PayOSService;
 
 /**
  * Controller cho Spa Booking
@@ -38,6 +39,7 @@ public class SpaBookingServlet extends HttpServlet {
     private SpaBookingService spaBookingService;
     private PetDAO petDAO;
     private BoardingBookingDAO boardingBookingDAO;
+    private PayOSService payOSService;
     
     @Override
     public void init() throws ServletException {
@@ -45,6 +47,7 @@ public class SpaBookingServlet extends HttpServlet {
         this.spaBookingService = new SpaBookingService();
         this.petDAO = new PetDAO();
         this.boardingBookingDAO = new BoardingBookingDAO();
+        this.payOSService = new PayOSService();
         
         // Khởi tạo database cho boarding bookings
         boolean dbInitialized = this.boardingBookingDAO.initializeDatabase();
@@ -142,15 +145,27 @@ public class SpaBookingServlet extends HttpServlet {
             } else if (action != null && action.equals("total")) {
                 // Lấy tổng giá trị giỏ hàng
                 getSpaCartTotal(request, response, customer);
+            } else if (action != null && action.equals("check-availability")) {
+                // Kiểm tra khả dụng slot cho giỏ hiện tại
+                checkSpaAvailability(request, response, customer);
             } else if (action != null && action.equals("get-boarding-details")) {
                 // Lấy chi tiết boarding từ session
                 getBoardingDetails(request, response, customer);
             } else if (action != null && action.equals("update-boarding-details")) {
                 // Cập nhật chi tiết boarding trong session
                 updateBoardingDetails(request, response, customer);
+            } else if (action != null && action.equals("check-single-availability")) {
+                // Kiểm tra khả dụng cho một dịch vụ
+                checkSingleAvailability(request, response);
+            } else if (action != null && action.equals("create-single-booking")) {
+                // Tạo booking cho một dịch vụ
+                createSingleBooking(request, response, customer);
             } else if (action != null && action.equals("create-test-boarding")) {
                 // Tạo dữ liệu test boarding
                 createTestBoardingData(request, response, customer);
+            } else if (action != null && action.equals("initiate-spa-payment")) {
+                // Khởi tạo thanh toán PayOS cho dịch vụ spa đơn lẻ
+                initiateSpaPayment(request, response, customer);
             } else if (action != null && action.equals("cancel-boarding-booking")) {
                 // Hủy boarding booking
                 cancelBoardingBooking(request, response, customer);
@@ -166,6 +181,9 @@ public class SpaBookingServlet extends HttpServlet {
             } else if (action != null && action.equals("delete-spa-booking")) {
                 // Xóa spa booking khỏi database
                 deleteSpaBooking(request, response, customer);
+            } else if (action != null && action.equals("refund-spa-booking")) {
+                // Hoàn tiền cho spa booking
+                refundSpaBooking(request, response, customer);
             }
             
         } catch (Exception e) {
@@ -270,70 +288,81 @@ public class SpaBookingServlet extends HttpServlet {
     /**
      * Hiển thị lịch sử đặt lịch Spa
      */
-    private void showSpaBookingHistory(HttpServletRequest request, HttpServletResponse response, Customer customer) 
+    private void showSpaBookingHistory(HttpServletRequest request, HttpServletResponse response, Customer customer)
             throws ServletException, IOException {
-        
         logger.info("=== SPA BOOKING HISTORY DEBUG ===");
         logger.info("Customer ID: " + customer.getCustomerId());
-        
-        // Lấy spa bookings từ database
         List<Booking> spaBookings = spaBookingService.getSpaBookingsByCustomerId(customer.getCustomerId());
         logger.info("Spa bookings count: " + (spaBookings != null ? spaBookings.size() : "null"));
-        
-        // Lấy boarding bookings từ database
-        List<BoardingBooking> boardingBookings = boardingBookingDAO.getBoardingBookingsByCustomerId(customer.getCustomerId());
-        logger.info("Boarding bookings count: " + (boardingBookings != null ? boardingBookings.size() : "null"));
-        
-        // Debug: Log chi tiết boarding bookings
-        if (boardingBookings != null && !boardingBookings.isEmpty()) {
-            logger.info("Found " + boardingBookings.size() + " boarding bookings in database");
-            for (BoardingBooking booking : boardingBookings) {
-                logger.info("Boarding booking: ID=" + booking.getBookingId() + 
-                           ", RoomType=" + booking.getRoomType() + 
-                           ", Status=" + booking.getStatus() + 
-                           ", TotalPrice=" + booking.getTotalPrice() +
-                           ", CheckIn=" + booking.getCheckInDate() +
-                           ", CheckOut=" + booking.getCheckOutDate() +
-                           ", CustomerID=" + booking.getCustomerId());
+        Map<Integer, String> spaStatusMap = new HashMap<>();
+        if (spaBookings != null) {
+            for (Booking b : spaBookings) {
+                String display;
+                String dbStatus = b.getStatus() != null ? b.getStatus().toLowerCase() : "";
+                if (dbStatus.equals("completed") || dbStatus.equals("hoàn thành")) {
+                    display = "Hoàn thành";
+                } else if (dbStatus.equals("đã thanh toán") || dbStatus.equals("confirmed")) {
+                    display = "Đã thanh toán";
+                } else if (dbStatus.equals("pending") || dbStatus.equals("chưa thanh toán")) {
+                    display = "Chưa thanh toán";
+                } else if (dbStatus.equals("cancelled") || dbStatus.equals("đã hủy")) {
+                    display = "Đã hủy";
+                } else {
+                    boolean paid = false;
+                    try { if (b.getOrderId() > 0) paid = isOrderPaid(b.getOrderId()); } catch (Exception ignore) {}
+                    display = paid ? "Đã thanh toán" : "Chưa thanh toán";
+                }
+                spaStatusMap.put(b.getBookingId(), display);
+            }
+        }
+        String dateSpaStr = request.getParameter("dateSpa");
+        java.sql.Date startDateSpa = null;
+        if (dateSpaStr != null && !dateSpaStr.isEmpty()) {
+            try { startDateSpa = java.sql.Date.valueOf(dateSpaStr); } catch (Exception e) {}
+        }
+        // Lọc spaBookings theo ngày nếu có chọn ngày (filter by startDateSpa)
+        List<Booking> filteredSpaBookings = new ArrayList<>();
+        if (startDateSpa != null && spaBookings != null) {
+            for (Booking b : spaBookings) {
+                if (b.getAppointmentStart() != null) {
+                    java.time.LocalDate bookingDate = b.getAppointmentStart().toLocalDateTime().toLocalDate();
+                    if (bookingDate.equals(startDateSpa.toLocalDate())) {
+                        filteredSpaBookings.add(b);
+                    }
+                }
             }
         } else {
-            logger.warning("No boarding bookings found in database for customer ID: " + customer.getCustomerId());
-            
-            // Test: Tạo dữ liệu test nếu không có dữ liệu
-            logger.info("Creating test boarding data for customer ID: " + customer.getCustomerId());
-            createTestBoardingDataForCustomer(customer);
-            
-            // Lấy lại dữ liệu sau khi tạo test
-            boardingBookings = boardingBookingDAO.getBoardingBookingsByCustomerId(customer.getCustomerId());
-            logger.info("After creating test data, found " + (boardingBookings != null ? boardingBookings.size() : 0) + " boarding bookings");
+            filteredSpaBookings = spaBookings;
         }
-        
-        // Convert BoardingBooking objects to Map format for JSP compatibility
+        // Lọc boardingBookings độc lập (filter by startDateBoarding)
+        String dateBoardingStr = request.getParameter("dateBoarding");
+        java.sql.Date startDateBoarding = null;
+        if (dateBoardingStr != null && !dateBoardingStr.isEmpty()) {
+            try { startDateBoarding = java.sql.Date.valueOf(dateBoardingStr); } catch (Exception e) {}
+        }
+        List<BoardingBooking> boardingBookings;
+        if (startDateBoarding != null) {
+            boardingBookings = boardingBookingDAO.getBoardingBookingsByCustomerIdAndDate(
+                customer.getCustomerId(), startDateBoarding, startDateBoarding, 0, 100);
+        } else {
+            boardingBookings = boardingBookingDAO.getBoardingBookingsByCustomerId(customer.getCustomerId());
+        }
         List<Map<String, Object>> boardingServices = new ArrayList<>();
         if (boardingBookings != null && !boardingBookings.isEmpty()) {
             for (BoardingBooking booking : boardingBookings) {
                 try {
                     Map<String, Object> boardingService = new HashMap<>();
-                    
                     boardingService.put("bookingId", booking.getBookingId());
                     boardingService.put("serviceName", booking.getServiceName());
                     boardingService.put("quantity", 1);
                     boardingService.put("price", booking.getPricePerDay());
                     boardingService.put("totalPrice", booking.getTotalPrice());
-                    
-                    // Safe date conversion
-                    if (booking.getCheckInDate() != null) {
+                    if (booking.getCheckInDate() != null)
                         boardingService.put("checkInDate", new java.sql.Date(booking.getCheckInDate().getTime()).toString());
-                    } else {
-                        boardingService.put("checkInDate", "");
-                    }
-                    
-                    if (booking.getCheckOutDate() != null) {
+                    else boardingService.put("checkInDate", "");
+                    if (booking.getCheckOutDate() != null)
                         boardingService.put("checkOutDate", new java.sql.Date(booking.getCheckOutDate().getTime()).toString());
-                    } else {
-                        boardingService.put("checkOutDate", "");
-                    }
-                    
+                    else boardingService.put("checkOutDate", "");
                     boardingService.put("petInfo", booking.getPetInfo() != null ? booking.getPetInfo() : "");
                     boardingService.put("status", booking.getStatus() != null ? booking.getStatus() : "pending");
                     boardingService.put("isBoarding", true);
@@ -341,24 +370,13 @@ public class SpaBookingServlet extends HttpServlet {
                     boardingService.put("specialNotes", booking.getSpecialNotes() != null ? booking.getSpecialNotes() : "");
                     boardingService.put("emergencyPhone1", booking.getEmergencyPhone1() != null ? booking.getEmergencyPhone1() : "");
                     boardingService.put("emergencyPhone2", booking.getEmergencyPhone2() != null ? booking.getEmergencyPhone2() : "");
-                    
                     boardingServices.add(boardingService);
-                    logger.info("Added boarding service from DB: " + booking.toString());
-                } catch (Exception e) {
-                    logger.warning("Error processing boarding booking: " + e.getMessage());
-                    // Continue with next booking
-                }
+                } catch (Exception e) {}
             }
         }
-        
-        // Chỉ lấy dữ liệu từ database, không lấy từ session
-        logger.info("Final boarding services count from database: " + boardingServices.size());
-        
-        logger.info("Final boarding services count: " + boardingServices.size());
-        
-        request.setAttribute("spaBookings", spaBookings);
+        request.setAttribute("spaBookings", filteredSpaBookings);
+        request.setAttribute("spaStatusMap", spaStatusMap);
         request.setAttribute("boardingServices", boardingServices);
-        
         request.getRequestDispatcher("/spa-booking-history.jsp").forward(request, response);
     }
     
@@ -518,6 +536,18 @@ public class SpaBookingServlet extends HttpServlet {
                 return;
             }
             
+            // Kiểm tra khả dụng slot trước khi tạo
+            List<Integer> serviceIds = new ArrayList<>();
+            for (Map.Entry<Integer, Integer> entry : spaCart.entrySet()) {
+                serviceIds.add(entry.getKey());
+            }
+            if (!spaBookingService.isSpaSlotAvailable(appointmentStart, serviceIds)) {
+                HttpSession session = request.getSession(true);
+                session.setAttribute("errorMessage", "Khung giờ này không khả dụng (trùng lịch/ngoài 08:00-18:00). Vui lòng chọn thời gian khác.");
+                response.sendRedirect(request.getContextPath() + "/spa-booking?action=cart");
+                return;
+            }
+
             // Tạo booking
             boolean success = spaBookingService.createSpaBookingFromCart(customer, spaCart, appointmentStart, note);
             
@@ -539,6 +569,207 @@ public class SpaBookingServlet extends HttpServlet {
             HttpSession session = request.getSession(true);
             session.setAttribute("errorMessage", "Có lỗi xảy ra khi đặt lịch: " + e.getMessage());
             response.sendRedirect(request.getContextPath() + "/spa-booking?action=cart");
+        }
+    }
+
+    // Kiểm tra đơn hàng đã thanh toán (dựa PayOS)
+    private boolean isOrderPaid(int orderId) {
+        try {
+            Map<String, Object> order = payOSService.getOrderInfo(orderId);
+            if (order == null || order.isEmpty()) return false;
+            Object paymentStatus = order.get("payment_status");
+            if (paymentStatus == null) paymentStatus = order.get("paymentStatus");
+            String st = paymentStatus != null ? paymentStatus.toString() : "";
+            return "Da thanh toan".equalsIgnoreCase(st) || "paid".equalsIgnoreCase(st);
+        } catch (Exception e) {
+            logger.warning("isOrderPaid error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Kiểm tra khả dụng slot theo giỏ hiện tại (AJAX)
+     */
+    private void checkSpaAvailability(HttpServletRequest request, HttpServletResponse response, Customer customer)
+            throws IOException {
+        try {
+            String appointmentDate = request.getParameter("appointmentDate");
+            String appointmentTime = request.getParameter("appointmentTime");
+            if (appointmentDate == null || appointmentTime == null) {
+                response.setContentType("application/json");
+                response.getWriter().write("{\"success\":false,\"message\":\"Thiếu ngày/giờ hẹn\"}");
+                return;
+            }
+
+            // Lấy giỏ hàng Spa từ session
+            @SuppressWarnings("unchecked")
+            Map<Integer, Integer> spaCart = (Map<Integer, Integer>) request.getSession().getAttribute("spaCart");
+            if (spaCart == null || spaCart.isEmpty()) {
+                response.setContentType("application/json");
+                response.getWriter().write("{\"success\":false,\"message\":\"Giỏ hàng trống\"}");
+                return;
+            }
+
+            List<Integer> serviceIds = new ArrayList<>();
+            for (Map.Entry<Integer, Integer> entry : spaCart.entrySet()) {
+                serviceIds.add(entry.getKey());
+            }
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            Timestamp start = new Timestamp(dateFormat.parse(appointmentDate + " " + appointmentTime).getTime());
+
+            boolean available = spaBookingService.isSpaSlotAvailable(start, serviceIds);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"success\":" + available + "}");
+
+        } catch (Exception e) {
+            logger.severe("Error checking availability: " + e.getMessage());
+            response.setContentType("application/json");
+            response.getWriter().write("{\"success\":false,\"message\":\"Lỗi kiểm tra khả dụng\"}");
+        }
+    }
+
+    /**
+     * Kiểm tra khả dụng một dịch vụ đơn lẻ (AJAX)
+     */
+    private void checkSingleAvailability(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        try {
+            int serviceId = getSafeIntParameter(request, "serviceId", 0);
+            int quantity = getSafeIntParameter(request, "quantity", 1);
+            String appointmentDate = request.getParameter("appointmentDate");
+            String appointmentTime = request.getParameter("appointmentTime");
+            if (serviceId <= 0 || quantity <= 0 || appointmentDate == null || appointmentTime == null) {
+                response.setContentType("application/json");
+                response.getWriter().write("{\"success\":false,\"message\":\"Thiếu dữ liệu\"}");
+                return;
+            }
+            java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm");
+            java.sql.Timestamp start = new java.sql.Timestamp(df.parse(appointmentDate + " " + appointmentTime).getTime());
+            boolean ok = spaBookingService.isSpaSlotAvailableForSingle(start, serviceId, quantity);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"success\":" + ok + "}");
+        } catch (Exception e) {
+            logger.severe("checkSingleAvailability error: " + e.getMessage());
+            response.setContentType("application/json");
+            response.getWriter().write("{\"success\":false}");
+        }
+    }
+
+    /**
+     * Khởi tạo thanh toán PayOS cho dịch vụ spa (AJAX)
+     */
+    private void initiateSpaPayment(HttpServletRequest request, HttpServletResponse response, Customer customer)
+            throws IOException {
+        try {
+            int serviceId = getSafeIntParameter(request, "serviceId", 0);
+            int quantity = getSafeIntParameter(request, "quantity", 1);
+            if (serviceId <= 0 || quantity <= 0) {
+                response.setContentType("application/json");
+                response.getWriter().write("{\"success\":false,\"message\":\"Thiếu dịch vụ/ số lượng\"}");
+                return;
+            }
+
+            PetServiceModel service = spaBookingService.getSpaServiceById(serviceId);
+            if (service == null) {
+                response.setContentType("application/json");
+                response.getWriter().write("{\"success\":false,\"message\":\"Dịch vụ không hợp lệ\"}");
+                return;
+            }
+
+            int orderCode = (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
+            double amount = service.getPrice().doubleValue() * quantity;
+            String description = "Thanh toan Spa service #" + serviceId + " x" + quantity;
+
+            String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort()
+                    + request.getContextPath();
+            String returnUrl = baseUrl + "/payos/return?orderId=" + orderCode;
+            String cancelUrl = baseUrl + "/payos/cancel?orderId=" + orderCode;
+
+            String paymentUrl = payOSService.createPaymentLink(orderCode, amount, description, returnUrl, cancelUrl);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"success\":true,\"url\":\"" + paymentUrl + "\"}");
+        } catch (Exception e) {
+            logger.severe("initiateSpaPayment error: " + e.getMessage());
+            response.setContentType("application/json");
+            response.getWriter().write("{\"success\":false,\"message\":\"Không tạo được link thanh toán\"}");
+        }
+    }
+
+    /**
+     * Tạo booking cho một dịch vụ đơn lẻ
+     */
+    private void createSingleBooking(HttpServletRequest request, HttpServletResponse response, Customer customer)
+            throws IOException {
+        try {
+            int serviceId = getSafeIntParameter(request, "serviceId", 0);
+            int quantity = getSafeIntParameter(request, "quantity", 1);
+            int petId = getSafeIntParameter(request, "petId", 0);
+            String note = getSafeParameter(request, "note", "");
+            String paymentMethod = getSafeParameter(request, "paymentMethod", "cash"); // cash | payos
+            String appointmentDate = request.getParameter("appointmentDate");
+            String appointmentTime = request.getParameter("appointmentTime");
+            if (serviceId <= 0 || quantity <= 0 || petId <= 0 || appointmentDate == null || appointmentTime == null) {
+                response.setContentType("application/json");
+                response.getWriter().write("{\"success\":false,\"message\":\"Thiếu dữ liệu\"}");
+                return;
+            }
+            java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm");
+            java.sql.Timestamp start = new java.sql.Timestamp(df.parse(appointmentDate + " " + appointmentTime).getTime());
+            // Nếu payOS: tạo order và trả URL thanh toán
+            if ("payos".equalsIgnoreCase(paymentMethod)) {
+                try {
+                    // Giả sử có API tạo order payOS tương tự bên đặt product
+                    java.util.Map<String, Object> orderInfo = new java.util.HashMap<>();
+                    orderInfo.put("customerId", customer.getCustomerId());
+                    orderInfo.put("serviceId", serviceId);
+                    orderInfo.put("quantity", quantity);
+                    double amount = spaBookingService.getSpaServiceById(serviceId).getPrice().doubleValue() * quantity;
+                    String description = "Thanh toan Spa service #" + serviceId;
+                    int code = (int) System.currentTimeMillis();
+                    String base = request.getRequestURL().toString().replace("/spa-booking", "");
+                    String commonParams = "orderId=" + code + "&type=service" +
+                            "&serviceId=" + serviceId + "&quantity=" + quantity + "&amount=" + amount;
+                    String returnUrl = base + "/payos/return?" + commonParams;
+                    String cancelUrl = base + "/payos/cancel?" + commonParams;
+                    String paymentUrl = payOSService.createPaymentLink(code, amount, description, returnUrl, cancelUrl);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"success\":true,\"payment\":\"payos\",\"url\":\"" + paymentUrl + "\"}");
+                    return;
+                } catch (Exception ex) {
+                    logger.severe("PayOS create link error: " + ex.getMessage());
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"success\":false,\"message\":\"Không tạo được link PayOS\"}");
+                    return;
+                }
+            }
+
+            boolean created = spaBookingService.createSingleSpaBooking(customer, petId, serviceId, quantity, start, note);
+            // Nếu tạo thành công, cập nhật giỏ: giảm số lượng hoặc xóa dịch vụ
+            if (created) {
+                HttpSession session = request.getSession(false);
+                if (session != null) {
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<Integer, Integer> spaCart = (java.util.Map<Integer, Integer>) session.getAttribute("spaCart");
+                    if (spaCart != null) {
+                        Integer currentQty = spaCart.get(serviceId);
+                        if (currentQty != null) {
+                            int newQty = currentQty - quantity;
+                            if (newQty > 0) {
+                                spaCart.put(serviceId, newQty);
+                            } else {
+                                spaCart.remove(serviceId);
+                            }
+                            session.setAttribute("spaCart", spaCart);
+                        }
+                    }
+                }
+            }
+            response.setContentType("application/json");
+            response.getWriter().write("{\"success\":" + created + "}");
+        } catch (Exception e) {
+            logger.severe("createSingleBooking error: " + e.getMessage());
+            response.setContentType("application/json");
+            response.getWriter().write("{\"success\":false}");
         }
     }
     
@@ -1317,10 +1548,33 @@ public class SpaBookingServlet extends HttpServlet {
             
             // Parse numbers
             BigDecimal pricePerDay = new BigDecimal(pricePerDayStr);
-            int boardingDays = Integer.parseInt(boardingDaysStr);
+            
+            // Parse dates để tính số ngày thực tế
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            java.util.Date checkIn = dateFormat.parse(checkInDate);
+            java.util.Date checkOut = dateFormat.parse(checkOutDate);
+            
+            // Tính số ngày thực tế từ ngày check-in đến check-out
+            long timeDiff = checkOut.getTime() - checkIn.getTime();
+            int actualBoardingDays = (int) Math.ceil(timeDiff / (1000.0 * 60 * 60 * 24));
+            
+            // Nếu boardingDaysStr từ form = 0 hoặc âm, dùng giá trị thực tế tính từ dates
+            int boardingDays = Math.max(Integer.parseInt(boardingDaysStr), actualBoardingDays);
+            
+            // Đảm bảo boardingDays >= 1 để tính đúng giờ
+            if (boardingDays < 1) {
+                boardingDays = 1; // Tối thiểu 1 ngày để tính đúng logic giờ
+                logger.info("Adjusting boardingDays to 1 for hours calculation");
+            }
+            
+            logger.info("Form boardingDays: " + boardingDaysStr);
+            logger.info("Actual boardingDays from dates: " + actualBoardingDays);
+            logger.info("Final boardingDays used: " + boardingDays);
+            logger.info("Price per day: " + pricePerDay);
             
             // Tính tổng số giờ lưu trú
             double totalHours = calculateTotalHours(boardingDays, checkInTime, checkOutTime);
+            logger.info("Total hours calculated: " + totalHours);
             
             // Tính giá theo logic 12 tiếng với ưu đãi
             BigDecimal totalPrice = calculatePriceByHours(totalHours, pricePerDay);
@@ -1332,16 +1586,14 @@ public class SpaBookingServlet extends HttpServlet {
                 return;
             }
             
-            if (!isValidBoardingDays(boardingDays)) {
-                session.setAttribute("errorMessage", "Số ngày lưu trú phải từ 0-30 ngày");
-                response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
+            // Validate boardingDays hợp lệ (đã được tính từ dates)
+            if (boardingDays > 30) {
+                session.setAttribute("errorMessage", "Số ngày lưu trú không được vượt quá 30 ngày");
+                response.sendRedirect(request.getContextPath() + "/spa-service.jsp");
                 return;
             }
             
             // Validate dates
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            java.util.Date checkInDateParsed = dateFormat.parse(checkInDate);
-            java.util.Date checkOutDateParsed = dateFormat.parse(checkOutDate);
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
             cal.set(java.util.Calendar.MINUTE, 0);
@@ -1349,21 +1601,21 @@ public class SpaBookingServlet extends HttpServlet {
             cal.set(java.util.Calendar.MILLISECOND, 0);
             java.util.Date today = cal.getTime();
             
-            if (checkInDateParsed.before(today)) {
+            if (checkIn.before(today)) {
                 session.setAttribute("errorMessage", "Ngày nhận không được là ngày quá khứ");
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
                 return;
             }
             
-            if (!isValidDateRange(checkInDateParsed, checkOutDateParsed)) {
+            if (!isValidDateRange(checkIn, checkOut)) {
                 session.setAttribute("errorMessage", "Ngày trả phải sau hoặc bằng ngày nhận");
                 response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
                 return;
             }
             
             // Parse timestamps
-            Timestamp checkInTimestamp = new Timestamp(dateFormat.parse(checkInDate).getTime());
-            Timestamp checkOutTimestamp = new Timestamp(dateFormat.parse(checkOutDate).getTime());
+            Timestamp checkInTimestamp = new Timestamp(checkIn.getTime());
+            Timestamp checkOutTimestamp = new Timestamp(checkOut.getTime());
             
             // Set time if provided
             if (checkInTime != null && !checkInTime.trim().isEmpty()) {
@@ -1442,9 +1694,22 @@ public class SpaBookingServlet extends HttpServlet {
                 logger.info("Created boarding booking from form with ID: " + booking.getBookingId());
                 logger.info("Boarding booking: " + booking.toString());
                 
+                // Lấy payment method
+                String paymentMethod = request.getParameter("paymentMethod");
+                logger.info("Payment method: " + paymentMethod);
+                
+                // Nếu chọn PayOS → redirect đến PayOS
+                if ("payos".equalsIgnoreCase(paymentMethod)) {
+                    String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort()
+                            + request.getContextPath();
+                    response.sendRedirect(baseUrl + "/boarding-room?action=initiate-boarding-payment&bookingId=" + booking.getBookingId());
+                    return;
+                }
+                
+                // Nếu chọn tiền mặt, chỉ cần redirect đến trang lịch sử
                 session.setAttribute("successMessage", 
                     "Đặt phòng lưu trú thành công! Mã đặt phòng: " + booking.getBookingId() + 
-                    ". Chúng tôi sẽ liên hệ xác nhận trong 24h.");
+                    ". Vui lòng thanh toán khi đến nhận thú cưng.");
             } else {
                 logger.warning("Failed to create boarding booking from form");
                 session.setAttribute("errorMessage", "Đặt phòng thất bại. Vui lòng thử lại hoặc liên hệ hỗ trợ.");
@@ -1453,21 +1718,21 @@ public class SpaBookingServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             logger.warning("Number format error: " + e.getMessage());
             session.setAttribute("errorMessage", "Dữ liệu số không hợp lệ. Vui lòng kiểm tra lại giá và số ngày.");
-            response.sendRedirect(request.getContextPath() + "/boarding-booking-form.jsp");
+            response.sendRedirect(request.getContextPath() + "/spa-service.jsp");
         } catch (java.text.ParseException e) {
             logger.warning("Date parse error: " + e.getMessage());
             session.setAttribute("errorMessage", "Ngày tháng không hợp lệ. Vui lòng chọn lại ngày nhận và ngày trả.");
-            response.sendRedirect(request.getContextPath() + "/boarding-booking-form.jsp");
+            response.sendRedirect(request.getContextPath() + "/spa-service.jsp");
         } catch (IllegalArgumentException e) {
             logger.warning("Illegal argument error: " + e.getMessage());
             session.setAttribute("errorMessage", "Dữ liệu không hợp lệ: " + e.getMessage());
-            response.sendRedirect(request.getContextPath() + "/boarding-booking-form.jsp");
+            response.sendRedirect(request.getContextPath() + "/spa-service.jsp");
         } catch (Exception e) {
             logger.severe("Unexpected error creating boarding booking from form: " + e.getMessage());
             logger.severe("Stack trace: " + java.util.Arrays.toString(e.getStackTrace()));
             e.printStackTrace();
             session.setAttribute("errorMessage", "Có lỗi xảy ra khi đặt phòng. Vui lòng thử lại hoặc liên hệ hỗ trợ.");
-            response.sendRedirect(request.getContextPath() + "/boarding-booking-form.jsp");
+            response.sendRedirect(request.getContextPath() + "/spa-service.jsp");
         }
         
         response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
@@ -1711,8 +1976,8 @@ public class SpaBookingServlet extends HttpServlet {
                 return;
             }
             
-            // Xóa booking khỏi database (tạm thời return true, cần implement trong SpaBookingService)
-            boolean success = true; // TODO: Implement deleteSpaBooking in SpaBookingService
+            // Xóa booking khỏi database
+            boolean success = spaBookingService.deleteSpaBooking(bookingId);
             
             if (success) {
                 logger.info("Deleted spa booking ID: " + bookingId);
@@ -1896,5 +2161,50 @@ public class SpaBookingServlet extends HttpServlet {
             
             return totalPrice;
         }
+    }
+
+    private void refundSpaBooking(HttpServletRequest request, HttpServletResponse response, Customer customer)
+            throws ServletException, IOException {
+        try {
+            String bookingIdStr = request.getParameter("bookingId");
+            String amountStr = request.getParameter("amount");
+            String reason = request.getParameter("reason");
+            if (reason == null || reason.trim().isEmpty()) reason = "Hoàn tiền spa";
+            
+            if (bookingIdStr == null || bookingIdStr.trim().isEmpty() || amountStr == null || amountStr.trim().isEmpty()) {
+                request.getSession().setAttribute("errorMessage", "Thiếu bookingId hoặc amount");
+                response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
+                return;
+            }
+            int bookingId = Integer.parseInt(bookingIdStr);
+            double amount = Double.parseDouble(amountStr);
+            if (amount <= 0) {
+                request.getSession().setAttribute("errorMessage", "Số tiền không hợp lệ");
+                response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
+                return;
+            }
+            
+            try (java.sql.Connection conn = utils.DBConnection.getConnection()) {
+                // Ghi log Refunds với order_id = SPA_<bookingId>
+                String insertRefund = "INSERT INTO dbo.Refunds (order_id, amount, payos_payout_id, reason, created_at) VALUES (?, ?, ?, ?, GETDATE())";
+                try (java.sql.PreparedStatement ps = conn.prepareStatement(insertRefund)) {
+                    ps.setString(1, "SPA_" + bookingId);
+                    ps.setDouble(2, amount);
+                    ps.setString(3, null);
+                    ps.setString(4, reason);
+                    ps.executeUpdate();
+                }
+                // Cập nhật trạng thái booking
+                String updateBooking = "UPDATE dbo.Booking SET note = COALESCE(CAST(note AS NVARCHAR(255)),'') + CASE WHEN LEN(COALESCE(CAST(note AS NVARCHAR(255)),''))>0 THEN N' | refunded' ELSE N'refunded' END, updated_at = GETDATE() WHERE booking_id = ?";
+                try (java.sql.PreparedStatement ps2 = conn.prepareStatement(updateBooking)) {
+                    ps2.setInt(1, bookingId);
+                    ps2.executeUpdate();
+                }
+            }
+            request.getSession().setAttribute("successMessage", "Hoàn tiền thành công cho booking #" + bookingId);
+        } catch (Exception ex) {
+            request.getSession().setAttribute("errorMessage", "Lỗi hoàn tiền: " + ex.getMessage());
+        }
+        response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
     }
 }

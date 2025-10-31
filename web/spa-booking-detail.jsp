@@ -217,12 +217,14 @@
                         </button>
                     </form>
                     <% } else if ("cancelled".equals(booking.getStatus())) { %>
-                    <button class="btn-secondary" disabled>
-                        <i class="fas fa-ban mr-2"></i>Đã hủy
+                    <button onclick="deleteSpaBooking(<%= booking.getBookingId() %>)" 
+                            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
+                        <i class="fas fa-trash mr-2"></i>Xóa khỏi danh sách
                     </button>
-                    <% } else { %>
-                    <button class="btn-secondary" disabled>
-                        <i class="fas fa-lock mr-2"></i>Không thể hủy
+                    <% } else if ("completed".equalsIgnoreCase(booking.getStatus()) || "đã thanh toán".equals(booking.getStatus()) || "hoàn thành".equalsIgnoreCase(booking.getStatus())) { %>
+                    <button onclick="deleteSpaBooking(<%= booking.getBookingId() %>)" 
+                            class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
+                        <i class="fas fa-trash mr-2"></i>Xóa khỏi lịch sử
                     </button>
                     <% } %>
                 </div>
@@ -469,6 +471,31 @@
                 });
             }
         });
+        
+        function deleteSpaBooking(bookingId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lịch spa này khỏi danh sách? Hành động này không thể hoàn tác!')) {
+                // Tạo form để xóa booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-spa-booking';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
     </script>
 </body>
 </html>

@@ -867,6 +867,37 @@
                             </div>
                         </div>
                         
+                        <!-- Payment Method -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">💰 Phương thức thanh toán</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="border-2 rounded-lg p-3 cursor-pointer" id="payment-cash" onclick="selectPaymentMethod('cash')">
+                                    <input type="radio" name="paymentMethod" value="cash" checked id="radio-cash" class="sr-only">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center">
+                                            <div class="w-3 h-3 rounded-full bg-green-500" id="check-cash"></div>
+                                        </div>
+                                        <div>
+                                            <div class="font-semibold text-gray-800">💵 Tiền mặt</div>
+                                            <div class="text-xs text-gray-500">Thanh toán khi nhận</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="border-2 rounded-lg p-3 cursor-pointer" id="payment-payos" onclick="selectPaymentMethod('payos')">
+                                    <input type="radio" name="paymentMethod" value="payos" id="radio-payos" class="sr-only">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                                            <div class="w-3 h-3 rounded-full bg-green-500 hidden" id="check-payos"></div>
+                                        </div>
+                                        <div>
+                                            <div class="font-semibold text-gray-800">💳 PayOS Online</div>
+                                            <div class="text-xs text-gray-500">Thanh toán trực tuyến</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <!-- Terms and Conditions -->
                         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                             <h4 class="font-semibold text-gray-800 mb-2">📋 Điều khoản lưu trú</h4>
@@ -1050,6 +1081,19 @@
                 
                 document.getElementById('checkOutDate').value = checkOut.toISOString().split('T')[0];
             }
+        }
+        
+        function selectPaymentMethod(method) {
+            // Unselect all payment options
+            document.getElementById('payment-cash').classList.remove('border-green-500');
+            document.getElementById('payment-payos').classList.remove('border-green-500');
+            document.getElementById('check-cash').classList.add('hidden');
+            document.getElementById('check-payos').classList.add('hidden');
+            
+            // Select the clicked option
+            document.getElementById('payment-' + method).classList.add('border-green-500');
+            document.getElementById('check-' + method).classList.remove('hidden');
+            document.getElementById('radio-' + method).checked = true;
         }
         
         function submitBoardingForm() {

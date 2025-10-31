@@ -1,13 +1,13 @@
 USE [master]
 GO
 
-/****** Object:  Database [SHOP_PET_Database]    Script Date: 10/23/2025 7:47:21 PM ******/
+/****** Object:  Database [SHOP_PET_Database]    Script Date: 10/30/2025 1:26:08 PM ******/
 CREATE DATABASE [SHOP_PET_Database]
  CONTAINMENT = NONE
  ON  PRIMARY 
 ( NAME = N'SHOP_PET_Database', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\SHOP_PET_Database.mdf' , SIZE = 73728KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
-( NAME = N'SHOP_PET_Database_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\SHOP_PET_Database_log.ldf' , SIZE = 73728KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+( NAME = N'SHOP_PET_Database_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\SHOP_PET_Database_log.ldf' , SIZE = 139264KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
  WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
 GO
 

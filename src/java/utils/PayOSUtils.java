@@ -165,13 +165,25 @@ public static String generateChecksum(String amount, String orderCode, String re
      * Xác thực webhook signature cho payment-requests
      * Sử dụng thuật toán HMAC_SHA256 với data dạng key1=value1&key2=value2...
      * Dữ liệu sắp xếp theo key thứ tự alphabet
+     * Theo tài liệu PayOS: https://payos.vn/docs/webhook
      */
     public static boolean verifyPaymentRequestSignature(JsonObject webhookData, String expectedSignature) {
         try {
             System.out.println("🔐 ===== VERIFYING PAYMENT REQUEST SIGNATURE =====");
             
-            if (!webhookData.has("data") || !webhookData.has("signature")) {
-                System.err.println("❌ Webhook data missing 'data' or 'signature' field");
+            if (!webhookData.has("data")) {
+                System.err.println("❌ Webhook data missing 'data' field");
+                return false;
+            }
+            
+            // Extract signature from webhook data if not provided
+            String actualSignature = expectedSignature;
+            if ((actualSignature == null || actualSignature.isEmpty()) && webhookData.has("signature")) {
+                actualSignature = webhookData.get("signature").getAsString();
+            }
+            
+            if (actualSignature == null || actualSignature.isEmpty()) {
+                System.err.println("❌ Webhook signature is missing");
                 return false;
             }
             
@@ -184,14 +196,21 @@ public static String generateChecksum(String amount, String orderCode, String re
             }
             
             System.out.println("📋 Webhook data: " + data.toString());
-            System.out.println("🔑 Expected signature: " + expectedSignature);
+            System.out.println("🔑 Expected signature: " + actualSignature);
             
-            // Tạo signature từ data object
+            // Tạo signature từ data object theo chuẩn PayOS
             String computedSignature = generatePaymentRequestSignature(data, checksumKey);
             System.out.println("🔐 Computed signature: " + computedSignature);
             
-            boolean isValid = computedSignature.equals(expectedSignature);
+            boolean isValid = computedSignature != null && computedSignature.equalsIgnoreCase(actualSignature);
             System.out.println("✅ Signature verification result: " + isValid);
+            
+            if (!isValid) {
+                System.err.println("❌ Signature mismatch!");
+                System.err.println("   Expected: " + actualSignature);
+                System.err.println("   Computed: " + computedSignature);
+            }
+            
             System.out.println("🔐 ===== PAYMENT REQUEST SIGNATURE VERIFICATION COMPLETE =====");
             
             return isValid;
@@ -205,9 +224,14 @@ public static String generateChecksum(String amount, String orderCode, String re
     
     /**
      * Tạo signature cho payment-requests webhook data
+     * Theo tài liệu PayOS: data tạo signature dạng key1=value1&key2=value2...
+     * Dữ liệu sắp xếp theo key thứ tự alphabet
      */
     private static String generatePaymentRequestSignature(JsonObject data, String checksumKey) {
         try {
+            System.out.println("🔐 ===== GENERATING PAYMENT REQUEST SIGNATURE =====");
+            System.out.println("📋 Input data: " + data.toString());
+            
             // Sắp xếp keys theo alphabet
             java.util.TreeMap<String, Object> sortedMap = new java.util.TreeMap<>();
             
@@ -248,6 +272,8 @@ public static String generateChecksum(String amount, String orderCode, String re
                 sortedMap.put(key, valueObj);
             }
             
+            System.out.println("📋 Sorted map: " + sortedMap);
+            
             // Tạo query string dạng key1=value1&key2=value2...
             java.util.List<String> queryParts = new java.util.ArrayList<>();
             for (Map.Entry<String, Object> entry : sortedMap.entrySet()) {
@@ -286,7 +312,11 @@ public static String generateChecksum(String amount, String orderCode, String re
                 hexString.append(hex);
             }
             
-            return hexString.toString();
+            String signature = hexString.toString();
+            System.out.println("✅ Generated signature: " + signature);
+            System.out.println("🔐 ===== PAYMENT REQUEST SIGNATURE GENERATION COMPLETE =====");
+            
+            return signature;
             
         } catch (Exception e) {
             System.err.println("❌ ERROR generating payment request signature: " + e.getMessage());
@@ -299,13 +329,25 @@ public static String generateChecksum(String amount, String orderCode, String re
      * Xác thực webhook signature cho payouts
      * Sử dụng thuật toán HMAC_SHA256 với data dạng key1=value1&key2=value2...
      * Dữ liệu sắp xếp theo key thứ tự alphabet, arrays không được sắp xếp
+     * Theo tài liệu PayOS: https://payos.vn/docs/webhook
      */
     public static boolean verifyPayoutSignature(JsonObject webhookData, String expectedSignature) {
         try {
             System.out.println("🔐 ===== VERIFYING PAYOUT SIGNATURE =====");
             
-            if (!webhookData.has("data") || !webhookData.has("signature")) {
-                System.err.println("❌ Webhook data missing 'data' or 'signature' field");
+            if (!webhookData.has("data")) {
+                System.err.println("❌ Webhook data missing 'data' field");
+                return false;
+            }
+            
+            // Extract signature from webhook data if not provided
+            String actualSignature = expectedSignature;
+            if ((actualSignature == null || actualSignature.isEmpty()) && webhookData.has("signature")) {
+                actualSignature = webhookData.get("signature").getAsString();
+            }
+            
+            if (actualSignature == null || actualSignature.isEmpty()) {
+                System.err.println("❌ Webhook signature is missing");
                 return false;
             }
             
@@ -318,14 +360,21 @@ public static String generateChecksum(String amount, String orderCode, String re
             }
             
             System.out.println("📋 Payout data: " + data.toString());
-            System.out.println("🔑 Expected signature: " + expectedSignature);
+            System.out.println("🔑 Expected signature: " + actualSignature);
             
-            // Tạo signature từ data object
+            // Tạo signature từ data object theo chuẩn PayOS
             String computedSignature = generatePayoutSignature(data, checksumKey);
             System.out.println("🔐 Computed signature: " + computedSignature);
             
-            boolean isValid = computedSignature.equals(expectedSignature);
+            boolean isValid = computedSignature != null && computedSignature.equalsIgnoreCase(actualSignature);
             System.out.println("✅ Signature verification result: " + isValid);
+            
+            if (!isValid) {
+                System.err.println("❌ Signature mismatch!");
+                System.err.println("   Expected: " + actualSignature);
+                System.err.println("   Computed: " + computedSignature);
+            }
+            
             System.out.println("🔐 ===== PAYOUT SIGNATURE VERIFICATION COMPLETE =====");
             
             return isValid;
@@ -461,15 +510,21 @@ public static String generateChecksum(String amount, String orderCode, String re
             
             JsonObject webhookData = JsonParser.parseString(data).getAsJsonObject();
             
+            // Extract signature from webhook data if not provided in header
+            String actualSignature = signature;
+            if ((actualSignature == null || actualSignature.isEmpty()) && webhookData.has("signature")) {
+                actualSignature = webhookData.get("signature").getAsString();
+            }
+            
             // Kiểm tra xem có phải payout webhook không
             if (webhookData.has("data")) {
                 JsonObject dataObj = webhookData.getAsJsonObject("data");
                 if (dataObj.has("payouts")) {
                     System.out.println("📊 Detected payout webhook");
-                    return verifyPayoutSignature(webhookData, signature);
+                    return verifyPayoutSignature(webhookData, actualSignature);
                 } else {
                     System.out.println("💳 Detected payment request webhook");
-                    return verifyPaymentRequestSignature(webhookData, signature);
+                    return verifyPaymentRequestSignature(webhookData, actualSignature);
                 }
             }
             

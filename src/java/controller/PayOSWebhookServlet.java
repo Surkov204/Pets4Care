@@ -46,11 +46,13 @@ public class PayOSWebhookServlet extends HttpServlet {
             if (signature == null || signature.isEmpty()) {
                 System.err.println("⚠️ No signature header, accepting anyway for testing");
                 // Ở giai đoạn test, chấp nhận webhook không có signature
-            } else if (!payOSService.verifyWebhook(webhookData, signature)) {
-                System.err.println("❌ Invalid webhook signature");
-                resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                resp.getWriter().write("{\"message\":\"Invalid signature\"}");
-                return;
+            } else {
+                if (!payOSService.verifyWebhook(webhookData, signature)) {
+                    System.err.println("❌ Invalid webhook signature");
+                    resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    resp.getWriter().write("{\"message\":\"Invalid signature\"}");
+                    return;
+                }
             }
             
             // Bước 3: Xử lý webhook và cập nhật trạng thái đơn hàng

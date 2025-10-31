@@ -299,7 +299,7 @@ or ant -Dj2ee.platform.classpath=&lt;server_classpath&gt; (where no properties f
         </macrodef>
     </target>
     <target name="-init-macrodef-copyfiles">
-        <macrodef name="copyfiles" uri="http://www.netbeans.org/ns/web-project/1">
+        <macrodef name="copyfiles">
             <attribute name="files"/>
             <attribute name="todir"/>
             <attribute name="iftldtodir" default=""/>
@@ -310,11 +310,17 @@ or ant -Dj2ee.platform.classpath=&lt;server_classpath&gt; (where no properties f
                         <available file="@{iftldtodir}"/>
                     </or>
                 </condition>
-                <copy todir="@{todir}" if="should.copy">
-                    <fileset file="@{files}"/>
-                </copy>
+                <antcall target="-copyfiles-impl">
+                    <param name="files" value="@{files}"/>
+                    <param name="todir" value="@{todir}"/>
+                </antcall>
             </sequential>
         </macrodef>
+    </target>
+    <target name="-copyfiles-impl" if="should.copy">
+        <copy todir="${todir}">
+            <fileset file="${files}"/>
+        </copy>
     </target>
     <target depends="-init-ap-cmdline-properties" if="ap.supported.internal" name="-init-macrodef-javac-with-processors">
         <macrodef name="javac" uri="http://www.netbeans.org/ns/web-project/2">

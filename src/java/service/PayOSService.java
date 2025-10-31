@@ -115,26 +115,40 @@ public class PayOSService {
             
             if (webhook.has("data")) {
                 JsonObject data = webhook.getAsJsonObject("data");
-                int orderCode = data.get("orderCode").getAsInt();
-                String status = data.get("status").getAsString();
                 
-                System.out.println("📦 Order Code: " + orderCode);
-                System.out.println("📊 Status: " + status);
-                
-                if ("PAID".equals(status)) {
-                    System.out.println("✅ Payment confirmed, updating order status...");
-                    // Cập nhật trạng thái thanh toán trong database
-                    boolean updated = updatePaymentStatus(orderCode, "Da thanh toan", new Timestamp(System.currentTimeMillis()));
+                // Kiểm tra webhook structure theo tài liệu PayOS
+                if (data.has("orderCode")) {
+                    // Payment request webhook
+                    int orderCode = data.get("orderCode").getAsInt();
+                    String code = data.has("code") ? data.get("code").getAsString() : null;
+                    String desc = data.has("desc") ? data.get("desc").getAsString() : "";
                     
-                    if (updated) {
-                        System.out.println("✅ Order #" + orderCode + " updated to 'Da thanh toan'");
+                    System.out.println("📦 Order Code: " + orderCode);
+                    System.out.println("📊 Code: " + code);
+                    System.out.println("📋 Description: " + desc);
+                    
+                    // PayOS trả về code="00" khi thanh toán thành công
+                    if ("00".equals(code)) {
+                        System.out.println("✅ Payment confirmed (code 00), updating order status...");
+                        // Cập nhật trạng thái thanh toán trong database
+                        boolean updated = updatePaymentStatus(orderCode, "Da thanh toan", new Timestamp(System.currentTimeMillis()));
+                        
+                        if (updated) {
+                            System.out.println("✅ Order #" + orderCode + " updated to 'Da thanh toan'");
+                        } else {
+                            System.err.println("❌ Failed to update order #" + orderCode);
+                        }
+                        
+                        return updated;
                     } else {
-                        System.err.println("❌ Failed to update order #" + orderCode);
+                        System.out.println("⚠️ Payment not completed yet, code: " + code + ", desc: " + desc);
                     }
-                    
-                    return updated;
+                } else if (data.has("payouts")) {
+                    // Payout webhook - not implemented yet
+                    System.out.println("📊 Payout webhook received but not handled");
+                    return true; // Return true to acknowledge receipt
                 } else {
-                    System.out.println("⚠️ Payment not completed yet, status: " + status);
+                    System.err.println("❌ Unknown webhook data structure");
                 }
             } else {
                 System.err.println("❌ No 'data' field in webhook");

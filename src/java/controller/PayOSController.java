@@ -161,6 +161,10 @@ public class PayOSController extends HttpServlet {
             String webhookData = jsonBuffer.toString();
             String signature = request.getHeader("x-payos-signature");
             
+            System.out.println("📨 ===== PAYOS WEBHOOK RECEIVED (PayOSController) =====");
+            System.out.println("Webhook data: " + webhookData);
+            System.out.println("Signature from header: " + signature);
+            
             // Xác thực webhook
             if (payOSService.verifyWebhook(webhookData, signature)) {
                 // Xử lý webhook
@@ -177,6 +181,7 @@ public class PayOSController extends HttpServlet {
             }
             
         } catch (Exception e) {
+            System.err.println("❌ EXCEPTION in PayOSController webhook: " + e.getMessage());
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.getWriter().write("Internal server error");

@@ -50,4 +50,31 @@ public class PayrollDAO {
         }
         return list;
     }
+    public PayrollRecord getLatestPayroll(int staffId) {
+        String sql = """
+        SELECT TOP 1 *
+        FROM PayrollRecords
+        WHERE StaffID = ?
+        ORDER BY CreatedAt DESC
+    """;
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, staffId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return new PayrollRecord(
+                        rs.getInt("PayrollID"),
+                        rs.getInt("StaffID"),
+                        rs.getDate("PeriodStart"),
+                        rs.getDate("PeriodEnd"),
+                        rs.getDouble("TotalHours"),
+                        rs.getDouble("HourlyRate"),
+                        rs.getDouble("TotalSalary"),
+                        rs.getTimestamp("CreatedAt")
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

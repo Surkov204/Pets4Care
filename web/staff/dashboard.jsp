@@ -449,12 +449,9 @@
                     <div class="salary-card">
                         <div class="salary-header">
                             <h3><i class="fas fa-coins"></i> Lương hiện tại</h3>
-                            <form action="${pageContext.request.contextPath}/staff/attendance" method="post">
-                                <input type="hidden" name="action" value="generate"/>
-                                <button type="submit" class="btn-calc-salary">
-                                    <i class="fas fa-calculator"></i> Tính lương tháng này
-                                </button>
-                            </form>
+                            <button type="button" id="generatePayrollBtn" class="btn-calc-salary">
+                                <i class="fas fa-calculator"></i> Tính lương tháng này
+                            </button>
                         </div>
 
                         <table class="salary-table">
@@ -468,16 +465,16 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <c:forEach var="p" items="${payrollList}">
+                                <c:if test="${not empty sessionScope.latestPayroll}">
                                     <tr>
-                                        <td>${p.periodStart} → ${p.periodEnd}</td>
-                                        <td>${p.totalHours}</td>
-                                        <td>${p.hourlyRate}</td>
-                                        <td><b>${p.totalSalary}</b></td>
-                                        <td>${p.createdAt}</td>
+                                        <td>${sessionScope.latestPayroll.periodStart} → ${sessionScope.latestPayroll.periodEnd}</td>
+                                        <td>${sessionScope.latestPayroll.totalHours}</td>
+                                        <td>${sessionScope.latestPayroll.hourlyRate}</td>
+                                        <td><b>${sessionScope.latestPayroll.totalSalary}</b></td>
+                                        <td>${sessionScope.latestPayroll.createdAt}</td>
                                     </tr>
-                                </c:forEach>
-                                <c:if test="${empty payrollList}">
+                                </c:if>
+                                <c:if test="${empty sessionScope.latestPayroll}">
                                     <tr><td colspan="5" class="empty-msg">Chưa có dữ liệu lương.</td></tr>
                                 </c:if>
                             </tbody>
@@ -655,7 +652,8 @@
             });
             document.addEventListener("DOMContentLoaded", () => {
                 const btn = document.getElementById("attendanceButton");
-
+                const generateBtn = document.getElementById("generatePayrollBtn");
+                
                 btn.addEventListener("click", async () => {
                     try {
                         const formData = new URLSearchParams();
@@ -706,6 +704,43 @@
                             icon: "error",
                             title: "Lỗi hệ thống",
                             text: "Không thể kết nối máy chủ. Hãy thử lại sau.",
+                            confirmButtonText: "OK"
+                        });
+                    }
+                });
+                
+            generateBtn.addEventListener("click", async () => {
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append("action", "generate");
+
+                        const res = await fetch("${pageContext.request.contextPath}/staff/attendance", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                            body: formData.toString()
+                        });
+
+                        const data = await res.json();
+                        if (data.status === "success") {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Thành công!",
+                                text: data.message,
+                                confirmButtonText: "OK"
+                            }).then(() => window.location.reload());
+                        } else {
+                            Swal.fire({
+                                icon: "warning",
+                                title: "Không thành công",
+                                text: data.message,
+                                confirmButtonText: "OK"
+                            });
+                        }
+                    } catch (err) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Lỗi hệ thống",
+                            text: "Không thể kết nối máy chủ.",
                             confirmButtonText: "OK"
                         });
                     }

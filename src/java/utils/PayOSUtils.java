@@ -33,54 +33,92 @@ public class PayOSUtils {
         System.out.println("📤 Request Method: " + method);
         System.out.println("📋 Request Body: " + requestBody);
         
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-        
-        conn.setRequestMethod(method);
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("x-client-id", PayOSConfig.getClientId());
-        conn.setRequestProperty("x-api-key", PayOSConfig.getApiKey());
-        
-        System.out.println("🔑 x-client-id: " + PayOSConfig.getClientId());
-        System.out.println("🔑 x-api-key: " + (PayOSConfig.getApiKey() != null ? PayOSConfig.getApiKey().substring(0, Math.min(10, PayOSConfig.getApiKey().length())) + "..." : "NULL"));
-        
-        // Thêm custom headers nếu có
-        if (headers != null) {
-            for (Map.Entry<String, String> entry : headers.entrySet()) {
-                conn.setRequestProperty(entry.getKey(), entry.getValue());
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) new URL(url).openConnection();
+            
+            // Set timeouts to avoid hanging indefinitely
+            conn.setConnectTimeout(15000); // 15 seconds
+            conn.setReadTimeout(15000); // 15 seconds
+            
+            conn.setRequestMethod(method);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("x-client-id", PayOSConfig.getClientId());
+            conn.setRequestProperty("x-api-key", PayOSConfig.getApiKey());
+            
+            System.out.println("🔑 x-client-id: " + PayOSConfig.getClientId());
+            System.out.println("🔑 x-api-key: " + (PayOSConfig.getApiKey() != null ? PayOSConfig.getApiKey().substring(0, Math.min(10, PayOSConfig.getApiKey().length())) + "..." : "NULL"));
+            
+            // Thêm custom headers nếu có
+            if (headers != null) {
+                for (Map.Entry<String, String> entry : headers.entrySet()) {
+                    conn.setRequestProperty(entry.getKey(), entry.getValue());
+                }
             }
-        }
-        
-        if ("POST".equals(method) && requestBody != null) {
-            conn.setDoOutput(true);
-            try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = requestBody.getBytes(StandardCharsets.UTF_8);
-                System.out.println("📤 Sending " + input.length + " bytes to PayOS");
-                os.write(input, 0, input.length);
+            
+            if ("POST".equals(method) && requestBody != null) {
+                conn.setDoOutput(true);
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = requestBody.getBytes(StandardCharsets.UTF_8);
+                    System.out.println("📤 Sending " + input.length + " bytes to PayOS");
+                    os.write(input, 0, input.length);
+                }
             }
-        }
-        
-        int responseCode = conn.getResponseCode();
-        System.out.println("📥 PayOS Response Code: " + responseCode);
-        
-        StringBuilder response = new StringBuilder();
-        
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(
-                responseCode >= 200 && responseCode < 300 ? conn.getInputStream() : conn.getErrorStream()))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                response.append(line);
+            
+            int responseCode = conn.getResponseCode();
+            System.out.println("📥 PayOS Response Code: " + responseCode);
+            
+            StringBuilder response = new StringBuilder();
+            
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(
+                    responseCode >= 200 && responseCode < 300 ? conn.getInputStream() : conn.getErrorStream()))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    response.append(line);
+                }
             }
-        }
-        
-        String responseBody = response.toString();
-        System.out.println("📥 PayOS Response Body: " + responseBody);
-        
-        if (responseCode >= 200 && responseCode < 300) {
-            System.out.println("✅ PayOS request successful");
-            return responseBody;
-        } else {
-            System.err.println("❌ PayOS API Error: " + responseCode + " - " + responseBody);
-            throw new IOException("PayOS API Error: " + responseCode + " - " + responseBody);
+            
+            String responseBody = response.toString();
+            System.out.println("📥 PayOS Response Body: " + responseBody);
+            
+            if (responseCode >= 200 && responseCode < 300) {
+                System.out.println("✅ PayOS request successful");
+                return responseBody;
+            } else {
+                System.err.println("❌ PayOS API Error: " + responseCode + " - " + responseBody);
+                throw new IOException("PayOS API Error: " + responseCode + " - " + responseBody);
+            }
+        } catch (java.net.UnknownHostException e) {
+            String errorMsg = "DNS Resolution Failed - Cannot resolve hostname: " + e.getMessage() + 
+                             "\nPossible causes: No internet connection, DNS server issues, or incorrect domain name";
+            System.err.println("❌ " + errorMsg);
+            e.printStackTrace();
+            throw new IOException(errorMsg, e);
+        } catch (java.net.SocketTimeoutException e) {
+            String errorMsg = "Connection Timeout - PayOS API did not respond within 15 seconds: " + e.getMessage();
+            System.err.println("❌ " + errorMsg);
+            e.printStackTrace();
+            throw new IOException(errorMsg, e);
+        } catch (java.net.ConnectException e) {
+            String errorMsg = "Connection Refused - Cannot connect to PayOS API: " + e.getMessage() + 
+                             "\nPossible causes: Firewall blocking, VPN issues, or PayOS API is down";
+            System.err.println("❌ " + errorMsg);
+            e.printStackTrace();
+            throw new IOException(errorMsg, e);
+        } catch (javax.net.ssl.SSLException e) {
+            String errorMsg = "SSL/TLS Error - Certificate validation failed: " + e.getMessage();
+            System.err.println("❌ " + errorMsg);
+            e.printStackTrace();
+            throw new IOException(errorMsg, e);
+        } catch (IOException e) {
+            String errorMsg = "I/O Error - " + e.getClass().getSimpleName() + ": " + e.getMessage();
+            System.err.println("❌ " + errorMsg);
+            e.printStackTrace();
+            throw new IOException(errorMsg, e);
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
     }
 
@@ -93,40 +131,68 @@ public class PayOSUtils {
         System.out.println("📤 Request Method: " + method);
         System.out.println("📋 Request Body: " + requestBody);
 
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-        conn.setRequestMethod(method);
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("x-client-id", PayOSConfig.getClientId());
-        conn.setRequestProperty("x-api-key", PayOSConfig.getApiKey());
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) new URL(url).openConnection();
+            
+            // Set timeouts
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(15000);
+            
+            conn.setRequestMethod(method);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("x-client-id", PayOSConfig.getClientId());
+            conn.setRequestProperty("x-api-key", PayOSConfig.getApiKey());
 
-        if (headers != null) {
-            for (Map.Entry<String, String> entry : headers.entrySet()) {
-                conn.setRequestProperty(entry.getKey(), entry.getValue());
+            if (headers != null) {
+                for (Map.Entry<String, String> entry : headers.entrySet()) {
+                    conn.setRequestProperty(entry.getKey(), entry.getValue());
+                }
+            }
+
+            if ("POST".equals(method) && requestBody != null) {
+                conn.setDoOutput(true);
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = requestBody.getBytes(StandardCharsets.UTF_8);
+                    os.write(input, 0, input.length);
+                }
+            }
+
+            int responseCode = conn.getResponseCode();
+            StringBuilder response = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(
+                    responseCode >= 200 && responseCode < 300 ? conn.getInputStream() : conn.getErrorStream()))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    response.append(line);
+                }
+            }
+            String responseBody = response.toString();
+            if (responseCode >= 200 && responseCode < 300) {
+                return responseBody;
+            }
+            throw new IOException("PayOS API Error: " + responseCode + " - " + responseBody);
+        } catch (java.net.UnknownHostException e) {
+            String errorMsg = "DNS Resolution Failed - Cannot resolve hostname: " + e.getMessage();
+            System.err.println("❌ " + errorMsg);
+            throw new IOException(errorMsg, e);
+        } catch (java.net.SocketTimeoutException e) {
+            String errorMsg = "Connection Timeout: " + e.getMessage();
+            System.err.println("❌ " + errorMsg);
+            throw new IOException(errorMsg, e);
+        } catch (java.net.ConnectException e) {
+            String errorMsg = "Connection Refused: " + e.getMessage();
+            System.err.println("❌ " + errorMsg);
+            throw new IOException(errorMsg, e);
+        } catch (javax.net.ssl.SSLException e) {
+            String errorMsg = "SSL/TLS Error: " + e.getMessage();
+            System.err.println("❌ " + errorMsg);
+            throw new IOException(errorMsg, e);
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
             }
         }
-
-        if ("POST".equals(method) && requestBody != null) {
-            conn.setDoOutput(true);
-            try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = requestBody.getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-            }
-        }
-
-        int responseCode = conn.getResponseCode();
-        StringBuilder response = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(
-                responseCode >= 200 && responseCode < 300 ? conn.getInputStream() : conn.getErrorStream()))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                response.append(line);
-            }
-        }
-        String responseBody = response.toString();
-        if (responseCode >= 200 && responseCode < 300) {
-            return responseBody;
-        }
-        throw new IOException("PayOS API Error: " + responseCode + " - " + responseBody);
     }
     
     /**
@@ -215,23 +281,52 @@ public static String generateChecksum(String amount, String orderCode, String re
     
     /**
      * Xác thực webhook signature từ PayOS
-     * PayOS gửi signature trong header x-payos-signature
+     * Theo tài liệu PayOS: https://payos.vn/docs/tich-hop-webhook/kiem-tra-du-lieu-voi-signature
+     * 
+     * Cách tính signature:
+     * 1. Lấy data object từ webhook (không bao gồm signature field)
+     * 2. Sắp xếp keys theo alphabet
+     * 3. Tạo query string: key1=value1&key2=value2&...
+     * 4. HMAC-SHA256 với checksum key
+     * 5. Convert sang hex string
+     * 
+     * @param webhookBody Raw webhook JSON string từ PayOS
+     * @param signatureHeader Signature từ header x-payos-signature (có thể null)
+     * @return true nếu signature hợp lệ
      */
-    public static boolean verifyWebhookSignature(String data, String signature) {
+    public static boolean verifyWebhookSignature(String webhookBody, String signatureHeader) {
         try {
             System.out.println("🔐 ===== VERIFYING WEBHOOK SIGNATURE =====");
-            System.out.println("📝 Data to verify: " + data);
-            System.out.println("🔑 Signature from PayOS: " + signature);
+            System.out.println("📝 Webhook body: " + webhookBody);
+            System.out.println("🔑 Signature from header: " + signatureHeader);
             
-            if (data == null || data.trim().isEmpty()) {
-                System.err.println("❌ Empty data to verify");
+            if (webhookBody == null || webhookBody.trim().isEmpty()) {
+                System.err.println("❌ Empty webhook body");
                 return false;
+            }
+            
+            // Parse JSON để lấy signature và data
+            JsonObject webhookJson = JsonParser.parseString(webhookBody).getAsJsonObject();
+            
+            // Extract signature từ JSON body hoặc header
+            String signature = signatureHeader;
+            if ((signature == null || signature.isEmpty()) && webhookJson.has("signature")) {
+                signature = webhookJson.get("signature").getAsString();
+                System.out.println("📋 Using signature from JSON body");
             }
             
             if (signature == null || signature.trim().isEmpty()) {
-                System.err.println("❌ Empty signature");
+                System.err.println("❌ No signature found (neither in header nor JSON body)");
                 return false;
             }
+            
+            // Lấy data object (không bao gồm signature, code, desc, success ở top level)
+            if (!webhookJson.has("data")) {
+                System.err.println("❌ No 'data' field in webhook");
+                return false;
+            }
+            
+            JsonObject dataObject = webhookJson.getAsJsonObject("data");
             
             String checksumKey = PayOSConfig.getChecksumKey();
             if (checksumKey == null || checksumKey.trim().isEmpty()) {
@@ -240,20 +335,49 @@ public static String generateChecksum(String amount, String orderCode, String re
             }
             
             System.out.println("🔑 Using checksum key: " + (checksumKey.length() > 10 ? checksumKey.substring(0, 10) + "..." : checksumKey));
+            System.out.println("📦 Data object: " + dataObject.toString());
             
-            // PayOS webhook signature verification:
-            // 1. Tạo HMAC-SHA256 của raw data với checksum key
-            // 2. Convert sang hex string
-            // 3. So sánh với signature từ PayOS
+            // Bước 1: Sắp xếp keys theo alphabet
+            java.util.TreeMap<String, String> sortedMap = new java.util.TreeMap<>();
+            for (java.util.Map.Entry<String, com.google.gson.JsonElement> entry : dataObject.entrySet()) {
+                String key = entry.getKey();
+                com.google.gson.JsonElement value = entry.getValue();
+                
+                // Convert value to string (xử lý các loại JSON element)
+                String valueStr;
+                if (value.isJsonPrimitive()) {
+                    valueStr = value.getAsString();
+                } else if (value.isJsonNull()) {
+                    valueStr = "";
+                } else {
+                    // Đối với object/array, convert sang JSON string
+                    valueStr = value.toString();
+                }
+                sortedMap.put(key, valueStr);
+            }
             
+            // Bước 2: Tạo query string: key1=value1&key2=value2&...
+            StringBuilder signatureData = new StringBuilder();
+            boolean first = true;
+            for (java.util.Map.Entry<String, String> entry : sortedMap.entrySet()) {
+                if (!first) {
+                    signatureData.append('&');
+                }
+                signatureData.append(entry.getKey()).append('=').append(entry.getValue());
+                first = false;
+            }
+            
+            System.out.println("📋 Signature data string: " + signatureData.toString());
+            
+            // Bước 3: HMAC-SHA256 với checksum key
             javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
             javax.crypto.spec.SecretKeySpec secretKeySpec = 
                 new javax.crypto.spec.SecretKeySpec(checksumKey.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256");
             mac.init(secretKeySpec);
             
-            byte[] hash = mac.doFinal(data.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            byte[] hash = mac.doFinal(signatureData.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
             
-            // Convert to hex
+            // Bước 4: Convert sang hex string
             StringBuilder hexString = new StringBuilder();
             for (byte b : hash) {
                 String hex = Integer.toHexString(0xff & b);
@@ -265,7 +389,8 @@ public static String generateChecksum(String amount, String orderCode, String re
             System.out.println("🔐 Calculated signature: " + calculatedSignature);
             System.out.println("🔐 PayOS signature: " + signature);
             
-            boolean isValid = calculatedSignature.equals(signature);
+            // Bước 5: So sánh (case-insensitive để tránh lỗi)
+            boolean isValid = calculatedSignature.equalsIgnoreCase(signature);
             System.out.println("✅ Signature verification result: " + isValid);
             System.out.println("🔐 ===== WEBHOOK SIGNATURE VERIFICATION COMPLETE =====");
             
@@ -451,5 +576,117 @@ public static String generateChecksum(String amount, String orderCode, String re
         System.out.println("🧹 ===== DESCRIPTION NORMALIZATION COMPLETE =====");
         
         return finalResult;
+    }
+    
+    /**
+     * Diagnostic utility to test connectivity to PayOS API
+     * This helps identify if the issue is DNS, firewall, SSL, or API-related
+     */
+    public static void diagnosePayOSConnectivity() {
+        System.out.println("\n🔧 ===== PAYOS CONNECTIVITY DIAGNOSTIC =====");
+        
+        String hostname = "api.payos.vn";
+        String baseUrl = PayOSConfig.getBaseUrl();
+        
+        // Test 1: DNS Resolution
+        System.out.println("\n1️⃣ Testing DNS Resolution for " + hostname + "...");
+        try {
+            java.net.InetAddress address = java.net.InetAddress.getByName(hostname);
+            System.out.println("   ✅ DNS Resolution successful");
+            System.out.println("   📍 IP Address: " + address.getHostAddress());
+        } catch (java.net.UnknownHostException e) {
+            System.err.println("   ❌ DNS Resolution FAILED: " + e.getMessage());
+            System.err.println("   💡 Possible causes:");
+            System.err.println("      - No internet connection");
+            System.err.println("      - DNS server issues");
+            System.err.println("      - Firewall blocking DNS queries");
+            return; // Can't continue if DNS fails
+        }
+        
+        // Test 2: TCP Connection
+        System.out.println("\n2️⃣ Testing TCP connection to " + hostname + ":443...");
+        try {
+            java.net.Socket socket = new java.net.Socket();
+            socket.connect(new java.net.InetSocketAddress(hostname, 443), 10000);
+            System.out.println("   ✅ TCP Connection successful");
+            socket.close();
+        } catch (Exception e) {
+            System.err.println("   ❌ TCP Connection FAILED: " + e.getMessage());
+            System.err.println("   💡 Possible causes:");
+            System.err.println("      - Firewall blocking HTTPS traffic");
+            System.err.println("      - VPN/Proxy issues");
+            System.err.println("      - PayOS API is down");
+            return;
+        }
+        
+        // Test 3: HTTPS Connection
+        System.out.println("\n3️⃣ Testing HTTPS connection to " + baseUrl + "...");
+        try {
+            java.net.URL url = new java.net.URL(baseUrl);
+            javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) url.openConnection();
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(10000);
+            conn.setRequestMethod("GET");
+            
+            int responseCode = conn.getResponseCode();
+            System.out.println("   ✅ HTTPS Connection successful");
+            System.out.println("   📡 Response Code: " + responseCode);
+            conn.disconnect();
+        } catch (javax.net.ssl.SSLException e) {
+            System.err.println("   ❌ SSL/TLS FAILED: " + e.getMessage());
+            System.err.println("   💡 Possible causes:");
+            System.err.println("      - SSL certificate validation failed");
+            System.err.println("      - Outdated Java version");
+            System.err.println("      - Corporate SSL inspection");
+            return;
+        } catch (Exception e) {
+            System.err.println("   ❌ HTTPS Connection FAILED: " + e.getMessage());
+            e.printStackTrace();
+            return;
+        }
+        
+        // Test 4: PayOS API Endpoint
+        System.out.println("\n4️⃣ Testing PayOS API authentication...");
+        try {
+            String testUrl = baseUrl + "/v2/payment-requests";
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(testUrl).openConnection();
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(10000);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("x-client-id", PayOSConfig.getClientId());
+            conn.setRequestProperty("x-api-key", PayOSConfig.getApiKey());
+            
+            // Send empty body (will fail but shows if auth works)
+            conn.setDoOutput(true);
+            conn.getOutputStream().write("{}".getBytes());
+            
+            int responseCode = conn.getResponseCode();
+            BufferedReader br = new BufferedReader(new InputStreamReader(
+                responseCode >= 200 && responseCode < 300 ? conn.getInputStream() : conn.getErrorStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                response.append(line);
+            }
+            br.close();
+            
+            System.out.println("   📡 Response Code: " + responseCode);
+            System.out.println("   📥 Response Body: " + response.toString());
+            
+            if (responseCode == 401 || responseCode == 403) {
+                System.err.println("   ❌ Authentication FAILED");
+                System.err.println("   💡 Check your Client ID and API Key in payos.properties");
+            } else if (responseCode >= 200 && responseCode < 500) {
+                System.out.println("   ✅ PayOS API is reachable and responding");
+            }
+            
+            conn.disconnect();
+        } catch (Exception e) {
+            System.err.println("   ❌ PayOS API Test FAILED: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        System.out.println("\n🔧 ===== DIAGNOSTIC COMPLETE =====\n");
     }
 }

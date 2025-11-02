@@ -40,7 +40,6 @@
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/Feedback.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/ChatHistory.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/spa-service.jsp</file>
-            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/nbproject/build-impl.xml</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/PayOSController.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/staff/index.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/CancelOrderServlet.java</file>
@@ -67,6 +66,7 @@
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/utils/GoogleConstants.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/service/ICustomerService.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/OrderServlet.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/nbproject/build-impl.xml~</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/StatisticServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/images/gt.png</file>
         </group>

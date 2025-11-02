@@ -65,11 +65,6 @@ public class PayOSService {
                 e.printStackTrace();
                 this.lastPayOSError = e.getMessage();
                 this.lastPayOSResponse = null;
-                
-                // Run connectivity diagnostic to help identify the issue
-                System.err.println("\n🔧 Running connectivity diagnostic...");
-                PayOSUtils.diagnosePayOSConnectivity();
-                
                 return null;
             }
             
@@ -215,13 +210,9 @@ public class PayOSService {
     
     /**
      * Xác thực webhook từ PayOS
-     * 
-     * @param webhookBody Raw webhook JSON string
-     * @param signatureHeader Signature từ header x-payos-signature (có thể null)
-     * @return true nếu signature hợp lệ
      */
-    public boolean verifyWebhook(String webhookBody, String signatureHeader) {
-        return PayOSUtils.verifyWebhookSignature(webhookBody, signatureHeader);
+    public boolean verifyWebhook(String data, String signature) {
+        return PayOSUtils.verifyWebhookSignature(data, signature);
     }
     
     /**

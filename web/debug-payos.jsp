@@ -1,33 +1,7 @@
 <%@ page import="service.PayOSService" %>
 <%@ page import="utils.PayOSConfig" %>
-<!DOCTYPE html>
-<html>
-<head>
-    <title>PayOS Debug Test</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .success { color: green; }
-        .error { color: red; }
-        .btn { 
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 10px 5px;
-            background: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        .btn:hover { background: #0056b3; }
-        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
-    </style>
-</head>
-<body>
 <%
     out.println("<h1>PayOS Debug Test</h1>");
-    out.println("<div style='margin: 20px 0;'>");
-    out.println("<a href='test-payos-connectivity.jsp' class='btn'>🔧 Test Connectivity</a>");
-    out.println("<a href='../home.jsp' class='btn'>🏠 Home</a>");
-    out.println("</div>");
     
     try {
         out.println("<h2>1. PayOS Config Test:</h2>");
@@ -78,5 +52,3 @@
         out.println("<pre>" + sw.toString() + "</pre>");
     }
 %>
-</body>
-</html>

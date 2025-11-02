@@ -247,89 +247,34 @@ public class PayOSController extends HttpServlet {
     
     /**
      * Xử lý khi khách hàng quay lại sau thanh toán thành công
-     * Theo tài liệu PayOS: https://payos.vn/docs/du-lieu-tra-ve/return-url
-     * 
-     * PayOS sẽ redirect về returnUrl với các parameters:
-     * - code: Mã kết quả ("00" = thành công)
-     * - id: Payment link ID
-     * - cancel: "true" nếu hủy thanh toán
-     * - status: Trạng thái thanh toán
-     * - orderCode: Mã đơn hàng
      */
     private void handlePaymentReturn(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
         try {
-            // Lấy parameters từ PayOS return URL
-            String code = request.getParameter("code");
-            String cancel = request.getParameter("cancel");
-            String status = request.getParameter("status");
-            String orderCodeStr = request.getParameter("orderCode");
-            String orderIdStr = request.getParameter("orderId");
-            String type = request.getParameter("type"); // boarding | service | null
+            int orderId = Integer.parseInt(request.getParameter("orderId"));
+            String type = request.getParameter("type"); // boarding | null
             
-            System.out.println("📥 ===== PAYOS RETURN URL HANDLER =====");
-            System.out.println("Code: " + code);
-            System.out.println("Cancel: " + cancel);
-            System.out.println("Status: " + status);
-            System.out.println("OrderCode: " + orderCodeStr);
-            System.out.println("OrderId: " + orderIdStr);
-            System.out.println("Type: " + type);
-            
-            // Xác định orderId (ưu tiên orderCode từ PayOS, sau đó orderId từ query)
-            int orderId;
-            if (orderCodeStr != null && !orderCodeStr.isEmpty()) {
-                orderId = Integer.parseInt(orderCodeStr);
-            } else if (orderIdStr != null && !orderIdStr.isEmpty()) {
-                orderId = Integer.parseInt(orderIdStr);
-            } else {
-                System.err.println("❌ Missing orderId/orderCode in return URL");
-                response.sendRedirect(request.getContextPath() + "/order/confirm-failed.jsp");
+            if ("boarding".equalsIgnoreCase(type)) {
+                // Với boarding: redirect tới invoice success
+                response.sendRedirect(request.getContextPath() + "/order/invoice.jsp?bookingId=" + orderId + "&type=boarding&method=PayOS");
+                return;
+            } else if ("service".equalsIgnoreCase(type)) {
+                // Service: chuyển nguyên query tới invoice (kèm method)
+                String qs = request.getQueryString();
+                String sep = (qs != null && qs.contains("method=")) ? "" : "&method=PayOS";
+                response.sendRedirect(request.getContextPath() + "/order/invoice.jsp?" + (qs != null ? qs : ("orderId=" + orderId + "&type=service")) + sep);
                 return;
             }
             
-            // Kiểm tra nếu user hủy thanh toán
-            if ("true".equalsIgnoreCase(cancel) || "cancelled".equalsIgnoreCase(status)) {
-                System.out.println("⚠️ Payment was cancelled by user");
-                if ("boarding".equalsIgnoreCase(type)) {
-                    response.sendRedirect(request.getContextPath() + "/order/invoice-cancelled.jsp?bookingId=" + orderId + "&type=boarding&method=PayOS");
-                } else if ("service".equalsIgnoreCase(type)) {
-                    String qs = request.getQueryString();
-                    response.sendRedirect(request.getContextPath() + "/order/invoice-cancelled.jsp?" + (qs != null ? qs : ("orderId=" + orderId + "&type=service")) + "&method=PayOS");
-                } else {
-                    response.sendRedirect(request.getContextPath() + "/order/invoice-cancelled.jsp?orderId=" + orderId + "&type=product&method=PayOS");
-                }
-                return;
-            }
-            
-            // Kiểm tra thanh toán thành công (code = "00")
-            boolean paymentSuccess = "00".equals(code) || "success".equalsIgnoreCase(status);
-            
-            if (paymentSuccess) {
-                System.out.println("✅ Payment successful, redirecting to invoice");
-                
-                if ("boarding".equalsIgnoreCase(type)) {
-                    response.sendRedirect(request.getContextPath() + "/order/invoice.jsp?bookingId=" + orderId + "&type=boarding&method=PayOS");
-                } else if ("service".equalsIgnoreCase(type)) {
-                    String qs = request.getQueryString();
-                    String sep = (qs != null && qs.contains("method=")) ? "" : "&method=PayOS";
-                    response.sendRedirect(request.getContextPath() + "/order/invoice.jsp?" + (qs != null ? qs : ("orderId=" + orderId + "&type=service")) + sep);
-                } else {
-                    // Kiểm tra database để xác nhận thanh toán đã được xử lý
-                    if (isPaymentCompleted(orderId)) {
-                        response.sendRedirect(request.getContextPath() + "/order/invoice.jsp?orderId=" + orderId + "&type=product&method=PayOS");
-                    } else {
-                        // Thanh toán thành công nhưng webhook chưa cập nhật → redirect với status pending
-                        response.sendRedirect(request.getContextPath() + "/order/order-success.jsp?orderId=" + orderId + "&method=PayOS&status=pending");
-                    }
-                }
+            // Kiểm tra trạng thái thanh toán trong database (đơn hàng sản phẩm)
+            if (isPaymentCompleted(orderId)) {
+                response.sendRedirect(request.getContextPath() + "/order/invoice.jsp?orderId=" + orderId + "&type=product&method=PayOS");
             } else {
-                System.out.println("⚠️ Payment status unknown or failed");
-                response.sendRedirect(request.getContextPath() + "/order/confirm-failed.jsp");
+                response.sendRedirect(request.getContextPath() + "/order/order-success.jsp?orderId=" + orderId + "&method=PayOS&status=pending");
             }
             
         } catch (Exception e) {
-            System.err.println("❌ ERROR in handlePaymentReturn: " + e.getMessage());
             e.printStackTrace();
             response.sendRedirect(request.getContextPath() + "/order/confirm-failed.jsp");
         }

@@ -11,7 +11,9 @@ import java.io.PrintWriter;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import model.AttendanceRecord;
+import model.PayrollRecord;
 import model.Staff;
 import model.WorkSchedule;
 
@@ -25,12 +27,11 @@ public class StaffAttendanceController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
-
         HttpSession session = request.getSession();
         Staff staff = (Staff) session.getAttribute("staff");
+
         if (staff == null) {
             out.write("{\"status\":\"error\",\"message\":\"Bạn chưa đăng nhập.\"}");
             return;
@@ -40,35 +41,23 @@ public class StaffAttendanceController extends HttpServlet {
         String action = request.getParameter("action");
         boolean success = false;
 
-        // ✅ Lấy ca hiện tại theo thời gian thực
-        WorkSchedule currentShift = workDAO.getCurrentShiftForToday(staffId);
-        LocalTime now = LocalTime.now();
-
-        if (currentShift == null) {
-            out.write("{\"status\":\"error\",\"message\":\"⚠️ Hôm nay bạn không có ca làm nào đang diễn ra.\"}");
-            return;
-        }
-
-        if (now.isAfter(currentShift.getEndTime().toLocalTime())) {
-            out.write("{\"status\":\"error\",\"message\":\"⏰ Ca làm của bạn đã kết thúc.\"}");
-            return;
-        }
-
         if ("toggle".equals(action)) {
-            AttendanceRecord last = attendanceDAO.getLatestRecord(staffId);
-            LocalTime nowTime = LocalTime.now();
+            // ✅ Chỉ check shift khi toggle
+            WorkSchedule currentShift = workDAO.getCurrentShiftForToday(staffId);
+            LocalTime now = LocalTime.now();
 
-            // ✅ Nếu không có ca làm hôm nay hoặc đã kết thúc
             if (currentShift == null) {
                 out.write("{\"status\":\"error\",\"message\":\"⚠️ Hôm nay bạn không có ca làm nào đang diễn ra.\"}");
                 return;
             }
-            if (nowTime.isAfter(currentShift.getEndTime().toLocalTime())) {
+            if (now.isAfter(currentShift.getEndTime().toLocalTime())) {
                 out.write("{\"status\":\"error\",\"message\":\"⏰ Ca làm của bạn đã kết thúc.\"}");
                 return;
             }
 
-            // ✅ Nếu đã có record và chưa checkout → cho phép checkout
+            AttendanceRecord last = attendanceDAO.getLatestRecord(staffId);
+            LocalTime nowTime = LocalTime.now();
+
             if (last != null && last.getCheckOut() == null) {
                 success = attendanceDAO.staffCheckOut(staffId);
                 if (success) {
@@ -77,15 +66,13 @@ public class StaffAttendanceController extends HttpServlet {
                 out.write(success
                         ? "{\"status\":\"success\",\"message\":\"✅ Checkout thành công! Nghỉ ngơi nhé.\"}"
                         : "{\"status\":\"error\",\"message\":\"❌ Lỗi khi checkout.\"}");
-            } // ✅ Nếu đã có record checkout trong cùng ca → KHÔNG cho check-in lại
-            else if (last != null
+            } else if (last != null
                     && last.getCheckOut() != null
                     && last.getCheckIn().toLocalDateTime().toLocalDate().equals(LocalDate.now())
                     && nowTime.isAfter(currentShift.getStartTime().toLocalTime())
                     && nowTime.isBefore(currentShift.getEndTime().toLocalTime())) {
                 out.write("{\"status\":\"error\",\"message\":\"⚠️ Bạn đã hoàn thành ca này, không thể check-in lại.\"}");
-            } // ✅ Còn lại: cho check-in bình thường
-            else {
+            } else {
                 success = attendanceDAO.staffCheckIn(staffId);
                 if (success) {
                     session.setAttribute("isCheckedIn", true);
@@ -94,16 +81,26 @@ public class StaffAttendanceController extends HttpServlet {
                         ? "{\"status\":\"success\",\"message\":\"✅ Check-in thành công!\"}"
                         : "{\"status\":\"error\",\"message\":\"❌ Lỗi khi check-in.\"}");
             }
+
         } else if ("generate".equals(action)) {
+            // ✅ KHÔNG kiểm tra shift hiện tại — chỉ cần tính lương theo tháng
             LocalDate nowDate = LocalDate.now();
             LocalDate firstDay = nowDate.withDayOfMonth(1);
+            LocalDate lastDay = nowDate.withDayOfMonth(nowDate.lengthOfMonth()); // 👈 ngày cuối tháng
+
             System.out.println("[DEBUG] Generating payroll for staffID = " + staffId);
-            success = payrollDAO.generatePayroll(staffId, Date.valueOf(firstDay), Date.valueOf(nowDate));
+            success = payrollDAO.generatePayroll(
+                    staffId,
+                    Date.valueOf(firstDay),
+                    Date.valueOf(lastDay) // 👈 truyền ngày cuối tháng
+            );
             System.out.println("[DEBUG] Payroll generate success? " + success);
 
             if (success) {
-                response.sendRedirect(request.getContextPath() + "/staff/dashboard");
-                return;
+                PayrollRecord latest = payrollDAO.getLatestPayroll(staffId);
+                session.setAttribute("latestPayroll", latest);
+
+                out.write("{\"status\":\"success\",\"message\":\"💰 Lương tháng này đã được tính thành công!\"}");
             } else {
                 out.write("{\"status\":\"error\",\"message\":\"⚠️ Có lỗi khi tính lương.\"}");
             }

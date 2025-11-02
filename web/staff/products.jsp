@@ -352,7 +352,6 @@
                                 <th>Stock</th>
                                 <th>Supplier</th>
                                 <th>Status</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -377,29 +376,18 @@
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
-                                    <td>
-                                        <a href="/Pets4Care/staff/products?action=view&id=${product.productId}"
-                                           class="btn-action view">
-                                            <i class="fas fa-eye"></i> View
-                                        </a>
-                                        <a href="/Pets4Care/staff/products?action=edit&id=${product.productId}"
-                                           class="btn-action edit">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </a>
-                                    </td>
                                 </tr>
                             </c:forEach>
 
                             <c:if test="${empty products}">
                                 <tr>
-                                    <td colspan="8" style="text-align:center; color:var(--text-light); padding:1rem;">
+                                    <td colspan="7" style="text-align:center; color:var(--text-light); padding:1rem;">
                                         Không có sản phẩm nào được tìm thấy 🐶
                                     </td>
                                 </tr>
                             </c:if>
                         </tbody>
                     </table>
-
                     <!-- Pagination -->
                     <c:if test="${totalPages > 1}">
                         <div class="pagination">

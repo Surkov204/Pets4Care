@@ -517,6 +517,7 @@
         </footer>
 
         <script>
+
             function toggleDropdown() {
                 const dropdown = document.getElementById('dropdownMenu');
                 dropdown.classList.toggle('show');
@@ -654,7 +655,36 @@
                 const btn = document.getElementById("attendanceButton");
                 const generateBtn = document.getElementById("generatePayrollBtn");
                 
+                async function verifyCompanyNetwork() {
+                    try {
+                        const res = await fetch("${pageContext.request.contextPath}/staff/verifyNetwork");
+                        const data = await res.json();
+
+                        if (data.isCompanyNetwork)
+                            return true;
+
+                        Swal.fire({
+                            icon: "warning",
+                            title: "Sai Wi-Fi!",
+                            text: "Vui lòng kết nối với Wi-Fi công ty 'Dung' trước khi check-in/check-out.",
+                            confirmButtonText: "OK"
+                        });
+                        return false;
+                    } catch (err) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Không xác định được mạng!",
+                            text: "Hãy thử lại khi có kết nối Internet ổn định.",
+                            confirmButtonText: "OK"
+                        });
+                        return false;
+                    }
+                }
+
                 btn.addEventListener("click", async () => {
+                        const inCompanyWifi = await verifyCompanyNetwork();
+                        if (!inCompanyWifi) return; // ❌ dừng nếu sai Wi-Fi{
+                        
                     try {
                         const formData = new URLSearchParams();
                         formData.append("action", "toggle");
@@ -708,8 +738,8 @@
                         });
                     }
                 });
-                
-            generateBtn.addEventListener("click", async () => {
+
+                generateBtn.addEventListener("click", async () => {
                     try {
                         const formData = new URLSearchParams();
                         formData.append("action", "generate");

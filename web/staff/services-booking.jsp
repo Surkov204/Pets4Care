@@ -176,7 +176,6 @@
                                 <th>Pet</th>
                                 <th>Appointment</th>
                                 <th>Status</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -190,10 +189,6 @@
                                         <fmt:formatDate value="${b.appointmentStart}" pattern="dd/MM/yyyy HH:mm" />
                                     </td>
                                     <td>${b.status}</td>
-                                    <td>
-                                        <a href="${pageContext.request.contextPath}/staff/services-booking?action=view&id=${b.bookingId}" 
-                                           class="btn btn-sm btn-outline-info">View</a>
-                                    </td>
                                 </tr>
                             </c:forEach>
 

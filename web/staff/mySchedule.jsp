@@ -6,6 +6,7 @@
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Lịch làm việc | Pet4Care</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <style>
@@ -465,7 +466,19 @@
                     <i class="fa-solid fa-arrow-left"></i> Trang chủ
                 </a>
 
-                <button class="btn" id="openModalBtn"><i class="fa-solid fa-plus"></i> Đăng ký ca</button>
+                <c:choose>
+                    <c:when test="${canRegister}">
+                        <button class="btn" id="openModalBtn">
+                            <i class="fa-solid fa-plus"></i> Đăng ký ca (tuần sau)
+                        </button>
+                    </c:when>
+                    <c:otherwise>
+                        <button class="btn" disabled style="opacity:0.6;cursor:not-allowed;">
+                            <i class="fa-solid fa-lock"></i> Đăng ký ca (chưa mở)
+                        </button>
+                    </c:otherwise>
+                </c:choose>
+                   
                 <button class="btn btn-danger" id="openCancelModalBtn"><i class="fa-solid fa-trash"></i> Hủy ca</button>
                 <button class="btn" id="openSwapModalBtn">
                     <i class="fa-solid fa-repeat"></i> Yêu cầu đổi ca
@@ -592,9 +605,9 @@
                 <form method="post" action="${pageContext.request.contextPath}/staff/mySchedule">
                     <input type="hidden" name="action" value="register">
 
-                    <label>Chọn ngày:</label>
+                    <label>Chọn ngày (tuần sau):</label>
                     <select name="day" required>
-                        <c:forEach var="day" items="${weekDays}">
+                        <c:forEach var="day" items="${nextWeekDays}">
                             <option value="${day.date}">
                                 ${day.dayName} - ${fn:substring(day.date,8,10)}/${fn:substring(day.date,5,7)}
                             </option>
@@ -730,7 +743,7 @@
                 </form>
             </div>
         </div>
-                    
+
         <!-- 🔹 Modal Nhờ Làm Thay -->
         <div id="passShiftModal" class="modal">
             <div class="modal-content" style="width:480px;border-radius:14px;">
@@ -782,7 +795,7 @@
                 </form>
             </div>
         </div>
-                
+
         <script>
             const regModal = document.getElementById("registerModal");
             const cancelModal = document.getElementById("cancelModal");

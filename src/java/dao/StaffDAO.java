@@ -8,14 +8,14 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class StaffDAO {
+
     private static final Logger logger = Logger.getLogger(StaffDAO.class.getName());
 
     public Staff findByEmail(String email) {
         String sql = "SELECT * FROM Staff WHERE email = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setString(1, email);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -32,9 +32,8 @@ public class StaffDAO {
     public Staff findById(int staffId) {
         String sql = "SELECT * FROM Staff WHERE staff_id = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, staffId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -51,9 +50,8 @@ public class StaffDAO {
     public boolean authenticateStaff(String email, String password) {
         String sql = "SELECT * FROM Staff WHERE email = ? AND password = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setString(1, email);
             ps.setString(2, password);
             try (ResultSet rs = ps.executeQuery()) {
@@ -69,9 +67,8 @@ public class StaffDAO {
     public boolean hasPermission(int staffId, String requiredPosition) {
         String sql = "SELECT position FROM Staff WHERE staff_id = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, staffId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -105,39 +102,37 @@ public class StaffDAO {
         staff.setPhone(rs.getString("phone"));
         staff.setPassword(rs.getString("password"));
         staff.setPosition(rs.getString("position"));
-      //  staff.setScheduleNote(rs.getString("schedule_note"));
+        staff.setAvatar(rs.getString("Avatar"));
         return staff;
     }
-    
+
     public boolean updateStaff(Staff staff) {
         String sql = "UPDATE Staff SET name = ?, email = ?, phone = ?, password = ?, schedule_note = ? WHERE staff_id = ?";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            
+
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setString(1, staff.getName());
             ps.setString(2, staff.getEmail());
             ps.setString(3, staff.getPhone());
             ps.setString(4, staff.getPassword());
-        //    ps.setString(5, staff.getScheduleNote());
+            //    ps.setString(5, staff.getScheduleNote());
             ps.setInt(6, staff.getStaffId());
-            
+
             int rowsAffected = ps.executeUpdate();
             return rowsAffected > 0;
-            
+
         } catch (SQLException e) {
             logger.severe("Error updating staff: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
-    
+
     public Staff getStaffByEmail(String email) {
         String sql = "SELECT * FROM Staff WHERE email = ?";
-        
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            
+
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setString(1, email);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -150,6 +145,7 @@ public class StaffDAO {
         }
         return null;
     }
+
     public List<Staff> getAllStaff() {
         List<Staff> list = new ArrayList<>();
         String sql = "SELECT * FROM Staff ORDER BY staff_id DESC";
@@ -226,6 +222,7 @@ public class StaffDAO {
             return false;
         }
     }
+
     public int countByPosition(String position) {
         String sql = "SELECT COUNT(*) FROM Staff WHERE LOWER(position) LIKE LOWER(?)";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -241,4 +238,25 @@ public class StaffDAO {
         }
         return 0;
     }
+    public boolean updateProfile(Staff staff) {
+        String sql = "UPDATE Staff SET name=?, email=?, phone=?, password=?, Avatar=? WHERE staff_id=?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, staff.getName());
+            ps.setString(2, staff.getEmail());
+            ps.setString(3, staff.getPhone());
+            ps.setString(4, staff.getPassword());
+            ps.setString(5, staff.getAvatar());
+            ps.setInt(6, staff.getStaffId());
+
+            int rows = ps.executeUpdate();
+            System.out.println("[StaffDAO] ✅ Updated rows: " + rows);
+            return rows > 0;
+        } catch (SQLException e) {
+            System.err.println("[StaffDAO] ❌ updateProfile failed: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
 }

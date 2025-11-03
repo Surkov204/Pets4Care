@@ -1,9 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <title>Đăng ký</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐾 Đăng ký - Petcity</title>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script>
@@ -137,6 +139,26 @@ input:focus {
             font-size: 0.9rem;
             margin-top: -0.5rem;
             margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .register-box {
+                padding: 1.5rem 2rem;
+                margin: 1rem;
+            }
+            .register-title {
+                font-size: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .register-box {
+                padding: 1rem 1.5rem;
+                margin: 0.5rem;
+            }
+            .register-title {
+                font-size: 1.25rem;
+            }
         }
     </style>
 </head>

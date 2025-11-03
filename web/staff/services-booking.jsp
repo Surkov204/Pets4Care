@@ -5,6 +5,7 @@
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>🐾 Services Booking | Pet4Care</title>
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/staff.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -77,7 +78,9 @@
             <div class="user-section">
                 <div class="avatar-dropdown">
                     <div class="avatar" onclick="toggleDropdown()">
-                        <img src="${pageContext.request.contextPath}/images/staff-avatar.png" alt="Staff">
+                      <img src="${pageContext.request.contextPath}/${sessionScope.staff.avatar != null ? sessionScope.staff.avatar : 'images/staff-avatar.png'}" 
+                             alt="Staff"
+                             style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
                         <span>${sessionScope.staff.name}</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
@@ -174,51 +177,19 @@
                                 <th>Pet</th>
                                 <th>Appointment</th>
                                 <th>Status</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <c:forEach var="booking" items="${bookings}">
+                            <c:forEach var="b" items="${bookings}">
                                 <tr>
-                                    <td>#${booking.bookingId}</td>
-                                    <td>${booking.customerName}</td>
+                                    <td>${b.bookingId}</td>
+                                    <td>${b.customerName}</td>
+                                    <td>${b.serviceNames}</td>
+                                    <td>${b.petName}</td>
                                     <td>
-                                        <c:if test="${not empty booking.note}">
-                                            ${booking.note}
-                                        </c:if>
-                                        <c:if test="${not empty booking.serviceNames}">
-                                            ${booking.serviceNames}
-                                        </c:if>
+                                        <fmt:formatDate value="${b.appointmentStart}" pattern="dd/MM/yyyy HH:mm" />
                                     </td>
-                                    <td>${booking.petName} (${booking.petType})</td>
-                                    <td>
-                                        <fmt:formatDate value="${booking.appointmentStart}" pattern="dd/MM/yyyy HH:mm"/>
-                                    </td>
-                                    <td>
-                                        <span class="status ${booking.status}">
-                                            ${booking.status}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <c:if test="${booking.status == 'pending' || booking.status == 'Chưa thanh toán' || booking.status == 'Chờ xác nhận'}">
-                                            <button type="button" class="btn-action edit" 
-                                                    onclick="updateStatus(${booking.bookingId}, 'Đã xác nhận')">
-                                                <i class="fas fa-check"></i> Xác nhận
-                                            </button>
-                                        </c:if>
-                                        <c:if test="${booking.status == 'Đã xác nhận' || booking.status == 'confirmed'}">
-                                            <button type="button" class="btn-action edit" 
-                                                    onclick="updateStatus(${booking.bookingId}, 'in_progress')">
-                                                <i class="fas fa-play"></i> Start
-                                            </button>
-                                        </c:if>
-                                        <c:if test="${booking.status == 'in_progress'}">
-                                            <button type="button" class="btn-action edit" 
-                                                    onclick="updateStatus(${booking.bookingId}, 'completed')">
-                                                <i class="fas fa-check-circle"></i> Complete
-                                            </button>
-                                        </c:if>
-                                    </td>
+                                    <td>${b.status}</td>
                                 </tr>
                             </c:forEach>
 

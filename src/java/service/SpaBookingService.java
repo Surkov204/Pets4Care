@@ -36,6 +36,111 @@ public class SpaBookingService {
         this.bookingServiceDAO = new BookingServiceDAO();
         this.petServiceDAO = new PetServiceDAO();
     }
+
+    /**
+     * Kiểm tra slot thời gian đề xuất có khả dụng cho Spa (không trùng các lịch spa khác)
+     * Áp dụng ràng buộc giờ làm việc 08:00 - 18:00
+     */
+    public boolean isSpaSlotAvailable(java.sql.Timestamp start, List<Integer> serviceIds) {
+        if (start == null || serviceIds == null || serviceIds.isEmpty()) return false;
+
+        // Ràng buộc giờ làm việc 08:00 - 18:00
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.setTimeInMillis(start.getTime());
+        int hour = cal.get(java.util.Calendar.HOUR_OF_DAY);
+        int minute = cal.get(java.util.Calendar.MINUTE);
+        if (hour < 8 || hour > 18 || minute < 0 || minute > 59) return false;
+
+        int totalDuration = calculateTotalDuration(serviceIds);
+        java.sql.Timestamp end = new java.sql.Timestamp(start.getTime() + (long) totalDuration * 60 * 1000);
+
+        // End vẫn phải nằm trong khung 08:00 - 18:59 (cho phép kết thúc đúng 18:00)
+        java.util.Calendar calEnd = java.util.Calendar.getInstance();
+        calEnd.setTimeInMillis(end.getTime());
+        int endHour = calEnd.get(java.util.Calendar.HOUR_OF_DAY);
+        int endMinute = calEnd.get(java.util.Calendar.MINUTE);
+        if (endHour > 18 || (endHour == 18 && endMinute > 0)) return false;
+
+        return bookingDAO.isSpaTimeSlotAvailable(start, end);
+    }
+
+    /**
+     * Tính tổng thời lượng cho 1 dịch vụ với số lượng quantity (mặc định nhân theo quantity)
+     */
+    public int calculateDurationForSingle(int serviceId, int quantity) {
+        PetServiceModel service = petServiceDAO.getServiceById(serviceId);
+        if (service == null || quantity <= 0) return 0;
+        int perUnit = service.getDuration();
+        long total = (long) perUnit * (long) quantity;
+        return (int) Math.min(Integer.MAX_VALUE, total);
+    }
+
+    /**
+     * Kiểm tra khả dụng slot cho 1 dịch vụ đơn lẻ
+     */
+    public boolean isSpaSlotAvailableForSingle(java.sql.Timestamp start, int serviceId, int quantity) {
+        if (start == null || serviceId <= 0 || quantity <= 0) return false;
+
+        // Ràng buộc 08:00 - 18:00 và phút 0-59
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.setTimeInMillis(start.getTime());
+        int hour = cal.get(java.util.Calendar.HOUR_OF_DAY);
+        int minute = cal.get(java.util.Calendar.MINUTE);
+        if (hour < 8 || hour > 18 || minute < 0 || minute > 59) return false;
+
+        int duration = calculateDurationForSingle(serviceId, quantity);
+        java.sql.Timestamp end = new java.sql.Timestamp(start.getTime() + (long) duration * 60 * 1000);
+
+        java.util.Calendar calEnd = java.util.Calendar.getInstance();
+        calEnd.setTimeInMillis(end.getTime());
+        int endHour = calEnd.get(java.util.Calendar.HOUR_OF_DAY);
+        int endMinute = calEnd.get(java.util.Calendar.MINUTE);
+        if (endHour > 18 || (endHour == 18 && endMinute > 0)) return false;
+
+        return bookingDAO.isSpaTimeSlotAvailable(start, end);
+    }
+
+    /**
+     * Tạo booking Spa cho một dịch vụ đơn lẻ
+     */
+    public boolean createSingleSpaBooking(Customer customer, int petId, int serviceId, int quantity,
+                                          java.sql.Timestamp start, String note) {
+        try {
+            if (!validateSpaService(serviceId) || quantity <= 0) return false;
+
+            // Tính end và kiểm tra khả dụng
+            int duration = calculateDurationForSingle(serviceId, quantity);
+            java.sql.Timestamp end = new java.sql.Timestamp(start.getTime() + (long) duration * 60 * 1000);
+            if (!bookingDAO.isSpaTimeSlotAvailable(start, end)) return false;
+
+            Booking booking = new Booking();
+            booking.setCustomerId(customer.getCustomerId());
+            booking.setPetId(petId);
+            booking.setAppointmentStart(start);
+            booking.setAppointmentEnd(end);
+            booking.setStatus("pending");
+            booking.setNote(note != null ? note.trim() : "");
+            booking.setCreatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
+
+            boolean created = bookingDAO.addBooking(booking);
+            if (!created) return false;
+
+            PetServiceModel svc = petServiceDAO.getServiceById(serviceId);
+            if (svc == null) return false;
+
+            BookingServiceItem item = new BookingServiceItem();
+            item.setBookingId(booking.getBookingId());
+            item.setServiceId(serviceId);
+            item.setQuantity(quantity);
+            item.setPrice(svc.getPrice());
+            item.setNote("");
+
+            return bookingServiceDAO.addBookingService(item);
+        } catch (Exception e) {
+            logger.log(java.util.logging.Level.SEVERE, "Lỗi tạo booking đơn lẻ", e);
+            return false;
+        }
+    }
     
     /**
      * Lấy tất cả dịch vụ Spa đang hoạt động
@@ -102,6 +207,12 @@ public class SpaBookingService {
             // 3. Tính thời gian kết thúc
             int totalDuration = calculateTotalDuration(serviceIds);
             Timestamp appointmentEnd = new Timestamp(appointmentStart.getTime() + (totalDuration * 60 * 1000L));
+
+            // 3.1 Kiểm tra khả dụng khung giờ
+            if (!isSpaSlotAvailable(appointmentStart, serviceIds)) {
+                logger.warning("Khung giờ spa không khả dụng hoặc ngoài giờ làm việc");
+                return false;
+            }
             
             // 4. Tạo booking
             Booking booking = new Booking();
@@ -300,5 +411,55 @@ public class SpaBookingService {
         }
         
         return spaDetails;
+    }
+    
+    /**
+     * Cập nhật spa booking
+     */
+    public boolean updateSpaBooking(int bookingId, Timestamp appointmentStart, String note) {
+        try {
+            return bookingDAO.updateBooking(bookingId, appointmentStart, note);
+        } catch (Exception e) {
+            logger.severe("Exception khi cập nhật booking ID " + bookingId + ": " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Lấy spa booking theo ID
+     */
+    public Booking getSpaBookingById(int bookingId) {
+        try {
+            return bookingDAO.getBookingById(bookingId);
+        } catch (Exception e) {
+            logger.severe("Exception khi lấy spa booking ID " + bookingId + ": " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Xóa spa booking khỏi database
+     */
+    public boolean deleteSpaBooking(int bookingId) {
+        try {
+            // Xóa booking services trước (foreign key constraint)
+            boolean deleteServices = bookingServiceDAO.deleteBookingServicesByBookingId(bookingId);
+            if (!deleteServices) {
+                logger.warning("Failed to delete booking services for booking ID: " + bookingId);
+            }
+            
+            // Xóa booking
+            boolean deleteBooking = bookingDAO.deleteBooking(bookingId);
+            if (deleteBooking) {
+                logger.info("Successfully deleted spa booking ID: " + bookingId);
+            }
+            return deleteBooking;
+        } catch (Exception e) {
+            logger.severe("Exception khi xóa spa booking ID " + bookingId + ": " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 }

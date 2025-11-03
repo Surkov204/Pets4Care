@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="TestBuild" default="test" basedir=".">
+    
+    <!-- Import the main build file -->
+    <import file="nbproject/build-impl.xml"/>
+    
+    <target name="test" depends="init">
+        <echo message="Testing copyfiles macrodef..."/>
+        
+        <!-- Test copyfiles with a simple file -->
+        <copyfiles files="build.xml" todir="test-output"/>
+        
+        <echo message="Test completed successfully!"/>
+    </target>
+    
+</project>
+

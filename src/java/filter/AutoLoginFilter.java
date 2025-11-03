@@ -31,7 +31,8 @@ public class AutoLoginFilter implements Filter {
         if (requestURI.contains("/login") || requestURI.contains("/register") || 
             requestURI.contains("/logingoogle") || requestURI.contains("/autologin") ||
             requestURI.contains("/css/") || requestURI.contains("/js/") || 
-            requestURI.contains("/images/") || requestURI.contains("/lib/")) {
+            requestURI.contains("/images/") || requestURI.contains("/lib/") ||
+            requestURI.contains("/payment-cancelled")) {
             chain.doFilter(request, response);
             return;
         }

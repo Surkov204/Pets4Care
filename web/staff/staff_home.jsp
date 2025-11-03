@@ -25,6 +25,7 @@
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Petcity - Thế giới đồ chơi & phụ kiện cho thú cưng</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
@@ -287,10 +288,10 @@
         <nav>
             <ul>
                 <li><a href="<%= request.getContextPath()%>/staff-home">TRANG CHỦ</a></li>
+                <li><a href="<%= request.getContextPath()%>/spa-service.jsp">DỊCH VỤ</a></li>
+                <li><a href="<%= request.getContextPath()%>/search?categoryId=2">SẢN PHẨM</a></li>
+                <li><a href="<%= request.getContextPath()%>/doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="<%= request.getContextPath()%>/gioi-thieu.jsp">GIỚI THIỆU</a></li>
-                <li><a href="<%= request.getContextPath()%>/search?categoryId=1">ĐẶT LỊCH KHÁM</a></li>
-                <li><a href="<%= request.getContextPath()%>/search?categoryId=2">HỒ SƠ BÁC SĨ</a></li>
-                <li><a href="<%= request.getContextPath()%>/search?categoryId=3">DỊCH VỤ SPA</a></li>
                 <li><a href="<%= request.getContextPath()%>/tin-tuc.jsp">TIN TỨC</a></li>
                 <li><a href="<%= request.getContextPath()%>/meo-vat.jsp">MẸO VẶT</a></li>
                 <li><a href="<%= request.getContextPath()%>/home">LIÊN HỆ</a></li>

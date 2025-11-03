@@ -2,357 +2,344 @@ package dao;
 
 import model.Pet;
 import utils.DBConnection;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
- * PetDAO implementation
- *
+ * DAO cho Pet
+ * Xử lý các thao tác database liên quan đến thú cưng
  * @author ASUS
  */
 public class PetDAO implements IPetDAO {
-
+    
+    private static final Logger logger = Logger.getLogger(PetDAO.class.getName());
+    
+    /**
+     * Lấy tất cả thú cưng của một khách hàng (tiện ích mở rộng ngoài interface)
+     */
+    public List<Pet> getPetsByCustomerId(int customerId) {
+        String sql = "SELECT * FROM Pet WHERE customer_id = ? ORDER BY created_at DESC";
+        List<Pet> pets = new ArrayList<>();
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, customerId);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                pets.add(mapResultSetToPet(rs));
+            }
+            
+        } catch (SQLException e) {
+            logger.severe("Error getting pets by customer ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return pets;
+    }
+    
+    /**
+     * Lấy 1 thú cưng đại diện theo customerId (đáp ứng IPetDAO)
+     */
     @Override
     public Pet getPetByCustomerId(int customerId) {
-        System.out.println("=== DEBUG GET PET BY CUSTOMER ID ===");
-        System.out.println("Customer ID: " + customerId);
-        String sql = "SELECT * FROM PET WHERE customer_id = ?";
-        System.out.println("SQL: " + sql);
-
-        try (Connection conn = DBConnection.getConnection()) {
-            System.out.println("Connection obtained: " + (conn != null ? "SUCCESS" : "FAILED"));
-            if (conn == null) {
-                System.out.println("ERROR: Database connection is null!");
-                return null;
-            }
-            
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                System.out.println("PreparedStatement created successfully");
-                ps.setInt(1, customerId);
-                System.out.println("Parameter set: customerId = " + customerId);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    System.out.println("Query executed successfully");
-                    if (rs.next()) {
-                        System.out.println("Pet found in database");
-                        Pet pet = new Pet(
-                                rs.getInt("id"),
-                                rs.getInt("customer_id"),
-                                rs.getString("pet_name"),
-                                rs.getString("species"),
-                                rs.getString("breed"),
-                                rs.getInt("age"),
-                                rs.getString("gender"),
-                                rs.getString("description"),
-                                rs.getString("health_status"),
-                                rs.getString("image_path"),
-                                rs.getTimestamp("created_at"),
-                                rs.getTimestamp("updated_at")
-                        );
-                        System.out.println("Pet object created: " + pet.getPetName());
-                        return pet;
-                    } else {
-                        System.out.println("No pet found for customer ID: " + customerId);
-                    }
-                } catch (SQLException e) {
-                    System.out.println("ERROR in ResultSet: " + e.getMessage());
-                    e.printStackTrace();
-                }
-            } catch (SQLException e) {
-                System.out.println("ERROR in PreparedStatement: " + e.getMessage());
-                e.printStackTrace();
+        String sql = "SELECT TOP 1 * FROM Pet WHERE customer_id = ? ORDER BY updated_at DESC, created_at DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, customerId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return mapResultSetToPet(rs);
             }
         } catch (SQLException e) {
-            System.out.println("ERROR in getPetByCustomerId: " + e.getMessage());
+            logger.severe("Error getting pet by customer ID: " + e.getMessage());
             e.printStackTrace();
         }
-
-        System.out.println("Returning null pet");
         return null;
     }
-
+    
+    /**
+     * Lấy thú cưng theo ID
+     */
+    public Pet getPetById(int petId) {
+        String sql = "SELECT * FROM Pet WHERE id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, petId);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return mapResultSetToPet(rs);
+            }
+            
+        } catch (SQLException e) {
+            logger.severe("Error getting pet by ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Lấy thú cưng theo ID và customer ID (để đảm bảo quyền truy cập)
+     */
+    public Pet getPetByIdAndCustomerId(int petId, int customerId) {
+        String sql = "SELECT * FROM Pet WHERE id = ? AND customer_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, petId);
+            stmt.setInt(2, customerId);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return mapResultSetToPet(rs);
+            }
+            
+        } catch (SQLException e) {
+            logger.severe("Error getting pet by ID and customer ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Lưu thú cưng mới (đáp ứng IPetDAO.savePet)
+     */
     @Override
     public boolean savePet(Pet pet) {
-        String sql = "INSERT INTO PET (customer_id, pet_name, species, breed, age, gender, description, health_status, image_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())";
-
-        System.out.println("=== DEBUG SAVE PET DAO ===");
-        System.out.println("SQL: " + sql);
-        System.out.println("Customer ID: " + pet.getCustomerId());
-        System.out.println("Pet Name: " + pet.getPetName());
-        System.out.println("Species: " + pet.getSpecies());
-        System.out.println("Breed: " + pet.getBreed());
-        System.out.println("Age: " + pet.getAge());
-        System.out.println("Gender: " + pet.getGender());
-        System.out.println("Description: " + pet.getDescription());
-        System.out.println("Health Status: " + pet.getHealthStatus());
-        System.out.println("Image Path: " + pet.getImagePath());
+        String sql = "INSERT INTO Pet (customer_id, pet_name, species, breed, age, gender, description, health_status, image_path, created_at, updated_at) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
-        try (Connection conn = DBConnection.getConnection()) {
-            System.out.println("Connection obtained: " + (conn != null ? "SUCCESS" : "FAILED"));
-            if (conn == null) {
-                System.out.println("ERROR: Database connection is null!");
-                return false;
-            }
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                System.out.println("PreparedStatement created successfully");
-
-                System.out.println("Setting parameters...");
-                ps.setInt(1, pet.getCustomerId());
-                ps.setString(2, pet.getPetName());
-                ps.setString(3, pet.getSpecies());
-                ps.setString(4, pet.getBreed());
-                ps.setInt(5, pet.getAge());
-                ps.setString(6, pet.getGender());
-                ps.setString(7, pet.getDescription() != null ? pet.getDescription() : "");
-                ps.setString(8, pet.getHealthStatus() != null ? pet.getHealthStatus() : "");
-                ps.setString(9, pet.getImagePath() != null ? pet.getImagePath() : "");
-                System.out.println("Parameters set successfully");
-
-                System.out.println("Executing INSERT statement...");
-                int rowsAffected = ps.executeUpdate();
-                System.out.println("Rows affected: " + rowsAffected);
-                return rowsAffected > 0;
-            } catch (SQLException e) {
-                System.out.println("ERROR in PreparedStatement: " + e.getMessage());
-                e.printStackTrace();
-                return false;
-            }
-        } catch (SQLException e) {
-            System.out.println("ERROR in savePet: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    @Override
-    public boolean updatePet(Pet pet) {
-        String sql = "UPDATE PET SET pet_name = ?, species = ?, breed = ?, age = ?, gender = ?, description = ?, health_status = ?, image_path = ?, updated_at = GETDATE() WHERE id = ?";
-
-        System.out.println("=== DEBUG UPDATE PET DAO ===");
-        System.out.println("SQL: " + sql);
-        System.out.println("Pet ID: " + pet.getId());
-        System.out.println("Pet Name: " + pet.getPetName());
-        System.out.println("Species: " + pet.getSpecies());
-        System.out.println("Breed: " + pet.getBreed());
-        System.out.println("Age: " + pet.getAge());
-        System.out.println("Gender: " + pet.getGender());
-        System.out.println("Description: " + pet.getDescription());
-        System.out.println("Health Status: " + pet.getHealthStatus());
-        System.out.println("Image Path: " + pet.getImagePath());
-        
-        try (Connection conn = DBConnection.getConnection()) {
-            System.out.println("Connection obtained: " + (conn != null ? "SUCCESS" : "FAILED"));
-            if (conn == null) {
-                System.out.println("ERROR: Database connection is null!");
-                return false;
-            }
+            stmt.setInt(1, pet.getCustomerId());
+            stmt.setString(2, pet.getPetName());
+            stmt.setString(3, pet.getSpecies());
+            stmt.setString(4, pet.getBreed());
+            stmt.setInt(5, pet.getAge());
+            stmt.setString(6, pet.getGender());
+            stmt.setString(7, pet.getDescription());
+            stmt.setString(8, pet.getHealthStatus());
+            stmt.setString(9, pet.getImagePath());
+            stmt.setTimestamp(10, new Timestamp(System.currentTimeMillis()));
+            stmt.setTimestamp(11, new Timestamp(System.currentTimeMillis()));
             
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                System.out.println("PreparedStatement created successfully");
-
-                System.out.println("Setting parameters...");
-                ps.setString(1, pet.getPetName());
-                ps.setString(2, pet.getSpecies());
-                ps.setString(3, pet.getBreed());
-                ps.setInt(4, pet.getAge());
-                ps.setString(5, pet.getGender());
-                ps.setString(6, pet.getDescription() != null ? pet.getDescription() : "");
-                ps.setString(7, pet.getHealthStatus() != null ? pet.getHealthStatus() : "");
-                ps.setString(8, pet.getImagePath() != null ? pet.getImagePath() : "");
-                ps.setInt(9, pet.getId()); 
-                System.out.println("Parameters set successfully");
-
-                System.out.println("Executing UPDATE statement...");
-                int rowsAffected = ps.executeUpdate();
-                System.out.println("Rows affected: " + rowsAffected);
-                return rowsAffected > 0;
-            } catch (SQLException e) {
-                System.out.println("ERROR in PreparedStatement: " + e.getMessage());
-                e.printStackTrace();
-                return false;
-            }
-        } catch (SQLException e) {
-            System.out.println("ERROR in updatePet: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    @Override
-    public boolean deletePetByCustomerId(int customerId) {
-        String sql = "DELETE FROM PET WHERE customer_id = ?";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, customerId);
-            int rowsAffected = ps.executeUpdate();
-            return rowsAffected > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    @Override
-    public boolean hasPetInfo(int customerId) {
-        String sql = "SELECT COUNT(*) FROM PET WHERE customer_id = ?";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, customerId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
+            int affectedRows = stmt.executeUpdate();
+            
+            if (affectedRows > 0) {
+                ResultSet generatedKeys = stmt.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    pet.setId(generatedKeys.getInt(1));
                 }
+                return true;
             }
+            
         } catch (SQLException e) {
+            logger.severe("Error adding pet: " + e.getMessage());
             e.printStackTrace();
         }
-
+        
         return false;
     }
-
+    
+    /**
+     * Cập nhật thông tin thú cưng
+     */
+    @Override
+    public boolean updatePet(Pet pet) {
+        String sql = "UPDATE Pet SET pet_name = ?, species = ?, breed = ?, age = ?, gender = ?, " +
+                    "description = ?, health_status = ?, image_path = ?, updated_at = ? WHERE id = ? AND customer_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, pet.getPetName());
+            stmt.setString(2, pet.getSpecies());
+            stmt.setString(3, pet.getBreed());
+            stmt.setInt(4, pet.getAge());
+            stmt.setString(5, pet.getGender());
+            stmt.setString(6, pet.getDescription());
+            stmt.setString(7, pet.getHealthStatus());
+            stmt.setString(8, pet.getImagePath());
+            stmt.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
+            stmt.setInt(10, pet.getId());
+            stmt.setInt(11, pet.getCustomerId());
+            
+            return stmt.executeUpdate() > 0;
+            
+        } catch (SQLException e) {
+            logger.severe("Error updating pet: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Xóa thú cưng theo customerId (đáp ứng IPetDAO.deletePetByCustomerId)
+     */
+    @Override
+    public boolean deletePetByCustomerId(int customerId) {
+        String sql = "DELETE FROM Pet WHERE customer_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, customerId);
+            
+            return stmt.executeUpdate() > 0;
+            
+        } catch (SQLException e) {
+            logger.severe("Error deleting pet by customerId: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Kiểm tra đã có thông tin thú cưng chưa
+     */
+    @Override
+    public boolean hasPetInfo(int customerId) {
+        String sql = "SELECT 1 FROM Pet WHERE customer_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, customerId);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            logger.severe("Error checking pet exists: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+    
+    /**
+     * Lấy tất cả thú cưng
+     */
     @Override
     public List<Pet> getAllPets() {
+        String sql = "SELECT * FROM Pet ORDER BY created_at DESC";
         List<Pet> pets = new ArrayList<>();
-        String sql = "SELECT * FROM PET ORDER BY created_at DESC";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                Pet pet = new Pet(
-                        rs.getInt("id"),
-                        rs.getInt("customer_id"),
-                        rs.getString("pet_name"),
-                        rs.getString("species"),
-                        rs.getString("breed"),
-                        rs.getInt("age"),
-                        rs.getString("gender"),
-                        rs.getString("description"),
-                        rs.getString("health_status"),
-                        rs.getString("image_path"),
-                        rs.getTimestamp("created_at"),
-                        rs.getTimestamp("updated_at")
-                );
-                pets.add(pet);
-            }
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) pets.add(mapResultSetToPet(rs));
         } catch (SQLException e) {
+            logger.severe("Error getting all pets: " + e.getMessage());
             e.printStackTrace();
         }
-
         return pets;
     }
-
+    
+    /**
+     * Tìm kiếm thú cưng theo tên
+     */
     @Override
     public List<Pet> searchPetsByName(String keyword) {
+        String sql = "SELECT * FROM Pet WHERE pet_name LIKE ? ORDER BY created_at DESC";
         List<Pet> pets = new ArrayList<>();
-        String sql = "SELECT * FROM PET WHERE pet_name LIKE ? ORDER BY pet_name";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, "%" + keyword + "%");
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Pet pet = new Pet(
-                            rs.getInt("id"),
-                            rs.getInt("customer_id"),
-                            rs.getString("pet_name"),
-                            rs.getString("species"),
-                            rs.getString("breed"),
-                            rs.getInt("age"),
-                            rs.getString("gender"),
-                            rs.getString("description"),
-                            rs.getString("health_status"),
-                            rs.getString("image_path"),
-                            rs.getTimestamp("created_at"),
-                            rs.getTimestamp("updated_at")
-                    );
-                    pets.add(pet);
-                }
-            }
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, "%" + keyword + "%");
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) pets.add(mapResultSetToPet(rs));
         } catch (SQLException e) {
+            logger.severe("Error searching pets by name: " + e.getMessage());
             e.printStackTrace();
         }
-
         return pets;
     }
-
+    
+    /**
+     * Lấy danh sách thú cưng theo loài
+     */
     @Override
     public List<Pet> getPetsBySpecies(String species) {
+        String sql = "SELECT * FROM Pet WHERE species = ? ORDER BY created_at DESC";
         List<Pet> pets = new ArrayList<>();
-        String sql = "SELECT * FROM PET WHERE species = ? ORDER BY pet_name";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, species);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Pet pet = new Pet(
-                            rs.getInt("id"),
-                            rs.getInt("customer_id"),
-                            rs.getString("pet_name"),
-                            rs.getString("species"),
-                            rs.getString("breed"),
-                            rs.getInt("age"),
-                            rs.getString("gender"),
-                            rs.getString("description"),
-                            rs.getString("health_status"),
-                            rs.getString("image_path"),
-                            rs.getTimestamp("created_at"),
-                            rs.getTimestamp("updated_at")
-                    );
-                    pets.add(pet);
-                }
-            }
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, species);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) pets.add(mapResultSetToPet(rs));
         } catch (SQLException e) {
+            logger.severe("Error getting pets by species: " + e.getMessage());
             e.printStackTrace();
         }
-
         return pets;
     }
-
+    
+    /**
+     * Đếm số thú cưng theo loài
+     */
     @Override
     public int countPetsBySpecies(String species) {
-        String sql = "SELECT COUNT(*) FROM PET WHERE species = ?";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, species);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
-                }
-            }
+        String sql = "SELECT COUNT(*) FROM Pet WHERE species = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, species);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {
+            logger.severe("Error counting pets by species: " + e.getMessage());
             e.printStackTrace();
         }
-
         return 0;
     }
-
+    
+    /**
+     * Thống kê số lượng thú cưng theo loài
+     */
     @Override
     public Map<String, Integer> getPetStatistics() {
-        Map<String, Integer> statistics = new HashMap<>();
-        String sql = "SELECT species, COUNT(*) as count FROM PET GROUP BY species ORDER BY count DESC";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-
+        String sql = "SELECT species, COUNT(*) AS cnt FROM Pet GROUP BY species";
+        Map<String, Integer> stats = new HashMap<>();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                statistics.put(rs.getString("species"), rs.getInt("count"));
+                stats.put(rs.getString("species"), rs.getInt("cnt"));
             }
         } catch (SQLException e) {
+            logger.severe("Error getting pet statistics: " + e.getMessage());
             e.printStackTrace();
         }
-
-        return statistics;
+        return stats;
+    }
+    
+    /**
+     * Map ResultSet to Pet object
+     */
+    private Pet mapResultSetToPet(ResultSet rs) throws SQLException {
+        Pet pet = new Pet();
+        
+        pet.setId(rs.getInt("id"));
+        pet.setCustomerId(rs.getInt("customer_id"));
+        pet.setPetName(rs.getString("pet_name"));
+        pet.setSpecies(rs.getString("species"));
+        pet.setBreed(rs.getString("breed"));
+        pet.setAge(rs.getInt("age"));
+        pet.setGender(rs.getString("gender"));
+        pet.setDescription(rs.getString("description"));
+        pet.setHealthStatus(rs.getString("health_status"));
+        pet.setImagePath(rs.getString("image_path"));
+        pet.setCreatedAt(rs.getTimestamp("created_at"));
+        pet.setUpdatedAt(rs.getTimestamp("updated_at"));
+        
+        return pet;
     }
 }

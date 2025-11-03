@@ -5,6 +5,7 @@
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>🐾 Services Booking | Pet4Care</title>
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/staff.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -176,7 +177,6 @@
                                 <th>Pet</th>
                                 <th>Appointment</th>
                                 <th>Status</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -190,10 +190,6 @@
                                         <fmt:formatDate value="${b.appointmentStart}" pattern="dd/MM/yyyy HH:mm" />
                                     </td>
                                     <td>${b.status}</td>
-                                    <td>
-                                        <a href="${pageContext.request.contextPath}/staff/services-booking?action=view&id=${b.bookingId}" 
-                                           class="btn btn-sm btn-outline-info">View</a>
-                                    </td>
                                 </tr>
                             </c:forEach>
 

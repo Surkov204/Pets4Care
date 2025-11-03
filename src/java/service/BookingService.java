@@ -3,6 +3,7 @@ package service;
 import dao.BookingDAO;
 import dao.BookingServiceDAO;
 import dao.PetServiceDAO;
+import dao.DoctorDAO;
 import model.Booking;
 import model.BookingServiceItem;
 import model.PetServiceModel;
@@ -28,11 +29,13 @@ public class BookingService {
     private BookingDAO bookingDAO;
     private BookingServiceDAO bookingServiceDAO;
     private PetServiceDAO petServiceDAO;
+    private DoctorDAO doctorDAO;
     
     public BookingService() {
         this.bookingDAO = new BookingDAO();
         this.bookingServiceDAO = new BookingServiceDAO();
         this.petServiceDAO = new PetServiceDAO();
+        this.doctorDAO = new DoctorDAO();
     }
     
     // =========================
@@ -92,14 +95,22 @@ public class BookingService {
                 return false;
             }
             
-            // 2. Tạo booking chính
+            // 2. Đảm bảo gán doctor_id nếu thiếu (fallback: chọn 1 bác sĩ đang active)
+            if (booking.getDoctorId() <= 0) {
+                int fallbackDoctorId = doctorDAO.getAnyActiveDoctorId();
+                if (fallbackDoctorId > 0) {
+                    booking.setDoctorId(fallbackDoctorId);
+                }
+            }
+
+            // 3. Tạo booking chính
             boolean bookingCreated = bookingDAO.addBooking(booking);
             if (!bookingCreated) {
                 logger.severe("Failed to create main booking");
                 return false;
             }
             
-            // 3. Tạo chi tiết booking service
+            // 4. Tạo chi tiết booking service
             for (int i = 0; i < serviceIds.size(); i++) {
                 int serviceId = serviceIds.get(i);
                 int quantity = quantities.get(i);

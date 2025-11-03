@@ -30,11 +30,16 @@ public class StaffScheduleController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
-
+        int weekOffset = 0;
+        try {
+            weekOffset = Integer.parseInt(request.getParameter("weekOffset"));
+        } catch (Exception e) {
+            weekOffset = 0;
+        }
         // 🗓️ Xem lịch = tuần hiện tại
         Locale locale = new Locale("vi", "VN");
         LocalDate today = LocalDate.now();
-        LocalDate startOfWeek = today.with(DayOfWeek.MONDAY);
+        LocalDate startOfWeek = today.with(DayOfWeek.MONDAY).plusWeeks(weekOffset);
         LocalDate endOfWeek = startOfWeek.plusDays(6);
 
         // 🟢 Lịch hiện tại
@@ -79,8 +84,10 @@ public class StaffScheduleController extends HttpServlet {
         request.setAttribute("weekDays", weekDays);
         request.setAttribute("nextWeekDays", nextWeekDays);
         request.setAttribute("startOfWeek", java.sql.Date.valueOf(startOfWeek));
-        request.setAttribute("endOfWeek", java.sql.Date.valueOf(endOfWeek));
-        request.setAttribute("commonSchedule", workDAO.getCommonSchedule());
+        request.setAttribute("endOfWeek", java.sql.Date.valueOf(endOfWeek)); 
+        request.setAttribute("weekOffset", weekOffset);
+        
+        request.setAttribute("commonSchedule", workDAO.getCommonSchedule(startOfWeek, endOfWeek));
         request.setAttribute("staffList", workDAO.getAllStaffExcept(staffId));
         request.setAttribute("shifts", shiftDAO.getAllShifts());
 

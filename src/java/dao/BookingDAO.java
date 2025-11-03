@@ -127,6 +127,41 @@ public List<Booking> getAllBookings() {
     }
 
     // =========================
+    // AVAILABILITY CHECK (SPA)
+    // =========================
+    /**
+     * Kiểm tra khung giờ có bị trùng với bất kỳ booking Spa nào đang active hay không
+     * Logic overlap: NOT (end <= existing_start OR start >= existing_end)
+     */
+    public boolean isSpaTimeSlotAvailable(java.sql.Timestamp start, java.sql.Timestamp end) {
+        final String sql =
+            "SELECT COUNT(*) AS cnt\n" +
+            "FROM dbo.Booking b\n" +
+            "JOIN dbo.Booking_Service bs ON bs.booking_id = b.booking_id\n" +
+            "JOIN dbo.PetService ps ON ps.service_id = bs.service_id\n" +
+            "WHERE ps.type = 'spa'\n" +
+            "  AND b.status IN ('pending','confirmed')\n" +
+            "  AND NOT (b.appointment_end <= ? OR b.appointment_start >= ?)";
+
+        try (java.sql.Connection conn = DBConnection.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTimestamp(1, start);
+            ps.setTimestamp(2, end);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int cnt = rs.getInt("cnt");
+                    return cnt == 0;
+                }
+            }
+        } catch (java.sql.SQLException e) {
+            logger.severe("Error checking spa time slot availability: " + e.getMessage());
+            e.printStackTrace();
+        }
+        // Nếu lỗi, trả về true để không chặn luồng đặt (an toàn mềm)
+        return true;
+    }
+
+    // =========================
     // GET BY CUSTOMER
     // =========================
     @Override
@@ -685,16 +720,16 @@ public List<Booking> getAllBookings() {
         String sql = """
             SELECT b.*, 
                    c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email,
-                   p.name AS pet_name, p.species AS pet_type,
+                   p.pet_name AS pet_name, p.species AS pet_type,
                    s.name AS staff_name,
                    d.name AS doctor_name,
-                   (SELECT STRING_AGG(sv.name, ', ')
-                      FROM dbo.BookingService bs
-                      JOIN dbo.Service sv ON sv.service_id = bs.service_id
+                   (SELECT STRING_AGG(ps.name, ', ')
+                      FROM dbo.Booking_Service bs
+                      JOIN dbo.PetService ps ON ps.service_id = bs.service_id
                       WHERE bs.booking_id = b.booking_id) AS service_names
             FROM dbo.Booking b
             LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id
-            LEFT JOIN dbo.Pet p ON b.pet_id = p.pet_id
+            LEFT JOIN dbo.Pet p ON b.pet_id = p.id
             LEFT JOIN dbo.Staff s ON b.staff_id = s.staff_id
             LEFT JOIN dbo.Doctor d ON b.doctor_id = d.doctor_id
             WHERE b.doctor_id = ? 
@@ -730,16 +765,16 @@ public List<Booking> getAllBookings() {
         String sql = """
             SELECT b.*, 
                    c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email,
-                   p.name AS pet_name, p.species AS pet_type,
+                   p.pet_name AS pet_name, p.species AS pet_type,
                    s.name AS staff_name,
                    d.name AS doctor_name,
-                   (SELECT STRING_AGG(sv.name, ', ')
-                      FROM dbo.BookingService bs
-                      JOIN dbo.Service sv ON sv.service_id = bs.service_id
+                   (SELECT STRING_AGG(ps.name, ', ')
+                      FROM dbo.Booking_Service bs
+                      JOIN dbo.PetService ps ON ps.service_id = bs.service_id
                       WHERE bs.booking_id = b.booking_id) AS service_names
             FROM dbo.Booking b
             LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id
-            LEFT JOIN dbo.Pet p ON b.pet_id = p.pet_id
+            LEFT JOIN dbo.Pet p ON b.pet_id = p.id
             LEFT JOIN dbo.Staff s ON b.staff_id = s.staff_id
             LEFT JOIN dbo.Doctor d ON b.doctor_id = d.doctor_id
             WHERE b.doctor_id = ? 
@@ -791,47 +826,32 @@ public List<Booking> getAllBookings() {
         }
     }
     
-    public List<Booking> getAllBookingsForStaffView() {
-        List<Booking> list = new ArrayList<>();
-        String sql = """
-        SELECT 
-            b.booking_id,
-            b.customer_id,
-            c.name AS customer_name,
-            b.pet_id,
-            p.pet_name AS pet_name,
-            b.status,
-            (
-                SELECT STRING_AGG(ps.name, ', ')
-                FROM Booking_Service bs
-                JOIN PetService ps ON bs.service_id = ps.service_id
-                WHERE bs.booking_id = b.booking_id
-            ) AS service_names
-        FROM Booking b
-        LEFT JOIN Customer c ON b.customer_id = c.customer_id
-        LEFT JOIN Pet p ON b.pet_id = p.id
-        ORDER BY b.appointment_start DESC
-    """;
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                Booking b = new Booking();
-                b.setBookingId(rs.getInt("booking_id"));
-                b.setCustomerId(rs.getInt("customer_id"));
-                b.setCustomerName(rs.getString("customer_name"));
-                b.setPetId(rs.getInt("pet_id"));
-                b.setPetName(rs.getString("pet_name"));
-                b.setStatus(rs.getString("status"));
-                b.setServiceNames(rs.getString("service_names"));
-                list.add(b);
-            }
-
-            System.out.println("[DEBUG] >>> FINISHED getAllBookingsForStaffView(): " + list.size());
+    /**
+     * Cập nhật appointment_start và note của booking
+     */
+    public boolean updateBooking(int bookingId, Timestamp appointmentStart, String note) {
+        String sql = "UPDATE dbo.Booking SET appointment_start = ?, note = ? WHERE booking_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setTimestamp(1, appointmentStart);
+            ps.setString(2, note);
+            ps.setInt(3, bookingId);
+            
+            int rowsUpdated = ps.executeUpdate();
+            return rowsUpdated > 0;
+            
         } catch (Exception e) {
+            logger.severe("Exception khi cập nhật booking ID " + bookingId + ": " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
-        return list;
+    }
+
+    @Override
+    public List<Booking> getAllBookingsForStaffView() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 }
 

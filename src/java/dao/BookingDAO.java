@@ -720,16 +720,16 @@ public List<Booking> getAllBookings() {
         String sql = """
             SELECT b.*, 
                    c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email,
-                   p.name AS pet_name, p.species AS pet_type,
+                   p.pet_name AS pet_name, p.species AS pet_type,
                    s.name AS staff_name,
                    d.name AS doctor_name,
-                   (SELECT STRING_AGG(sv.name, ', ')
-                      FROM dbo.BookingService bs
-                      JOIN dbo.Service sv ON sv.service_id = bs.service_id
+                   (SELECT STRING_AGG(ps.name, ', ')
+                      FROM dbo.Booking_Service bs
+                      JOIN dbo.PetService ps ON ps.service_id = bs.service_id
                       WHERE bs.booking_id = b.booking_id) AS service_names
             FROM dbo.Booking b
             LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id
-            LEFT JOIN dbo.Pet p ON b.pet_id = p.pet_id
+            LEFT JOIN dbo.Pet p ON b.pet_id = p.id
             LEFT JOIN dbo.Staff s ON b.staff_id = s.staff_id
             LEFT JOIN dbo.Doctor d ON b.doctor_id = d.doctor_id
             WHERE b.doctor_id = ? 
@@ -765,16 +765,16 @@ public List<Booking> getAllBookings() {
         String sql = """
             SELECT b.*, 
                    c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email,
-                   p.name AS pet_name, p.species AS pet_type,
+                   p.pet_name AS pet_name, p.species AS pet_type,
                    s.name AS staff_name,
                    d.name AS doctor_name,
-                   (SELECT STRING_AGG(sv.name, ', ')
-                      FROM dbo.BookingService bs
-                      JOIN dbo.Service sv ON sv.service_id = bs.service_id
+                   (SELECT STRING_AGG(ps.name, ', ')
+                      FROM dbo.Booking_Service bs
+                      JOIN dbo.PetService ps ON ps.service_id = bs.service_id
                       WHERE bs.booking_id = b.booking_id) AS service_names
             FROM dbo.Booking b
             LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id
-            LEFT JOIN dbo.Pet p ON b.pet_id = p.pet_id
+            LEFT JOIN dbo.Pet p ON b.pet_id = p.id
             LEFT JOIN dbo.Staff s ON b.staff_id = s.staff_id
             LEFT JOIN dbo.Doctor d ON b.doctor_id = d.doctor_id
             WHERE b.doctor_id = ? 

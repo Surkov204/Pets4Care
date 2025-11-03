@@ -146,6 +146,34 @@
             }
         %>
         
+        <!-- Thông báo lỗi -->
+        <%
+            String errorMessage = (String) session.getAttribute("errorMessage");
+            if (errorMessage != null) {
+        %>
+        <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: linear-gradient(135deg, #e53e3e, #fc8181); color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 300px; animation: slideInRight 0.5s ease-out;">
+            <i class="fas fa-exclamation-circle"></i> <%= errorMessage %>
+        </div>
+        <script>
+            // Tự động ẩn thông báo sau 4 giây
+            setTimeout(function() {
+                const notification = document.querySelectorAll('div[style*="position: fixed"]');
+                if (notification.length > 0) {
+                    notification[notification.length - 1].style.animation = 'slideOutRight 0.5s ease-out';
+                    setTimeout(() => {
+                        if (notification[notification.length - 1].parentNode) {
+                            notification[notification.length - 1].remove();
+                        }
+                    }, 500);
+                }
+            }, 4000);
+        </script>
+        <%
+                // Xóa thông báo khỏi session sau khi hiển thị
+                session.removeAttribute("errorMessage");
+            }
+        %>
+        
         <!-- Top Bar -->
         <div class="top-bar">
             <div class="left">
@@ -264,7 +292,6 @@
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
                 <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
-                <li><a href="health-check-booking">ĐẶT LỊCH KHÁM</a></li>
                 <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
                 <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>

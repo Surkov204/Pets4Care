@@ -139,8 +139,8 @@ public List<Booking> getAllBookings() {
             "FROM dbo.Booking b\n" +
             "JOIN dbo.Booking_Service bs ON bs.booking_id = b.booking_id\n" +
             "JOIN dbo.PetService ps ON ps.service_id = bs.service_id\n" +
-            "WHERE ps.type = 'spa'\n" +
-            "  AND b.status IN ('pending','confirmed')\n" +
+            "WHERE ps.service_type = 'spa'\n" +
+            "  AND b.status IN (N'Đã thanh toán', N'Chờ xác nhận', N'Đã xác nhận', 'pending', 'confirmed')\n" +
             "  AND NOT (b.appointment_end <= ? OR b.appointment_start >= ?)";
 
         try (java.sql.Connection conn = DBConnection.getConnection();

@@ -35,6 +35,10 @@ public class PayOSUtils {
         
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
         
+        // Set connection timeouts to prevent hanging
+        conn.setConnectTimeout(30000); // 30 seconds
+        conn.setReadTimeout(30000); // 30 seconds
+        
         conn.setRequestMethod(method);
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("x-client-id", PayOSConfig.getClientId());

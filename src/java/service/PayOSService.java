@@ -268,7 +268,7 @@ public class PayOSService {
                     } else {
                         // Không thấy trong [Order] → thử cập nhật cho booking lưu trú
                         System.err.println("ℹ️ Order #" + orderCode + " not found in [Order], trying boarding_bookings...");
-                        updated = updateBoardingPaymentStatus(orderCode, "confirmed");
+                        updated = updateBoardingPaymentStatus(orderCode, "Đã thanh toán");
                     }
                     
                     if (updated) {

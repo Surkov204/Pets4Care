@@ -24,8 +24,11 @@ import model.BookingServiceItem;
 import model.Customer;
 import model.Pet;
 import model.PetServiceModel;
+import model.Review;
 import service.SpaBookingService;
 import service.PayOSService;
+import service.ReviewService;
+import service.IReviewService;
 
 /**
  * Controller cho Spa Booking
@@ -40,6 +43,7 @@ public class SpaBookingServlet extends HttpServlet {
     private PetDAO petDAO;
     private BoardingBookingDAO boardingBookingDAO;
     private PayOSService payOSService;
+    private final IReviewService reviewService = new ReviewService();
     
     @Override
     public void init() throws ServletException {
@@ -92,12 +96,36 @@ public class SpaBookingServlet extends HttpServlet {
             } else if (action.equals("detail")) {
                 // Hiển thị chi tiết booking Spa
                 showSpaBookingDetail(request, response, customer);
+            } else if (action.equals("service-detail")) {
+                // Hiển thị chi tiết dịch vụ Spa trước khi thêm vào giỏ hàng
+                showServiceDetail(request, response, customer);
             } else if (action.equals("boarding-detail")) {
                 // Hiển thị chi tiết booking Boarding
                 showBoardingBookingDetail(request, response, customer);
             } else if (action.equals("test-boarding")) {
                 // Test tạo dữ liệu boarding
                 testCreateBoardingData(request, response, customer);
+            } else if (action.equals("get-completed-bookings")) {
+                // Lấy danh sách bookings đã hoàn thành để review
+                getCompletedBookingsForReview(request, response, customer);
+            } else if (action.equals("check-review-exists")) {
+                // Kiểm tra xem đã review chưa
+                checkReviewExists(request, response, customer);
+            } else if (action.equals("get-service-reviews")) {
+                // Lấy reviews của một service
+                getServiceReviews(request, response);
+            } else if (action.equals("get-time-slots")) {
+                // Lấy danh sách time slots với trạng thái available/occupied
+                getTimeSlots(request, response);
+            } else if (action.equals("boarding-cart")) {
+                // Hiển thị form đặt phòng lưu trú (chuyển đến spa cart)
+                showSpaCart(request, response, customer);
+            } else if (action.equals("get-boarding-reviews")) {
+                // Lấy reviews của boarding booking
+                getBoardingReviews(request, response);
+            } else if (action.equals("submit-boarding-review")) {
+                // Gửi review cho boarding booking
+                submitBoardingReview(request, response, customer);
             }
             
         } catch (Exception e) {
@@ -184,6 +212,9 @@ public class SpaBookingServlet extends HttpServlet {
             } else if (action != null && action.equals("refund-spa-booking")) {
                 // Hoàn tiền cho spa booking
                 refundSpaBooking(request, response, customer);
+            } else if (action != null && action.equals("submit-review")) {
+                // Submit review cho service
+                submitReview(request, response, customer);
             }
             
         } catch (Exception e) {
@@ -298,14 +329,18 @@ public class SpaBookingServlet extends HttpServlet {
         if (spaBookings != null) {
             for (Booking b : spaBookings) {
                 String display;
-                String dbStatus = b.getStatus() != null ? b.getStatus().toLowerCase() : "";
-                if (dbStatus.equals("completed") || dbStatus.equals("hoàn thành")) {
-                    display = "Hoàn thành";
-                } else if (dbStatus.equals("đã thanh toán") || dbStatus.equals("confirmed")) {
-                    display = "Đã thanh toán";
-                } else if (dbStatus.equals("pending") || dbStatus.equals("chưa thanh toán")) {
+                String dbStatus = b.getStatus();
+                if (dbStatus == null) {
                     display = "Chưa thanh toán";
-                } else if (dbStatus.equals("cancelled") || dbStatus.equals("đã hủy")) {
+                } else if (dbStatus.equalsIgnoreCase("completed") || dbStatus.equalsIgnoreCase("hoàn thành")) {
+                    display = "Hoàn thành";
+                } else if (dbStatus.equals("Đã xác nhận")) {
+                    display = "Đã xác nhận";
+                } else if (dbStatus.equalsIgnoreCase("đã thanh toán") || dbStatus.equalsIgnoreCase("confirmed")) {
+                    display = "Đã thanh toán";
+                } else if (dbStatus.equals("Chờ xác nhận") || dbStatus.equals("Chưa thanh toán")) {
+                    display = "Chưa thanh toán";
+                } else if (dbStatus.equalsIgnoreCase("cancelled") || dbStatus.equalsIgnoreCase("đã hủy")) {
                     display = "Đã hủy";
                 } else {
                     boolean paid = false;
@@ -364,7 +399,7 @@ public class SpaBookingServlet extends HttpServlet {
                         boardingService.put("checkOutDate", new java.sql.Date(booking.getCheckOutDate().getTime()).toString());
                     else boardingService.put("checkOutDate", "");
                     boardingService.put("petInfo", booking.getPetInfo() != null ? booking.getPetInfo() : "");
-                    boardingService.put("status", booking.getStatus() != null ? booking.getStatus() : "pending");
+                    boardingService.put("status", booking.getStatus() != null ? booking.getStatus() : "Chờ xác nhận");
                     boardingService.put("isBoarding", true);
                     boardingService.put("createdAt", booking.getCreatedAt());
                     boardingService.put("specialNotes", booking.getSpecialNotes() != null ? booking.getSpecialNotes() : "");
@@ -425,6 +460,62 @@ public class SpaBookingServlet extends HttpServlet {
             HttpSession session = request.getSession(true);
             session.setAttribute("errorMessage", "ID booking không hợp lệ");
             response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
+        }
+    }
+    
+    /**
+     * Hiển thị chi tiết dịch vụ Spa trước khi thêm vào giỏ hàng
+     */
+    private void showServiceDetail(HttpServletRequest request, HttpServletResponse response, Customer customer) 
+            throws ServletException, IOException {
+        
+        String serviceIdParam = request.getParameter("serviceId");
+        if (serviceIdParam == null || serviceIdParam.trim().isEmpty()) {
+            HttpSession session = request.getSession(true);
+            session.setAttribute("errorMessage", "Không tìm thấy dịch vụ");
+            response.sendRedirect(request.getContextPath() + "/spa-booking?action=services");
+            return;
+        }
+        
+        try {
+            int serviceId = Integer.parseInt(serviceIdParam);
+            PetServiceModel service = spaBookingService.getSpaServiceById(serviceId);
+            
+            if (service == null || !service.isActive()) {
+                HttpSession session = request.getSession(true);
+                session.setAttribute("errorMessage", "Dịch vụ không tồn tại hoặc không còn hoạt động");
+                response.sendRedirect(request.getContextPath() + "/spa-booking?action=services");
+                return;
+            }
+            
+            // Lấy danh sách reviews của dịch vụ (tối đa 50 reviews)
+            List<Review> reviews = reviewService.listByService(serviceId, 50);
+            if (reviews == null) {
+                reviews = new ArrayList<>(); // Đảm bảo không null
+            }
+            
+            // Lấy thông tin thú cưng của khách hàng để hiển thị trong form
+            List<Pet> customerPets = petDAO.getPetsByCustomerId(customer.getCustomerId());
+            if (customerPets == null) {
+                customerPets = new ArrayList<>(); // Đảm bảo không null
+            }
+            
+            request.setAttribute("service", service);
+            request.setAttribute("reviews", reviews);
+            request.setAttribute("customerPets", customerPets);
+            
+            request.getRequestDispatcher("/spa-service-detail.jsp").forward(request, response);
+            
+        } catch (NumberFormatException e) {
+            HttpSession session = request.getSession(true);
+            session.setAttribute("errorMessage", "ID dịch vụ không hợp lệ");
+            response.sendRedirect(request.getContextPath() + "/spa-booking?action=services");
+        } catch (Exception e) {
+            logger.severe("Error showing service detail: " + e.getMessage());
+            e.printStackTrace();
+            HttpSession session = request.getSession(true);
+            session.setAttribute("errorMessage", "Có lỗi xảy ra khi tải chi tiết dịch vụ");
+            response.sendRedirect(request.getContextPath() + "/spa-booking?action=services");
         }
     }
     
@@ -810,7 +901,7 @@ public class SpaBookingServlet extends HttpServlet {
             
             // Kiểm tra có thể hủy không - sử dụng trạng thái từ booking object
             String status = booking.getStatus();
-            boolean canCancel = "pending".equals(status) || "confirmed".equals(status);
+            boolean canCancel = "Chờ xác nhận".equals(status) || "Đã thanh toán".equals(status) || "Đã xác nhận".equals(status);
             
             if (!canCancel) {
                 String reason;
@@ -948,7 +1039,7 @@ public class SpaBookingServlet extends HttpServlet {
                     (Map<Integer, Map<String, Object>>) request.getSession().getAttribute("boardingDetails");
                 if (boardingDetailsMap != null && boardingDetailsMap.containsKey(serviceId)) {
                     Map<String, Object> boardingDetails = boardingDetailsMap.get(serviceId);
-                    boardingDetails.put("status", "cancelled");
+                    boardingDetails.put("status", "Chờ xác nhận");
                     boardingDetailsMap.put(serviceId, boardingDetails);
                     request.getSession().setAttribute("boardingDetails", boardingDetailsMap);
                 }
@@ -1362,7 +1453,7 @@ public class SpaBookingServlet extends HttpServlet {
             
             // Kiểm tra có thể hủy không
             String status = booking.getStatus();
-            boolean canCancel = "pending".equals(status) || "confirmed".equals(status);
+            boolean canCancel = "Chờ xác nhận".equals(status) || "Đã thanh toán".equals(status) || "Đã xác nhận".equals(status);
             
             if (!canCancel) {
                 String reason;
@@ -1379,8 +1470,8 @@ public class SpaBookingServlet extends HttpServlet {
                 return;
             }
             
-            // Hủy booking
-            boolean success = boardingBookingDAO.updateBookingStatus(bookingId, "cancelled");
+            // Hủy booking - giữ nguyên trạng thái vì không có status cancelled
+            boolean success = boardingBookingDAO.updateBookingStatus(bookingId, "Chờ xác nhận");
             
             if (success) {
                 logger.info("Cancelled boarding booking ID: " + bookingId);
@@ -2206,5 +2297,480 @@ public class SpaBookingServlet extends HttpServlet {
             request.getSession().setAttribute("errorMessage", "Lỗi hoàn tiền: " + ex.getMessage());
         }
         response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
+    }
+
+    /**
+     * Lấy danh sách bookings đã hoàn thành để review
+     */
+    private void getCompletedBookingsForReview(HttpServletRequest request, HttpServletResponse response, Customer customer) 
+            throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        try {
+            List<Booking> allBookings = spaBookingService.getSpaBookingsByCustomerId(customer.getCustomerId());
+            List<Map<String, Object>> completedBookings = new ArrayList<>();
+            
+            dao.BookingServiceDAO bookingServiceDAO = new dao.BookingServiceDAO();
+            
+            for (Booking booking : allBookings) {
+                String status = booking.getStatus();
+                // Cho phép review cả "Đã thanh toán", "Chờ xác nhận" và "Đã xác nhận" (cùng cấp độ)
+                if (status != null && 
+                    (status.equalsIgnoreCase("completed") || status.equalsIgnoreCase("hoàn thành") ||
+                     status.equals("Đã thanh toán") || status.equals("Chờ xác nhận") || 
+                     status.equals("Đã xác nhận"))) {
+                    List<BookingServiceItem> services = bookingServiceDAO.getBookingServicesByBookingId(booking.getBookingId());
+                    for (BookingServiceItem service : services) {
+                        if (service.isSpaService()) {
+                            Map<String, Object> bookingInfo = new HashMap<>();
+                            bookingInfo.put("bookingId", booking.getBookingId());
+                            bookingInfo.put("serviceId", service.getServiceId());
+                            bookingInfo.put("serviceName", service.getServiceName() != null ? service.getServiceName() : "Dịch vụ Spa");
+                            
+                            if (booking.getAppointmentStart() != null) {
+                                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                                bookingInfo.put("bookingDate", sdf.format(new java.util.Date(booking.getAppointmentStart().getTime())));
+                            } else {
+                                bookingInfo.put("bookingDate", "");
+                            }
+                            
+                            completedBookings.add(bookingInfo);
+                        }
+                    }
+                }
+            }
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("bookings", completedBookings);
+            
+            response.getWriter().write(new com.google.gson.Gson().toJson(result));
+        } catch (Exception e) {
+            logger.severe("Error getting completed bookings: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Lỗi khi tải danh sách bookings");
+            response.getWriter().write(new com.google.gson.Gson().toJson(error));
+        }
+    }
+
+    /**
+     * Kiểm tra xem đã review chưa
+     */
+    private void checkReviewExists(HttpServletRequest request, HttpServletResponse response, Customer customer) 
+            throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        try {
+            int bookingId = Integer.parseInt(request.getParameter("bookingId"));
+            int serviceId = Integer.parseInt(request.getParameter("serviceId"));
+            
+            Review existingReview = reviewService.getReviewByBooking(bookingId, serviceId, customer.getCustomerId());
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("exists", existingReview != null);
+            
+            response.getWriter().write(new com.google.gson.Gson().toJson(result));
+        } catch (Exception e) {
+            logger.severe("Error checking review exists: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Lỗi khi kiểm tra");
+            response.getWriter().write(new com.google.gson.Gson().toJson(error));
+        }
+    }
+
+    /**
+     * Lấy reviews của một service
+     */
+    private void getServiceReviews(HttpServletRequest request, HttpServletResponse response) 
+            throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        try {
+            int serviceId = Integer.parseInt(request.getParameter("serviceId"));
+            int limit = 10;
+            if (request.getParameter("limit") != null) {
+                limit = Integer.parseInt(request.getParameter("limit"));
+            }
+            
+            List<Review> reviews = reviewService.listByService(serviceId, limit);
+            
+            List<Map<String, Object>> reviewList = new ArrayList<>();
+            for (Review review : reviews) {
+                Map<String, Object> reviewMap = new HashMap<>();
+                reviewMap.put("reviewId", review.getReviewId());
+                reviewMap.put("rating", review.getRating());
+                reviewMap.put("comment", review.getComment());
+                reviewMap.put("customerName", review.getCustomerName());
+                if (review.getCreatedAt() != null) {
+                    reviewMap.put("createdAt", review.getCreatedAt().getTime());
+                }
+                reviewList.add(reviewMap);
+            }
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("reviews", reviewList);
+            
+            response.getWriter().write(new com.google.gson.Gson().toJson(result));
+        } catch (Exception e) {
+            logger.severe("Error getting service reviews: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Lỗi khi tải đánh giá");
+            response.getWriter().write(new com.google.gson.Gson().toJson(error));
+        }
+    }
+
+    /**
+     * Submit review cho service
+     */
+    private void submitReview(HttpServletRequest request, HttpServletResponse response, Customer customer) 
+            throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        try {
+            int bookingId = Integer.parseInt(request.getParameter("bookingId"));
+            int serviceId = Integer.parseInt(request.getParameter("serviceId"));
+            int rating = Integer.parseInt(request.getParameter("rating"));
+            String comment = request.getParameter("comment");
+            
+            // Validate rating
+            if (rating < 1 || rating > 5) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Đánh giá phải từ 1 đến 5 sao");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            // Check if booking is completed or paid/confirmed (cùng cấp độ)
+            if (!reviewService.hasCompletedBooking(customer.getCustomerId(), serviceId, bookingId)) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Bạn chỉ có thể đánh giá các dịch vụ đã thanh toán hoặc đã xác nhận");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            // Check if already reviewed
+            Review existingReview = reviewService.getReviewByBooking(bookingId, serviceId, customer.getCustomerId());
+            if (existingReview != null) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Bạn đã đánh giá dịch vụ này rồi");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            // Create and save review
+            Review review = new Review();
+            review.setCustomerId(customer.getCustomerId());
+            review.setServiceId(serviceId);
+            review.setBookingId(bookingId);
+            review.setRating(rating);
+            review.setComment(comment != null ? comment.trim() : "");
+            
+            reviewService.add(review);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "Đánh giá đã được gửi thành công");
+            
+            response.getWriter().write(new com.google.gson.Gson().toJson(result));
+        } catch (Exception e) {
+            logger.severe("Error submitting review: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Lỗi khi gửi đánh giá: " + e.getMessage());
+            response.getWriter().write(new com.google.gson.Gson().toJson(error));
+        }
+    }
+
+    /**
+     * Lấy danh sách time slots với trạng thái available/occupied cho một ngày và service
+     */
+    private void getTimeSlots(HttpServletRequest request, HttpServletResponse response) 
+            throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        try {
+            String dateStr = request.getParameter("date");
+            String serviceIdStr = request.getParameter("serviceId");
+            String quantityStr = request.getParameter("quantity");
+            
+            if (dateStr == null || serviceIdStr == null) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Thiếu tham số date hoặc serviceId");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            int serviceId = Integer.parseInt(serviceIdStr);
+            int quantity = quantityStr != null ? Integer.parseInt(quantityStr) : 1;
+            
+            // Lấy thông tin service để biết duration
+            PetServiceModel service = spaBookingService.getSpaServiceById(serviceId);
+            if (service == null) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Không tìm thấy dịch vụ");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            int duration = service.getDuration() * quantity; // Tổng thời gian = duration * quantity
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            java.util.Date selectedDate = dateFormat.parse(dateStr);
+            
+            List<Map<String, Object>> slots = new ArrayList<>();
+            
+            // Tạo các time slots từ 08:00 đến 18:00 với interval = duration (phút)
+            // Mỗi slot bắt đầu từ giờ chẵn (08:00, 09:00, ...) và kéo dài trong duration phút
+            
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.setTime(selectedDate);
+            cal.set(java.util.Calendar.HOUR_OF_DAY, 8);
+            cal.set(java.util.Calendar.MINUTE, 0);
+            cal.set(java.util.Calendar.SECOND, 0);
+            cal.set(java.util.Calendar.MILLISECOND, 0);
+            
+            // Tạo slot đầu tiên: 08:00
+            while (true) {
+                int currentHour = cal.get(java.util.Calendar.HOUR_OF_DAY);
+                int currentMinute = cal.get(java.util.Calendar.MINUTE);
+                
+                // Kiểm tra nếu vượt quá 18:00 thì dừng
+                if (currentHour > 18 || (currentHour == 18 && currentMinute > 0)) {
+                    break;
+                }
+                
+                Timestamp slotStart = new Timestamp(cal.getTimeInMillis());
+                
+                // Tính end time
+                java.util.Calendar calEnd = (java.util.Calendar) cal.clone();
+                calEnd.add(java.util.Calendar.MINUTE, duration);
+                
+                int endHour = calEnd.get(java.util.Calendar.HOUR_OF_DAY);
+                int endMinute = calEnd.get(java.util.Calendar.MINUTE);
+                
+                // Kiểm tra end time có vượt quá 18:00 không
+                if (endHour > 18 || (endHour == 18 && endMinute > 0)) {
+                    break; // Slot này không hợp lệ vì vượt quá giờ đóng cửa
+                }
+                
+                Timestamp slotEnd = new Timestamp(calEnd.getTimeInMillis());
+                
+                // Kiểm tra slot có bị chiếm không (status "Đã thanh toán" hoặc "Đã xác nhận")
+                boolean isAvailable = spaBookingService.isSpaSlotAvailableForSingle(slotStart, serviceId, quantity);
+                
+                Map<String, Object> slot = new HashMap<>();
+                slot.put("start", String.format("%02d:%02d", currentHour, currentMinute));
+                slot.put("end", String.format("%02d:%02d", endHour, endMinute));
+                slot.put("startTimestamp", slotStart.getTime());
+                slot.put("endTimestamp", slotEnd.getTime());
+                slot.put("available", isAvailable);
+                slot.put("duration", duration);
+                
+                slots.add(slot);
+                
+                // Chuyển sang slot tiếp theo: cộng thêm duration phút
+                cal.add(java.util.Calendar.MINUTE, duration);
+            }
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("date", dateStr);
+            result.put("serviceId", serviceId);
+            result.put("serviceDuration", service.getDuration());
+            result.put("quantity", quantity);
+            result.put("totalDuration", duration);
+            result.put("slots", slots);
+            
+            response.getWriter().write(new com.google.gson.Gson().toJson(result));
+            
+        } catch (Exception e) {
+            logger.severe("Error getting time slots: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Lỗi khi lấy danh sách time slots: " + e.getMessage());
+            response.getWriter().write(new com.google.gson.Gson().toJson(error));
+        }
+    }
+
+    /**
+     * Lấy danh sách reviews cho boarding booking
+     */
+    private void getBoardingReviews(HttpServletRequest request, HttpServletResponse response) 
+            throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        try {
+            String bookingIdStr = request.getParameter("bookingId");
+            if (bookingIdStr == null) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Thiếu bookingId");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            int bookingId = Integer.parseInt(bookingIdStr);
+            
+            // Boarding reviews: dùng service_id = 9999 (đặc biệt cho boarding)
+            // Query trực tiếp từ Review table với booking_id và service_id = 9999
+            String sql = "SELECT r.*, c.name AS customer_name FROM Review r " +
+                         "JOIN Customer c ON r.customer_id = c.customer_id " +
+                         "WHERE r.booking_id = ? AND r.service_id = 9999 " +
+                         "ORDER BY r.created_at DESC";
+            
+            List<Review> reviews = new ArrayList<>();
+            try (java.sql.Connection conn = utils.DBConnection.getConnection();
+                 java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, bookingId);
+                try (java.sql.ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Review review = new Review();
+                        review.setReviewId(rs.getInt("review_id"));
+                        review.setCustomerId(rs.getInt("customer_id"));
+                        review.setServiceId(rs.getInt("service_id"));
+                        review.setBookingId(rs.getInt("booking_id"));
+                        review.setRating(rs.getInt("rating"));
+                        review.setComment(rs.getString("comment"));
+                        review.setCreatedAt(rs.getTimestamp("created_at"));
+                        review.setCustomerName(rs.getString("customer_name"));
+                        reviews.add(review);
+                    }
+                }
+            }
+            
+            response.getWriter().write(new com.google.gson.Gson().toJson(reviews));
+            
+        } catch (Exception e) {
+            logger.severe("Error getting boarding reviews: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Lỗi khi lấy đánh giá: " + e.getMessage());
+            response.getWriter().write(new com.google.gson.Gson().toJson(error));
+        }
+    }
+
+    /**
+     * Gửi review cho boarding booking
+     */
+    private void submitBoardingReview(HttpServletRequest request, HttpServletResponse response, Customer customer)
+            throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        try {
+            String bookingIdStr = request.getParameter("bookingId");
+            String ratingStr = request.getParameter("rating");
+            String comment = request.getParameter("comment");
+            
+            if (bookingIdStr == null || ratingStr == null) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Thiếu thông tin bookingId hoặc rating");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            int bookingId = Integer.parseInt(bookingIdStr);
+            int rating = Integer.parseInt(ratingStr);
+            
+            if (rating < 1 || rating > 5) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Rating phải từ 1 đến 5 sao");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            if (comment == null || comment.trim().isEmpty()) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Vui lòng nhập đánh giá");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            if (comment.length() > 1000) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Đánh giá không được vượt quá 1000 ký tự");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            // Kiểm tra xem booking có thuộc customer và đã hoàn thành chưa
+            BoardingBooking booking = boardingBookingDAO.getBoardingBookingById(bookingId);
+            if (booking == null || booking.getCustomerId() != customer.getCustomerId()) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Không tìm thấy đơn lưu trú hoặc bạn không có quyền đánh giá");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            String status = booking.getStatus();
+            if (status == null || (!status.contains("Hoàn thành") && !status.contains("completed") 
+                && !status.contains("Đã thanh toán") && !status.contains("Đã xác nhận"))) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Chỉ có thể đánh giá các đơn đã hoàn thành, đã thanh toán hoặc đã xác nhận");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            // Kiểm tra xem đã review chưa
+            String checkSql = "SELECT COUNT(*) FROM Review WHERE booking_id = ? AND service_id = 9999 AND customer_id = ?";
+            boolean alreadyReviewed = false;
+            try (java.sql.Connection conn = utils.DBConnection.getConnection();
+                 java.sql.PreparedStatement ps = conn.prepareStatement(checkSql)) {
+                ps.setInt(1, bookingId);
+                ps.setInt(2, customer.getCustomerId());
+                try (java.sql.ResultSet rs = ps.executeQuery()) {
+                    if (rs.next() && rs.getInt(1) > 0) {
+                        alreadyReviewed = true;
+                    }
+                }
+            }
+            
+            if (alreadyReviewed) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "Bạn đã đánh giá đơn lưu trú này rồi");
+                response.getWriter().write(new com.google.gson.Gson().toJson(error));
+                return;
+            }
+            
+            // Tạo review với service_id = 9999 cho boarding
+            Review review = new Review();
+            review.setCustomerId(customer.getCustomerId());
+            review.setServiceId(9999); // Service ID đặc biệt cho boarding
+            review.setBookingId(bookingId);
+            review.setRating(rating);
+            review.setComment(comment.trim());
+            review.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+            
+            reviewService.add(review);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "Đánh giá thành công");
+            response.getWriter().write(new com.google.gson.Gson().toJson(result));
+            
+        } catch (Exception e) {
+            logger.severe("Error submitting boarding review: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Lỗi khi gửi đánh giá: " + e.getMessage());
+            response.getWriter().write(new com.google.gson.Gson().toJson(error));
+        }
     }
 }

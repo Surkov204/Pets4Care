@@ -159,19 +159,30 @@
     const popup = document.getElementById("chat-popup");
 
     function toggleChat() {
+        // Lấy box AI chatbot (nếu có)
+        const aiBox = document.getElementById("ai-chatbox");
+
+        // Nếu AI chatbot đang mở thì ẩn đi
+        if (aiBox && aiBox.style.display === "flex") {
+            aiBox.style.display = "none";
+        }
+
+        // Toggle chat khách hàng
         if (popup.style.display === "none" || popup.style.display === "") {
             popup.style.display = "flex";
+            popup.style.zIndex = "100001"; // Đảm bảo nằm trên AI
         } else {
             popup.style.display = "none";
         }
     }
+
 
     function loadMessages() {
         if (customerId <= 0)
             return;
 
         fetch("<%=request.getContextPath()%>/chat?action=get&customerId=" + customerId)
-                .then(res => res.json()) // ✅ đổi từ .text() sang .json()
+                .then(res => res.json())
                 .then(messages => {
                     chatBody.innerHTML = "";
 
@@ -179,7 +190,6 @@
                         const div = document.createElement("div");
                         div.classList.add("message");
 
-                        // Nếu người gửi là customer → tin nằm bên phải
                         if (m.senderType.toLowerCase() === "customer") {
                             div.classList.add("sent");
                         } else {
@@ -204,6 +214,22 @@
         if (!msg || customerId <= 0)
             return;
 
+        // 👇 hiển thị tạm tin nhắn mới gửi trên giao diện
+        const div = document.createElement("div");
+        div.classList.add("message", "sent");
+
+        const bubble = document.createElement("div");
+        bubble.classList.add("bubble");
+        bubble.textContent = msg;
+
+        div.appendChild(bubble);
+        chatBody.appendChild(div);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        // reset input
+        chatInput.value = "";
+
+        // gửi về server
         const params = "action=send"
                 + "&customerId=" + customerId
                 + "&senderType=customer"
@@ -213,16 +239,19 @@
             method: "POST",
             headers: {"Content-Type": "application/x-www-form-urlencoded"},
             body: params
-        })
-                .then(() => {
-                    chatInput.value = "";
-                    loadMessages();
-                })
-                .catch(err => console.error("Send error:", err));
+        }).catch(err => console.error("Send error:", err));
     }
 
     if (customerId > 0) {
         loadMessages();
-        setInterval(loadMessages, 3000);
+        setInterval(loadMessages, 3000); // 3 giây cập nhật lại tin nhắn
     }
+
+    // ✅ Enter = gửi, Shift+Enter = xuống dòng
+    chatInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendChat();
+        }
+    });
 </script>

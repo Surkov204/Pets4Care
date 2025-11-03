@@ -19,7 +19,7 @@
     ShiftDAO shiftDAO = new ShiftDAO();
     List<Shift> shiftList = shiftDAO.getAllShifts();
     request.setAttribute("shiftList", shiftList);
-    
+
     WorkScheduleDAO scheduleDAO = new WorkScheduleDAO();
     List<WorkSchedule> scheduleList = scheduleDAO.getAllSchedules();
     request.setAttribute("scheduleList", scheduleList);
@@ -269,8 +269,9 @@
                 <div class="tab-buttons">
                     <button class="active" onclick="showTab('info', this)">👔 Thông tin nhân viên</button>
                     <button onclick="showTab('shift', this)">⏰ Ca làm việc</button>
-                    <button onclick="showTab('schedule', this)">🗓️ Lịch làm việc</button>
+                    <button onclick="showTab('schedule', this)">🗓️ Danh sách các ca làm</button>
                     <button onclick="showTab('request', this)">🔄 Yêu cầu đổi / làm thay</button>
+                    <button onclick="showTab('worktable', this)">📅 Bảng làm việc</button>
                 </div>
 
                 <!-- Tab 1: Thông tin nhân viên -->
@@ -285,26 +286,50 @@
                         <thead>
                             <tr>
                                 <th>ID</th><th>Tên</th><th>Email</th><th>Vị trí</th><th>Ghi chú</th><th>Hành động</th>
+                                <th>Lương/Giờ (₫)</th><th>Ghi chú</th><th>Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <% if (staffList != null && !staffList.isEmpty()) {
-                                    for (Staff s : staffList) {%>
+                            <%
+                                if (staffList != null && !staffList.isEmpty()) {
+                                    // Tạo DAO để lấy lương từng nhân viên
+                                    dao.StaffSalaryDAO salaryDAO = new dao.StaffSalaryDAO();
+
+                                    for (Staff s : staffList) {
+                                        Double rate = salaryDAO.getHourlyRate(s.getStaffId());
+                            %>
                             <tr>
                                 <td><%= s.getStaffId()%></td>
                                 <td><%= s.getName()%></td>
                                 <td><%= s.getEmail()%></td>
                                 <td><%= s.getPosition()%></td>
+
+                                <!-- 💰 Thêm cột Lương/Giờ -->
+                                <td><%= rate != null ? String.format("%.0f", rate) : "18000"%></td>
+
+                                <!-- Ghi chú -->
                                 <td><%= s.getScheduleNote() != null ? s.getScheduleNote() : "-"%></td>
+
+                                <!-- Hành động -->
                                 <td>
                                     <a href="view-staff?id=<%= s.getStaffId()%>" class="btn edit">✏️ Xem</a>
-                                    <a href="delete-staff?id=<%= s.getStaffId()%>" class="btn delete" onclick="return confirm('Xóa nhân viên này?')">🗑️ Xóa</a>
+                                    <a href="delete-staff?id=<%= s.getStaffId()%>" class="btn delete"
+                                       onclick="return confirm('Xóa nhân viên này?')">🗑️ Xóa</a>
+                                    <!-- 💰 Nút cập nhật lương -->
+                                    <button class="btn approve"
+                                            onclick="openSalaryModal(<%= s.getStaffId()%>, '<%= rate != null ? rate : 18000%>')">
+                                        💰 Cập nhật lương
+                                    </button>
                                 </td>
                             </tr>
-                            <% }
-                            } else { %>
-                            <tr><td colspan="6">Không có nhân viên nào.</td></tr>
-                            <% }%>
+                            <%
+                                }
+                            } else {
+                            %>
+                            <tr><td colspan="7">Không có nhân viên nào.</td></tr>
+                            <%
+                                }
+                            %>
                         </tbody>
                     </table>
                 </div>
@@ -438,19 +463,23 @@
                                     </td>
                                     <td>${r.reason}</td>
                                     <td style="
-                                        color: ${r.status eq 'ApprovedByAdmin' ? '#4CAF50' :
+                                        color: ${r.status eq 'ApprovedByAdmin' or r.status eq 'Approved' ? '#4CAF50' :
                                                  (r.status eq 'Rejected' ? '#F44336' :
-                                                 (r.status eq 'AcceptedByTo' ? '#2196F3' : '#FF9800'))};
+                                                 (r.status eq 'N.A' ? '#2196F3' : '#FF9800'))};
                                         font-weight: bold;">
-                                        ${r.status}
+                                        <c:choose>
+                                            <c:when test="${r.status eq 'ApprovedByAdmin'}">Approved</c:when>
+                                            <c:otherwise>${r.status}</c:otherwise>
+                                        </c:choose>
                                     </td>
                                     <td>
                                         <c:choose>
                                             <c:when test="${r.status eq 'Pending' || r.status eq 'AcceptedByTo'}">
                                                 <a href="${pageContext.request.contextPath}/admin/approveShiftRequest?id=${r.requestID}"
                                                    class="btn approve">✔️ Duyệt</a>
-                                                <a href="${pageContext.request.contextPath}/admin/rejectShiftRequest?id=${r.requestID}"
+                                                <a href="${pageContext.request.contextPath}/admin/approveShiftRequest?id=${r.requestID}&action=reject"
                                                    class="btn deny">❌ Từ chối</a>
+
                                             </c:when>
                                             <c:otherwise><span style="color:#999;">Đã xử lý</span></c:otherwise>
                                         </c:choose>
@@ -460,10 +489,354 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- Tab 5: Bảng làm việc -->
+                <div id="tab-worktable" class="tab-content">
+
+                    <h2 style="color:#0077b6; margin-bottom:12px;">
+                        📅 Lịch làm việc chung của toàn bộ nhân viên
+                    </h2>
+
+                    <style>
+                        /* ====== BẢNG LỊCH LÀM ====== */
+                        .shift-grid {
+                            width: 100%;
+                            border-collapse: separate;
+                            border-spacing: 0;
+                            border-radius: 10px;
+                            overflow: hidden;
+                            background: #fff;
+                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                        }
+                        .shift-grid thead tr {
+                            background: linear-gradient(90deg, #4EA8DE, #5BC0EB);
+                        }
+                        .shift-grid th {
+                            color: #fff;
+                            font-weight: 600;
+                            text-align: center;
+                            padding: 12px;
+                            border: none;
+                            font-size: 0.95rem;
+                        }
+                        .shift-grid th:first-child {
+                            border-top-left-radius: 10px;
+                        }
+                        .shift-grid th:last-child {
+                            border-top-right-radius: 10px;
+                        }
+
+                        .shift-grid td {
+                            border-top: 1px solid #e0e0e0;
+                            border-right: 1px solid #e0e0e0;
+                            text-align: center;
+                            vertical-align: top;
+                            padding: 12px 10px;
+                        }
+                        .shift-grid td:last-child {
+                            border-right: none;
+                        }
+                        .shift-grid td:hover {
+                            background: #f9fafc;
+                            transition: 0.2s;
+                        }
+
+                        /* ====== NHÃN CA ====== */
+                        .shift-label {
+                            background: #f1f9ff;
+                            color: #0077b6;
+                            font-weight: 700;
+                            font-size: 1rem;
+                            width: 140px;
+                            border-right: 2px solid #e0e0e0;
+                        }
+                        .shift-label small {
+                            display: block;
+                            color: #555;
+                            font-weight: 500;
+                            font-size: 0.85rem;
+                            margin-top: 3px;
+                        }
+
+                        /* ====== THẺ NHÂN VIÊN ====== */
+                        .shift-card {
+                            background: #e6fffa;
+                            border-radius: 10px;
+                            padding: 6px 8px;
+                            color: #02735e;
+                            font-weight: 600;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                            margin: 5px auto;
+                            width: 90%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                        }
+
+                        .shift-card button {
+                            background: #ef5350;
+                            border: none;
+                            border-radius: 6px;
+                            color: white;
+                            font-size: 0.8rem;
+                            padding: 2px 6px;
+                            cursor: pointer;
+                            transition: 0.2s;
+                        }
+                        .shift-card button:hover {
+                            background: #d32f2f;
+                        }
+
+                        /* ====== THÔNG TIN PHỤ ====== */
+                        .missing-info {
+                            background: #1f2937;
+                            color: #fff;
+                            font-size: 0.8rem;
+                            border-radius: 8px;
+                            padding: 4px 6px;
+                            display: inline-block;
+                            margin-bottom: 6px;
+                            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+                        }
+                        .empty-slot {
+                            background: #f3f4f6;
+                            color: #888;
+                            border-radius: 8px;
+                            padding: 12px;
+                            font-style: italic;
+                            font-weight: 500;
+                            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+                        }
+
+                        /* ====== NÚT THÊM ====== */
+                        .mini-btn {
+                            background: #4caf50;
+                            color: #fff;
+                            border: none;
+                            border-radius: 6px;
+                            padding: 4px 8px;
+                            margin-top: 8px;
+                            font-weight: 600;
+                            font-size: 0.8rem;
+                            cursor: pointer;
+                            transition: 0.2s;
+                        }
+                        .mini-btn:hover {
+                            background: #43a047;
+                        }
+
+                        .modal {
+                            display: none;
+                            justify-content: center;
+                            align-items: center;
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0,0,0,0.3);
+                            z-index: 1000;
+                        }
+                        .modal-content {
+                            background: #fff;
+                            border-radius: 12px;
+                            padding: 20px;
+                            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+                            width: 400px;
+                            animation: fadeIn 0.3s ease;
+                        }
+                        @keyframes fadeIn {
+                            from {
+                                opacity: 0;
+                                transform: scale(0.9);
+                            }
+                            to {
+                                opacity: 1;
+                                transform: scale(1);
+                            }
+                        }
+                        .close-btn {
+                            float: right;
+                            font-size: 20px;
+                            cursor: pointer;
+                            color: #666;
+                        }
+                        .close-btn:hover {
+                            color: #000;
+                        }
+                    </style>
+
+                    <%
+                        dao.WorkScheduleDAO wsDao = new dao.WorkScheduleDAO();
+                        List<model.WorkSchedule> allSchedules = wsDao.getAllSchedules();
+                        dao.StaffDAO staffDAO = new dao.StaffDAO();
+                        List<model.Shift> shifts = shiftDAO.getAllShifts();
+
+                        java.time.LocalDate today = java.time.LocalDate.now();
+                        java.time.LocalDate monday = today.with(java.time.DayOfWeek.MONDAY);
+                        java.util.List<java.time.LocalDate> days = new java.util.ArrayList<>();
+                        for (int i = 0; i < 7; i++)
+                            days.add(monday.plusDays(i));
+                    %>
+
+                    <table class="shift-grid">
+                        <thead>
+                            <tr>
+                                <th>Ca / Ngày</th>
+                                    <% for (java.time.LocalDate d : days) {%>
+                                <th>
+                                    Thứ <%= d.getDayOfWeek().getValue()%><br>
+                                    <%= d.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM"))%>
+                                </th>
+                                <% } %>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% for (model.Shift shift : shifts) {%>
+                            <tr>
+                                <td class="shift-label">
+                                    <%= shift.getStartTime().substring(0, 5)%> – <%= shift.getEndTime().substring(0, 5)%>
+                                </td>
+                                <% for (java.time.LocalDate d : days) {
+                                        java.util.List<model.WorkSchedule> schedulesForSlot = new java.util.ArrayList<>();
+                                        for (model.WorkSchedule ws : allSchedules) {
+                                            if (ws.getWorkDate().toString().equals(d.toString())
+                                                    && ws.getShiftId() == shift.getShiftID()) {
+                                                schedulesForSlot.add(ws);
+                                            }
+                                        }
+                                %>
+                                <td>
+                                    <% if (!schedulesForSlot.isEmpty()) {%>
+                                    <span class="missing-info">Còn thiếu <%= 5 - schedulesForSlot.size()%> nhân viên</span>
+                                    <% for (model.WorkSchedule ws : schedulesForSlot) {
+                                            model.Staff st = staffDAO.findById(ws.getStaffId());
+                                    %>
+                                    <div class="shift-card">
+                                        👤 <%= st != null ? st.getName() : "N/A"%>
+                                        <form method="post" action="${pageContext.request.contextPath}/admin/manageSchedule" style="display:inline;">
+                                            <input type="hidden" name="action" value="unassign">
+                                            <input type="hidden" name="scheduleId" value="<%= ws.getScheduleId()%>">
+                                            <button type="submit">✖</button>
+                                        </form>
+                                    </div>
+                                    <% } %>
+                                    <% } else { %>
+                                    <div class="empty-slot">Chưa có nhân viên đăng ký</div>
+                                    <% }%>
+                                    <!-- Nút thêm -->
+                                    <button class="mini-btn" onclick="openAssignModal('<%= d%>', '<%= shift.getShiftID()%>')">➕ Gán</button>
+                                </td>
+                                <% } %>
+                            </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+
+                    <!-- Modal thêm nhân viên -->
+                    <div id="assignModal" class="modal">
+                        <div class="modal-content">
+                            <span class="close-btn" onclick="closeAssignModal()">&times;</span>
+                            <h3 style="text-align:center;">Gán nhân viên vào ca</h3>
+                            <form method="post" action="${pageContext.request.contextPath}/admin/manageSchedule">
+                                <input type="hidden" name="action" value="assign">
+                                <input type="hidden" id="assignDate" name="date">
+                                <input type="hidden" id="assignShiftId" name="shiftType">
+
+                                <label>Chọn nhân viên:</label>
+                                <select name="staffId" required>
+                                    <c:forEach var="s" items="${staffList}">
+                                        <option value="${s.staffId}">${s.name}</option>
+                                    </c:forEach>
+                                </select>
+
+                                <button type="submit" class="mini-btn" style="width:100%;margin-top:10px;">Xác nhận</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <script>
+                        function openAssignModal(date, shiftId) {
+                            document.getElementById("assignDate").value = date;
+                            document.getElementById("assignShiftId").value = shiftId;
+                            document.getElementById("assignModal").style.display = "flex";
+                        }
+                        function closeAssignModal() {
+                            document.getElementById("assignModal").style.display = "none";
+                        }
+                        window.onclick = function (e) {
+                            const modal = document.getElementById("assignModal");
+                            if (e.target === modal)
+                                modal.style.display = "none";
+                        }
+                    </script>
+
+                </div>
+                <!-- ⚙️ QUYỀN ĐĂNG KÝ CA -->
+                <%@ page import="dao.SystemSettingDAO" %>
+                <%
+                    dao.SystemSettingDAO settingDAO = new dao.SystemSettingDAO();
+                    boolean canRegister = settingDAO.isShiftRegistrationEnabled();
+                %>
+
+                <div style="margin-top:25px; background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                    <h3 style="color:#0077b6;">⚙️ Cấp quyền đăng ký ca cho nhân viên</h3>
+                    <p>Cho phép nhân viên đăng ký ca làm việc cho tuần kế tiếp.</p>
+
+                    <form method="post" action="${pageContext.request.contextPath}/admin/toggleShiftRegistration">
+                        <input type="hidden" name="status" value="<%= canRegister ? "OFF" : "ON"%>">
+                        <button type="submit"
+                                style="background:<%= canRegister ? "#f44336" : "#4caf50"%>;
+                                color:white; border:none; padding:10px 16px;
+                                border-radius:8px; cursor:pointer; font-weight:600;">
+                            <%= canRegister ? "🔒 Đang MỞ – Nhấn để TẮT" : "🔓 Đang TẮT – Nhấn để MỞ"%>
+                        </button>
+                    </form>
+
+
+                    <p style="margin-top:10px; color:<%= canRegister ? "#4caf50" : "#f44336"%>; font-weight:600;">
+                        Trạng thái hiện tại: <%= canRegister ? "ĐÃ MỞ đăng ký ca" : "ĐANG TẮT đăng ký ca"%>
+                    </p>
+                </div>
+
+                <div id="salaryModal" class="modal">
+                    <div class="modal-content" style="width:350px;">
+                        <span class="close-btn" onclick="closeSalaryModal()">&times;</span>
+                        <h3 style="text-align:center;">💰 Cập nhật lương theo giờ</h3>
+                        <form id="salaryForm">
+                            <input type="hidden" id="salaryStaffId" name="staffId">
+                            <label>Mức lương/giờ (₫):</label>
+                            <input type="number" id="salaryRate" name="hourlyRate" required min="10000"
+                                   style="width:100%; padding:8px; margin-top:6px;">
+                            <button type="submit" class="mini-btn" style="width:100%;margin-top:10px;">💾 Lưu thay đổi</button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
 
         <script>
+            function openSalaryModal(id, rate) {
+                document.getElementById('salaryStaffId').value = id;
+                document.getElementById('salaryRate').value = rate;
+                document.getElementById('salaryModal').style.display = 'flex';
+            }
+            function closeSalaryModal() {
+                document.getElementById('salaryModal').style.display = 'none';
+            }
+
+            document.getElementById('salaryForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new URLSearchParams(new FormData(e.target)).toString();
+                const res = await fetch('${pageContext.request.contextPath}/admin/updateSalary', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: formData
+                });
+                const data = await res.json();
+                alert(data.message);
+                if (data.status === 'success')
+                    window.location.reload();
+            });
             function showTab(name, el) {
                 document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
                 document.querySelectorAll('.tab-buttons button').forEach(b => b.classList.remove('active'));

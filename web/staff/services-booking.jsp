@@ -78,7 +78,9 @@
             <div class="user-section">
                 <div class="avatar-dropdown">
                     <div class="avatar" onclick="toggleDropdown()">
-                        <img src="${pageContext.request.contextPath}/images/staff-avatar.png" alt="Staff">
+                      <img src="${pageContext.request.contextPath}/${sessionScope.staff.avatar != null ? sessionScope.staff.avatar : 'images/staff-avatar.png'}" 
+                             alt="Staff"
+                             style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
                         <span>${sessionScope.staff.name}</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
@@ -179,46 +181,19 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <c:forEach var="booking" items="${bookings}">
+                            <c:forEach var="b" items="${bookings}">
                                 <tr>
-                                    <td>#${booking.bookingId}</td>
-                                    <td>${booking.customerName}</td>
+                                    <td>${b.bookingId}</td>
+                                    <td>${b.customerName}</td>
+                                    <td>${b.serviceNames}</td>
+                                    <td>${b.petName}</td>
                                     <td>
-                                        <c:if test="${not empty booking.note}">
-                                            ${booking.note}
-                                        </c:if>
-                                        <c:if test="${not empty booking.serviceNames}">
-                                            ${booking.serviceNames}
-                                        </c:if>
+                                        <fmt:formatDate value="${b.appointmentStart}" pattern="dd/MM/yyyy HH:mm" />
                                     </td>
-                                    <td>${booking.petName} (${booking.petType})</td>
+                                    <td>${b.status}</td>
                                     <td>
-                                        <fmt:formatDate value="${booking.appointmentStart}" pattern="dd/MM/yyyy HH:mm"/>
-                                    </td>
-                                    <td>
-                                        <span class="status ${booking.status}">
-                                            ${booking.status}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <c:if test="${booking.status == 'pending'}">
-                                            <button type="button" class="btn-action edit" 
-                                                    onclick="updateStatus(${booking.bookingId}, 'confirmed')">
-                                                <i class="fas fa-check"></i> Confirm
-                                            </button>
-                                        </c:if>
-                                        <c:if test="${booking.status == 'confirmed'}">
-                                            <button type="button" class="btn-action edit" 
-                                                    onclick="updateStatus(${booking.bookingId}, 'in_progress')">
-                                                <i class="fas fa-play"></i> Start
-                                            </button>
-                                        </c:if>
-                                        <c:if test="${booking.status == 'in_progress'}">
-                                            <button type="button" class="btn-action edit" 
-                                                    onclick="updateStatus(${booking.bookingId}, 'completed')">
-                                                <i class="fas fa-check-circle"></i> Complete
-                                            </button>
-                                        </c:if>
+                                        <a href="${pageContext.request.contextPath}/staff/services-booking?action=view&id=${b.bookingId}" 
+                                           class="btn btn-sm btn-outline-info">View</a>
                                     </td>
                                 </tr>
                             </c:forEach>

@@ -521,4 +521,38 @@ public class WorkScheduleDAO {
         }
         return null;
     }
+    public void assignShift(int staffId, String date, int shiftId) {
+        String sqlCheck = "SELECT COUNT(*) FROM WorkSchedule WHERE staff_id=? AND work_date=? AND shift_id=?";
+        String sqlInsert = """
+        INSERT INTO WorkSchedule (staff_id, shift_id, work_date, start_time, end_time, status, note)
+        SELECT ?, s.ShiftID, ?, s.StartTime, s.EndTime, 'Assigned', 'Gán trực tiếp bởi Admin'
+        FROM Shifts s WHERE s.ShiftID = ?
+    """;
+
+        try (Connection con = DBConnection.getConnection()) {
+            // Kiểm tra trùng lịch
+            try (PreparedStatement check = con.prepareStatement(sqlCheck)) {
+                check.setInt(1, staffId);
+                check.setDate(2, Date.valueOf(date));
+                check.setInt(3, shiftId);
+                ResultSet rs = check.executeQuery();
+                if (rs.next() && rs.getInt(1) > 0) {
+                    System.out.println("⚠️ Nhân viên " + staffId + " đã có ca " + shiftId + " ngày " + date);
+                    return;
+                }
+            }
+
+            // Gán mới
+            try (PreparedStatement ps = con.prepareStatement(sqlInsert)) {
+                ps.setInt(1, staffId);
+                ps.setDate(2, Date.valueOf(date));
+                ps.setInt(3, shiftId);
+                int rows = ps.executeUpdate();
+                System.out.println("✅ assignShift(): " + rows + " row(s) inserted for staff=" + staffId);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }

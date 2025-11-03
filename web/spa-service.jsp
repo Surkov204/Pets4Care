@@ -243,14 +243,9 @@
                             </span>
                             <span class="duration-badge"><%= service.getDuration() %> phút</span>
                         </div>
-                        <form method="POST" action="${pageContext.request.contextPath}/spa-booking" style="display: inline;">
-                            <input type="hidden" name="action" value="add-to-cart">
-                            <input type="hidden" name="serviceId" value="<%= service.getServiceId() %>">
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="booking-btn">
-                                🛒 Thêm vào giỏ Spa
-                            </button>
-                        </form>
+                        <a href="<%= request.getContextPath() %>/spa-booking?action=service-detail&serviceId=<%= service.getServiceId() %>" class="booking-btn">
+                            👁️ Xem chi tiết
+                        </a>
                     </div>
                 </div>
                 <% } %>

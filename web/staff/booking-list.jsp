@@ -175,13 +175,13 @@
                                                    class="btn btn-outline-primary btn-sm">
                                                     <i class="fas fa-eye"></i> Xem
                                                 </a>
-                                                <c:if test="${booking.status == 'pending'}">
+                                                <c:if test="${booking.status == 'pending' || booking.status == 'Chưa thanh toán' || booking.status == 'Chờ xác nhận'}">
                                                     <button type="button" class="btn btn-outline-success btn-sm" 
-                                                            onclick="updateStatus(${booking.bookingId}, 'confirmed')">
-                                                        <i class="fas fa-check"></i> Xác nhận
+                                                            onclick="updateStatus(${booking.bookingId}, 'Đã xác nhận')">
+                                                <i class="fas fa-check"></i> Xác nhận
                                                     </button>
                                                 </c:if>
-                                                <c:if test="${booking.status == 'confirmed'}">
+                                                <c:if test="${booking.status == 'Đã xác nhận' || booking.status == 'confirmed'}">
                                                     <button type="button" class="btn btn-outline-info btn-sm" 
                                                             onclick="updateStatus(${booking.bookingId}, 'in_progress')">
                                                         <i class="fas fa-play"></i> Bắt đầu

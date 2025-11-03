@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" isELIgnored="true" %>
 <%@ page import="java.util.*, model.Customer, model.PetServiceModel" %>
 <%@ page import="java.math.BigDecimal" %>
 <%@ page session="true" %>
@@ -55,6 +55,70 @@
             /* Buttons */
             .btn { transition: background-color .3s ease, box-shadow .3s ease, transform .2s ease; }
             .btn:hover { box-shadow: 0 4px 10px rgba(0,0,0,.08); transform: translateY(-1px); }
+
+            /* Time Slot Picker */
+            .time-slot-box {
+                padding: 10px 8px;
+                border: 2px solid #e2e8f0;
+                border-radius: 8px;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                background: white;
+                font-size: 13px;
+                font-weight: 500;
+                color: #475569;
+                min-height: 50px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            .time-slot-box:hover:not(.disabled) {
+                border-color: #3b82f6;
+                background: #eff6ff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+            }
+            .time-slot-box.selected {
+                border-color: #3b82f6;
+                background: #3b82f6;
+                color: white;
+                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            }
+            .time-slot-box.disabled {
+                background: #fee2e2;
+                border-color: #fca5a5;
+                color: #991b1b;
+                cursor: not-allowed;
+                opacity: 0.7;
+                position: relative;
+            }
+            .time-slot-box.disabled::after {
+                content: '✕';
+                position: absolute;
+                top: -4px;
+                right: -4px;
+                background: #dc2626;
+                color: white;
+                border-radius: 50%;
+                width: 18px;
+                height: 18px;
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+            }
+            .time-slot-time {
+                font-size: 14px;
+                font-weight: 600;
+                margin-bottom: 2px;
+            }
+            .time-slot-duration {
+                font-size: 11px;
+                opacity: 0.8;
+            }
         </style>
     </head>
     <body>
@@ -218,10 +282,16 @@
                                     <label class="block text-sm font-medium text-slate-700 mb-1">Ngày</label>
                                     <input type="date" name="date-<%= serviceId%>" class="w-full border border-slate-300 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" min="<%= java.time.LocalDate.now().toString() %>">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Giờ (08:00-18:00)</label>
-                                    <input type="time" name="time-<%= serviceId%>" class="w-full border border-slate-300 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" min="08:00" max="18:00" step="300" placeholder="08:00">
-                                    <p class="text-xs text-slate-500 mt-1">Khung giờ mở cửa 08:00 - 18:00</p>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-slate-700 mb-2">Chọn khung giờ (<%= service.getDuration() * quantity%> phút)</label>
+                                    <div id="time-slots-<%= serviceId%>" class="time-slots-container grid grid-cols-5 gap-2 mb-2 min-h-[120px]">
+                                        <div class="col-span-5 text-center text-gray-500 py-8">
+                                            <i class="fas fa-clock text-2xl mb-2"></i>
+                                            <p>Vui lòng chọn ngày để xem khung giờ</p>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="time-<%= serviceId%>" id="selected-time-<%= serviceId%>" value="">
+                                    <p class="text-xs text-slate-500">Mỗi khung giờ chiếm <%= service.getDuration() * quantity%> phút (thời gian thực hiện dịch vụ). <span class="text-red-600 font-semibold">Khung giờ đỏ</span> = đã bị chiếm (không thể đặt).</p>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1">Thú cưng</label>
@@ -280,6 +350,82 @@
                 </div>
             </div>
             <% }%>
+        </div>
+
+        <!-- Review Section - Giống Lazada/Shopee -->
+        <div class="mx-auto max-w-6xl mt-8 px-4 py-6 rounded-md shadow-md" style="background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow-light);">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-star text-yellow-400 mr-2"></i>
+                    Đánh giá dịch vụ Spa
+                </h2>
+                <p class="text-gray-600 mt-1">Chia sẻ trải nghiệm của bạn về dịch vụ Spa</p>
+            </div>
+
+            <!-- Review Form -->
+            <div id="reviewSection" class="mb-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">📝 Viết đánh giá</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Chọn dịch vụ đã hoàn thành:</label>
+                    <select id="reviewServiceSelect" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Chọn dịch vụ đã hoàn thành --</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Đánh giá sao:</label>
+                    <div class="flex items-center space-x-2" id="starRating">
+                        <button type="button" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="1">★</button>
+                        <button type="button" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="2">★</button>
+                        <button type="button" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="3">★</button>
+                        <button type="button" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="4">★</button>
+                        <button type="button" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="5">★</button>
+                        <span id="ratingText" class="ml-3 text-gray-600"></span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Bình luận:</label>
+                    <textarea id="reviewComment" rows="4" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Chia sẻ trải nghiệm của bạn về dịch vụ..."></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Tối đa 1000 ký tự</p>
+                </div>
+
+                <button id="submitReviewBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-paper-plane mr-2"></i>Gửi đánh giá
+                </button>
+            </div>
+
+            <!-- Reviews List by Service -->
+            <% if (spaServices != null && !spaServices.isEmpty()) { %>
+            <div class="space-y-6">
+                <% for (PetServiceModel service : spaServices) { %>
+                <div class="service-reviews bg-white rounded-lg border border-gray-200 p-6" data-service-id="<%= service.getServiceId() %>">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-semibold text-gray-800">
+                            <i class="fas fa-spa text-blue-500 mr-2"></i>
+                            <%= service.getName() %>
+                        </h4>
+                        <div class="flex items-center">
+                            <span id="avg-rating-<%= service.getServiceId() %>" class="text-sm text-gray-600"></span>
+                        </div>
+                    </div>
+                    
+                    <div id="reviews-list-<%= service.getServiceId() %>" class="space-y-4">
+                        <!-- Reviews will be loaded via AJAX -->
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p>Đang tải đánh giá...</p>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+            <% } else { %>
+            <div class="text-center py-12 text-gray-500">
+                <i class="fas fa-comment-slash text-4xl mb-4"></i>
+                <p>Chưa có dịch vụ nào trong giỏ hàng để xem đánh giá</p>
+            </div>
+            <% } %>
         </div>
 
         <!-- Modal for viewing boarding details -->
@@ -661,46 +807,230 @@
                         options += '<option value="' + p.id + '">' + p.petName + ' (' + p.species + ')</option>';
                     }
                     $('select[name^="pet-"]').each(function(){
-                        this.innerHTML = options;
-                        if (pets.length > 0) this.value = String(pets[0].id);
+                        var petSelect = this;
+                        var name = petSelect.name;
+                        var match = name.match(/pet-(\d+)/);
+                        if (match) {
+                            var serviceId = match[1];
+                            petSelect.innerHTML = options;
+                            if (pets.length > 0) {
+                                petSelect.value = String(pets[0].id);
+                                // Kiểm tra enable button sau khi chọn pet
+                                setTimeout(function() {
+                                    if (typeof checkAndEnableBookButton === 'function') {
+                                        checkAndEnableBookButton(serviceId);
+                                    }
+                                }, 100);
+                            }
+                            // Gắn event listener cho pet select
+                            petSelect.addEventListener('change', function() {
+                                if (typeof checkAndEnableBookButton === 'function') {
+                                    checkAndEnableBookButton(serviceId);
+                                }
+                            });
+                        }
                     });
                 }, 'json');
 
-                // Check single availability
-                window.checkSingleAvailability = function(serviceId, quantity){
-                    const d = document.querySelector('input[name="date-' + serviceId + '"]').value;
-                    const t = document.querySelector('input[name="time-' + serviceId + '"]').value;
-                    const el = document.getElementById('avail-' + serviceId);
-                    if (!d || !t) { el.textContent = 'Vui lòng nhập đủ ngày/giờ'; el.className='text-xs text-red-600'; return; }
-                    const parts = t.split(':');
-                    const hh = parts[0];
-                    const mm = parts[1];
-                    el.textContent = 'Đang kiểm tra...'; el.className='text-xs text-gray-500';
-                    $.post('<%= request.getContextPath()%>/spa-booking', {
-                        action: 'check-single-availability',
+                // Load time slots khi người dùng chọn ngày
+                window.loadTimeSlots = function(serviceId, quantity) {
+                    var dateInput = document.querySelector('input[name="date-' + serviceId + '"]');
+                    var slotsContainer = document.getElementById('time-slots-' + serviceId);
+                    var selectedTimeInput = document.getElementById('selected-time-' + serviceId);
+                    
+                    if (!dateInput) {
+                        console.error('Không tìm thấy date input cho serviceId:', serviceId);
+                        return;
+                    }
+                    
+                    if (!slotsContainer) {
+                        console.error('Không tìm thấy slots container cho serviceId:', serviceId);
+                        return;
+                    }
+                    
+                    if (!dateInput.value) {
+                        slotsContainer.innerHTML = '<div class="col-span-5 text-center text-gray-500 py-8"><i class="fas fa-clock text-2xl mb-2"></i><p>Vui lòng chọn ngày để xem khung giờ</p></div>';
+                        if (selectedTimeInput) selectedTimeInput.value = '';
+                        return;
+                    }
+                    
+                    slotsContainer.innerHTML = '<div class="col-span-5 text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p>Đang tải khung giờ...</p></div>';
+                    
+                    console.log('Loading time slots for serviceId:', serviceId, 'date:', dateInput.value, 'quantity:', quantity);
+                    
+                    $.get('<%= request.getContextPath()%>/spa-booking', {
+                        action: 'get-time-slots',
+                        date: dateInput.value,
                         serviceId: serviceId,
-                        quantity: quantity,
-                        appointmentDate: d,
-                        appointmentTime: hh + ':' + mm
-                    }, function(res){
-                        var btn = document.getElementById('btn-book-' + serviceId);
-                        if (res && res.success) {
-                            el.textContent = '✅ Khả dụng';
-                            el.className='text-xs text-green-600';
-                            if (btn) { btn.disabled = false; btn.classList.remove('opacity-50','cursor-not-allowed'); }
-                        } else {
-                            el.textContent = '❌ Không khả dụng hoặc ngoài giờ';
-                            el.className='text-xs text-red-600';
-                            if (btn) { btn.disabled = true; btn.classList.add('opacity-50','cursor-not-allowed'); }
+                        quantity: quantity
+                    }, function(response) {
+                        console.log('Time slots response:', response);
+                        
+                        if (response.error) {
+                            slotsContainer.innerHTML = '<div class="col-span-5 text-center text-red-500 py-8"><i class="fas fa-exclamation-circle text-2xl mb-2"></i><p>' + response.error + '</p></div>';
+                            return;
                         }
-                    }, 'json');
+                        
+                        if (!response.slots || response.slots.length === 0) {
+                            slotsContainer.innerHTML = '<div class="col-span-5 text-center text-gray-500 py-8"><i class="fas fa-clock text-2xl mb-2"></i><p>Không có khung giờ khả dụng trong ngày này</p></div>';
+                            return;
+                        }
+                        
+                        var html = '';
+                        for (var i = 0; i < response.slots.length; i++) {
+                            var slot = response.slots[i];
+                            var disabledClass = slot.available ? '' : 'disabled';
+                            var slotTime = slot.start;
+                            
+                            html += '<div class="time-slot-box ' + disabledClass + '" ' + 
+                                    (slot.available ? 'onclick="selectTimeSlot(' + serviceId + ', \'' + slotTime + '\')"' : '') +
+                                    ' data-start="' + slot.start + '" data-end="' + slot.end + '">';
+                            html += '<div class="time-slot-time">' + slot.start + ' - ' + slot.end + '</div>';
+                            html += '<div class="time-slot-duration">' + response.totalDuration + ' phút</div>';
+                            html += '</div>';
+                        }
+                        
+                        slotsContainer.innerHTML = html;
+                        if (selectedTimeInput) selectedTimeInput.value = '';
+                        console.log('Time slots loaded:', response.slots.length);
+                        
+                        // Cập nhật validation message sau khi load slots
+                        if (typeof checkAndEnableBookButton === 'function') {
+                            checkAndEnableBookButton(serviceId);
+                        }
+                    }, 'json').fail(function(xhr, status, error) {
+                        console.error('Error loading time slots:', status, error, xhr.responseText);
+                        slotsContainer.innerHTML = '<div class="col-span-5 text-center text-red-500 py-8"><i class="fas fa-exclamation-circle text-2xl mb-2"></i><p>Lỗi khi tải khung giờ: ' + error + '</p></div>';
+                    });
+                }
+                
+                // Hàm chọn time slot
+                window.selectTimeSlot = function(serviceId, time) {
+                    // Xóa selection cũ
+                    document.querySelectorAll('#time-slots-' + serviceId + ' .time-slot-box').forEach(function(box) {
+                        box.classList.remove('selected');
+                    });
+                    
+                    // Thêm selection mới
+                    var boxes = document.querySelectorAll('#time-slots-' + serviceId + ' .time-slot-box');
+                    for (var i = 0; i < boxes.length; i++) {
+                        if (boxes[i].dataset.start === time) {
+                            boxes[i].classList.add('selected');
+                            break;
+                        }
+                    }
+                    
+                    // Cập nhật hidden input
+                    var selectedTimeInput = document.getElementById('selected-time-' + serviceId);
+                    selectedTimeInput.value = time + ':00'; // Format: HH:MM:00
+                    
+                    // Kiểm tra và enable button
+                    checkAndEnableBookButton(serviceId);
+                };
+                
+                // Hàm kiểm tra điều kiện và enable/disable nút đặt dịch vụ + cập nhật validation message
+                function checkAndEnableBookButton(serviceId) {
+                    var dateInput = document.querySelector('input[name="date-' + serviceId + '"]');
+                    var timeInput = document.getElementById('selected-time-' + serviceId);
+                    var petSelect = document.querySelector('select[name="pet-' + serviceId + '"]');
+                    var btn = document.getElementById('btn-book-' + serviceId);
+                    var availSpan = document.getElementById('avail-' + serviceId);
+                    
+                    if (!btn) return;
+                    
+                    var hasDate = dateInput && dateInput.value;
+                    var hasTime = timeInput && timeInput.value;
+                    var hasPet = petSelect && petSelect.value;
+                    var missing = [];
+                    
+                    // Cập nhật validation message
+                    if (availSpan) {
+                        if (hasDate && hasTime && hasPet) {
+                            availSpan.textContent = '✅ Đã sẵn sàng để đặt dịch vụ';
+                            availSpan.className = 'text-xs text-green-600';
+                        } else {
+                            if (!hasDate) missing.push('ngày');
+                            if (!hasTime) missing.push('khung giờ');
+                            if (!hasPet) missing.push('thú cưng');
+                            
+                            if (missing.length > 0) {
+                                availSpan.textContent = 'Vui lòng chọn: ' + missing.join(', ');
+                                availSpan.className = 'text-xs text-red-600';
+                            } else {
+                                availSpan.textContent = '';
+                                availSpan.className = 'text-sm text-gray-600';
+                            }
+                        }
+                    }
+                    
+                    // Enable/disable button
+                    if (hasDate && hasTime && hasPet) {
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        btn.title = 'Đặt dịch vụ';
+                    } else {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-50', 'cursor-not-allowed');
+                        btn.title = 'Vui lòng chọn: ' + missing.join(', ');
+                    }
+                }
+                
+                // Gắn sự kiện change cho date inputs và load time slots nếu đã có ngày
+                function initTimeSlotPickers() {
+                    var dateInputs = document.querySelectorAll('input[type="date"][name^="date-"]');
+                    dateInputs.forEach(function(dateInput) {
+                        var name = dateInput.name;
+                        var match = name.match(/date-(\d+)/);
+                        if (!match) return;
+                        
+                        var serviceId = match[1];
+                        var form = dateInput.closest('form');
+                        if (!form) return;
+                        
+                        // Lấy quantity từ form attribute hoặc default = 1
+                        var quantity = form.getAttribute('data-quantity') ? parseInt(form.getAttribute('data-quantity')) : 1;
+                        
+                        // Gắn event listener
+                        dateInput.addEventListener('change', function() {
+                            loadTimeSlots(serviceId, quantity);
+                            // Reset selection khi đổi ngày
+                            var selectedTimeInput = document.getElementById('selected-time-' + serviceId);
+                            if (selectedTimeInput) selectedTimeInput.value = '';
+                            // Kiểm tra và cập nhật button state
+                            if (typeof checkAndEnableBookButton === 'function') {
+                                checkAndEnableBookButton(serviceId);
+                            }
+                        });
+                        
+                        // Nếu date input đã có giá trị, load time slots ngay
+                        if (dateInput.value) {
+                            setTimeout(function() {
+                                loadTimeSlots(serviceId, quantity);
+                            }, 100);
+                        }
+                    });
+                }
+                
+                // Khởi tạo ngay khi script chạy và sau khi DOM ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initTimeSlotPickers);
+                } else {
+                    initTimeSlotPickers();
+                }
+
+                // Check single availability - Giữ lại nhưng đơn giản hóa vì đã có time slot picker
+                window.checkSingleAvailability = function(serviceId, quantity){
+                    // Vì đã có time slot picker tự động validate, chỉ cần kiểm tra lại validation
+                    if (typeof checkAndEnableBookButton === 'function') {
+                        checkAndEnableBookButton(serviceId);
+                    }
                 };
 
                 // Submit single service
                 window.submitSingleService = function(e, serviceId, quantity){
                     e.preventDefault();
                     const d = document.querySelector('input[name="date-' + serviceId + '"]').value;
-                    const t = document.querySelector('input[name="time-' + serviceId + '"]').value;
+                    const t = document.getElementById('selected-time-' + serviceId).value;
                     const pet = document.querySelector('select[name="pet-' + serviceId + '"]').value;
                     const note = document.querySelector('input[name="note-' + serviceId + '"]').value || '';
                     if (!d || !t || !pet) { alert('Vui lòng nhập đủ ngày/giờ và chọn thú cưng'); return false; }
@@ -754,6 +1084,215 @@
                     if (elPet)  elPet.textContent  = p;
                     // Auto check availability when all fields present
                     if (sid && qty) checkSingleAvailability(parseInt(sid,10), parseInt(qty,10));
+                });
+            });
+
+            // ====== REVIEW FUNCTIONALITY ======
+            let selectedRating = 0;
+            let selectedBookingId = 0;
+            let selectedServiceId = 0;
+
+            // Star rating interaction
+            $('.star-btn').on('click', function() {
+                const rating = parseInt($(this).data('rating'));
+                selectedRating = rating;
+                updateStarDisplay(rating);
+            });
+
+            $('.star-btn').on('mouseenter', function() {
+                const rating = parseInt($(this).data('rating'));
+                highlightStars(rating);
+            });
+
+            $('#starRating').on('mouseleave', function() {
+                if (selectedRating > 0) {
+                    updateStarDisplay(selectedRating);
+                } else {
+                    $('.star-btn').removeClass('text-yellow-400').addClass('text-gray-300');
+                }
+            });
+
+            function highlightStars(rating) {
+                $('.star-btn').each(function() {
+                    const btnRating = parseInt($(this).data('rating'));
+                    if (btnRating <= rating) {
+                        $(this).removeClass('text-gray-300').addClass('text-yellow-400');
+                    } else {
+                        $(this).removeClass('text-yellow-400').addClass('text-gray-300');
+                    }
+                });
+            }
+
+            function updateStarDisplay(rating) {
+                highlightStars(rating);
+                const texts = ['', 'Rất không hài lòng', 'Không hài lòng', 'Bình thường', 'Hài lòng', 'Rất hài lòng'];
+                $('#ratingText').text(texts[rating] || '');
+            }
+
+            // Load completed bookings for review dropdown
+            function loadCompletedBookings() {
+                $.get('<%= request.getContextPath()%>/spa-booking', {
+                    action: 'get-completed-bookings'
+                }, function(data) {
+                    if (data && data.bookings && data.bookings.length > 0) {
+                        let options = '<option value="">-- Chọn dịch vụ đã hoàn thành --</option>';
+                        data.bookings.forEach(function(booking) {
+                            options += `<option value="${booking.bookingId}_${booking.serviceId}" 
+                                          data-booking-id="${booking.bookingId}" 
+                                          data-service-id="${booking.serviceId}"
+                                          data-service-name="${booking.serviceName}">
+                                          ${booking.serviceName} - Booking #${booking.bookingId} (${booking.bookingDate})
+                                       </option>`;
+                        });
+                        $('#reviewServiceSelect').html(options);
+                    } else {
+                        $('#reviewServiceSelect').html('<option value="">-- Chưa có dịch vụ nào hoàn thành --</option>');
+                    }
+                }, 'json').fail(function() {
+                    $('#reviewServiceSelect').html('<option value="">-- Không thể tải danh sách --</option>');
+                });
+            }
+
+            // Handle service selection
+            $('#reviewServiceSelect').on('change', function() {
+                const val = $(this).val();
+                if (val) {
+                    const option = $(this).find('option:selected');
+                    selectedBookingId = parseInt(option.data('booking-id'));
+                    selectedServiceId = parseInt(option.data('service-id'));
+                    
+                    // Check if already reviewed
+                    $.get('<%= request.getContextPath()%>/spa-booking', {
+                        action: 'check-review-exists',
+                        bookingId: selectedBookingId,
+                        serviceId: selectedServiceId
+                    }, function(data) {
+                        if (data.exists) {
+                            alert('⚠️ Bạn đã đánh giá dịch vụ này rồi!');
+                            $('#reviewServiceSelect').val('');
+                            selectedBookingId = 0;
+                            selectedServiceId = 0;
+                        }
+                    }, 'json');
+                } else {
+                    selectedBookingId = 0;
+                    selectedServiceId = 0;
+                }
+            });
+
+            // Submit review
+            $('#submitReviewBtn').on('click', function() {
+                if (!selectedBookingId || !selectedServiceId) {
+                    alert('⚠️ Vui lòng chọn dịch vụ đã hoàn thành');
+                    return;
+                }
+                if (selectedRating < 1 || selectedRating > 5) {
+                    alert('⚠️ Vui lòng đánh giá sao (1-5 sao)');
+                    return;
+                }
+                
+                const comment = $('#reviewComment').val().trim();
+                if (comment.length > 1000) {
+                    alert('⚠️ Bình luận không được quá 1000 ký tự');
+                    return;
+                }
+
+                $(this).prop('disabled', true).text('Đang gửi...');
+
+                $.post('<%= request.getContextPath()%>/spa-booking', {
+                    action: 'submit-review',
+                    bookingId: selectedBookingId,
+                    serviceId: selectedServiceId,
+                    rating: selectedRating,
+                    comment: comment
+                }, function(data) {
+                    if (data.success) {
+                        alert('✅ Cảm ơn bạn đã đánh giá!');
+                        $('#reviewServiceSelect').val('');
+                        $('#reviewComment').val('');
+                        selectedRating = 0;
+                        updateStarDisplay(0);
+                        $('#ratingText').text('');
+                        // Reload reviews
+                        loadServiceReviews(selectedServiceId);
+                    } else {
+                        alert('❌ ' + (data.message || 'Có lỗi xảy ra'));
+                    }
+                    $('#submitReviewBtn').prop('disabled', false).html('<i class="fas fa-paper-plane mr-2"></i>Gửi đánh giá');
+                }, 'json').fail(function() {
+                    alert('❌ Lỗi kết nối. Vui lòng thử lại');
+                    $('#submitReviewBtn').prop('disabled', false).html('<i class="fas fa-paper-plane mr-2"></i>Gửi đánh giá');
+                });
+            });
+
+            // Load reviews for a service
+            function loadServiceReviews(serviceId) {
+                const $container = $(`#reviews-list-${serviceId}`);
+                $container.html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-xl"></i></div>');
+
+                $.get('<%= request.getContextPath()%>/spa-booking', {
+                    action: 'get-service-reviews',
+                    serviceId: serviceId,
+                    limit: 10
+                }, function(data) {
+                    if (data && data.reviews && data.reviews.length > 0) {
+                        let html = '';
+                        let totalRating = 0;
+                        
+                        data.reviews.forEach(function(review) {
+                            totalRating += review.rating;
+                            const date = new Date(review.createdAt).toLocaleDateString('vi-VN');
+                            const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+                            
+                            html += `
+                                <div class="review-item border-b border-gray-200 pb-4 last:border-0">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                                ${(review.customerName || 'Khách').charAt(0).toUpperCase()}
+                                            </div>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div>
+                                                    <div class="font-semibold text-gray-800">${review.customerName || 'Khách hàng'}</div>
+                                                    <div class="text-yellow-400 text-lg">${stars}</div>
+                                                </div>
+                                                <div class="text-sm text-gray-500">${date}</div>
+                                            </div>
+                                            ${review.comment ? `<p class="text-gray-700 mt-2">${review.comment}</p>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        const avgRating = (totalRating / data.reviews.length).toFixed(1);
+                        $(`#avg-rating-${serviceId}`).html(
+                            `<span class="text-yellow-400 text-xl">★</span> ` +
+                            `<span class="font-semibold">${avgRating}</span> ` +
+                            `<span class="text-gray-500">(${data.reviews.length} đánh giá)</span>`
+                        );
+                        
+                        $container.html(html);
+                    } else {
+                        $container.html('<div class="text-center py-8 text-gray-500"><i class="fas fa-comment-slash text-3xl mb-2"></i><p>Chưa có đánh giá nào</p></div>');
+                        $(`#avg-rating-${serviceId}`).html('<span class="text-gray-500">Chưa có đánh giá</span>');
+                    }
+                }, 'json').fail(function() {
+                    $container.html('<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-triangle text-xl mb-2"></i><p>Lỗi khi tải đánh giá</p></div>');
+                });
+            }
+
+            // Load reviews for all services in cart on page load
+            $(document).ready(function() {
+                loadCompletedBookings();
+                
+                $('.service-reviews').each(function() {
+                    const serviceId = $(this).data('service-id');
+                    if (serviceId) {
+                        loadServiceReviews(serviceId);
+                    }
                 });
             });
         </script>

@@ -103,7 +103,21 @@ public class ReviewDAO implements IReviewDAO {
         }
         r.setRating     (rs.getInt("rating"));
         r.setComment    (rs.getString("comment"));
-        r.setCreatedAt  (rs.getTimestamp("created_at"));
+        try {
+            // created_at có thể là datetime2(7) nên cần convert
+            java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+            if (createdAt != null) {
+                r.setCreatedAt(createdAt);
+            }
+        } catch (SQLException e) {
+            // Nếu không lấy được timestamp, thử lấy datetime
+            try {
+                java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+                r.setCreatedAt(createdAt);
+            } catch (SQLException e2) {
+                System.err.println("Error getting created_at: " + e2.getMessage());
+            }
+        }
         r.setCustomerName(rs.getString("customer_name"));
         return r;
     }
@@ -170,6 +184,139 @@ public class ReviewDAO implements IReviewDAO {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return mapRow(rs);
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public boolean hasPurchasedService(int customerId, int serviceId) {
+        String sql = """
+            SELECT COUNT(*) 
+            FROM Booking b
+            JOIN Booking_Service bs ON b.booking_id = bs.booking_id
+            WHERE b.customer_id = ? 
+              AND bs.service_id = ?
+            """;
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ps.setInt(2, serviceId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1) > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Lấy booking_id và service_id từ Booking_Service mà customer đã sử dụng
+     * Trả về booking_id đầu tiên tìm thấy
+     */
+    public Integer getBookingIdForService(int customerId, int serviceId) {
+        String sql = """
+            SELECT TOP 1 bs.booking_id
+            FROM Booking b
+            JOIN Booking_Service bs ON b.booking_id = bs.booking_id
+            WHERE b.customer_id = ? 
+              AND bs.service_id = ?
+            ORDER BY b.created_at DESC
+            """;
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ps.setInt(2, serviceId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("booking_id");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public boolean update(Review r) {
+        String sql = "UPDATE Review SET rating = ?, comment = ? WHERE review_id = ? AND customer_id = ?";
+        
+        System.out.println("ReviewDAO.update: reviewId=" + r.getReviewId() + ", customerId=" + r.getCustomerId() + ", rating=" + r.getRating() + ", comment=" + r.getComment());
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, r.getRating());
+            ps.setString(2, r.getComment());
+            ps.setInt(3, r.getReviewId());
+            ps.setInt(4, r.getCustomerId());
+            
+            int rows = ps.executeUpdate();
+            System.out.println("ReviewDAO.update: rows affected = " + rows);
+            
+            if (rows == 0) {
+                // Kiểm tra xem review có tồn tại không
+                String checkSql = "SELECT COUNT(*) FROM Review WHERE review_id = ? AND customer_id = ?";
+                try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+                    checkPs.setInt(1, r.getReviewId());
+                    checkPs.setInt(2, r.getCustomerId());
+                    try (java.sql.ResultSet rs = checkPs.executeQuery()) {
+                        if (rs.next()) {
+                            int count = rs.getInt(1);
+                            System.out.println("ReviewDAO.update: Review exists check: " + count);
+                        }
+                    }
+                }
+            }
+            
+            return rows > 0;
+        } catch (SQLException e) {
+            System.err.println("ReviewDAO.update: SQL Error: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("ReviewDAO.update: Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean delete(int reviewId) {
+        String sql = "DELETE FROM Review WHERE review_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, reviewId);
+            
+            int rows = ps.executeUpdate();
+            return rows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public Review getReviewById(int reviewId) {
+        String sql = """
+            SELECT r.*, c.name AS customer_name
+            FROM Review r
+            LEFT JOIN Customer c ON r.customer_id = c.customer_id
+            WHERE r.review_id = ?
+            """;
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, reviewId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return mapRow(rs);
+            } else {
+                System.out.println("ReviewDAO: No review found with ID: " + reviewId);
+            }
+        } catch (Exception e) {
+            System.err.println("ReviewDAO: Error getting review by ID " + reviewId + ": " + e.getMessage());
             e.printStackTrace();
         }
         return null;

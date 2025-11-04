@@ -8,6 +8,7 @@ import utils.DBConnection;
 import utils.PayOSConfig;
 import utils.PayOSUtils;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,12 +57,39 @@ public class PayOSService {
             this.lastPayOSRequest = requestBody;
             
             System.out.println("🌐 Calling PayOS API...");
-            String response;
+            String response = null;
+            String errorResponse = null;
             try {
                 response = PayOSUtils.makePayOSRequest("/payment-requests", "POST", requestBody, null);
                 System.out.println("🔍 PayOS API call completed, response length: " + (response != null ? response.length() : "NULL"));
-            } catch (Exception e) {
+            } catch (IOException e) {
                 System.err.println("❌ PayOS API call failed: " + e.getMessage());
+                e.printStackTrace();
+                
+                // Cố gắng extract response từ error message nếu có
+                String errorMsg = e.getMessage();
+                if (errorMsg != null && errorMsg.contains(":")) {
+                    int colonIndex = errorMsg.indexOf(":");
+                    if (colonIndex > 0 && colonIndex < errorMsg.length() - 1) {
+                        String extractedResponse = errorMsg.substring(colonIndex + 1).trim();
+                        // Nếu error message chứa JSON response
+                        if (extractedResponse.startsWith("{") || extractedResponse.startsWith("[")) {
+                            errorResponse = extractedResponse;
+                            response = errorResponse; // Dùng response này để parse error
+                        }
+                    }
+                }
+                
+                this.lastPayOSError = errorMsg;
+                this.lastPayOSResponse = errorResponse != null ? errorResponse : null;
+                
+                // Nếu có response để parse (JSON error từ PayOS), tiếp tục parse
+                // Nếu không, return null ngay
+                if (response == null) {
+                    return null;
+                }
+            } catch (Exception e) {
+                System.err.println("❌ PayOS API call failed with exception: " + e.getMessage());
                 e.printStackTrace();
                 this.lastPayOSError = e.getMessage();
                 this.lastPayOSResponse = null;
@@ -70,7 +98,9 @@ public class PayOSService {
             
             // Store response for debugging
             this.lastPayOSResponse = response;
-            this.lastPayOSError = null;
+            if (errorResponse == null) {
+                this.lastPayOSError = null;
+            }
             
             // Debug: Log response details
             System.out.println("📥 PayOS API Response received:");
@@ -101,6 +131,9 @@ public class PayOSService {
                 if (!"00".equals(code) && !"200".equals(code)) {
                     System.err.println("❌ PayOS API Error Code: " + code);
                     System.err.println("❌ PayOS API Error Description: " + desc);
+                    // Lưu error message chi tiết
+                    this.lastPayOSError = "Code: " + code + ", Description: " + desc;
+                    this.lastPayOSResponse = response; // Lưu response để debug
                     return null;
                 }
             }
@@ -265,9 +298,13 @@ public class PayOSService {
                     if (orderExists(orderCode)) {
                         // Cập nhật trạng thái thanh toán trong [Order]
                         updated = updatePaymentStatus(orderCode, "Da thanh toan", new Timestamp(System.currentTimeMillis()));
+                    } else if (serviceBookingExists(orderCode)) {
+                        // Kiểm tra xem có phải service booking không (trong bảng Booking với order_id = orderCode)
+                        System.out.println("ℹ️ Order #" + orderCode + " found in Booking table, updating service bookings...");
+                        updated = updateServiceBookingPaymentStatus(orderCode, "Đã thanh toán");
                     } else {
-                        // Không thấy trong [Order] → thử cập nhật cho booking lưu trú
-                        System.err.println("ℹ️ Order #" + orderCode + " not found in [Order], trying boarding_bookings...");
+                        // Không thấy trong [Order] và Booking → thử cập nhật cho booking lưu trú
+                        System.out.println("ℹ️ Order #" + orderCode + " not found in [Order] or Booking, trying boarding_bookings...");
                         updated = updateBoardingPaymentStatus(orderCode, "Đã thanh toán");
                     }
                     
@@ -316,6 +353,32 @@ public class PayOSService {
             
         } catch (Exception e) {
             System.err.println("❌ ERROR checking if order exists: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Kiểm tra xem service booking có tồn tại trong bảng Booking không (theo order_id)
+     */
+    private boolean serviceBookingExists(int orderCode) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "SELECT COUNT(*) FROM dbo.Booking WHERE order_id = ? OR booking_id = ?")) {
+            
+            ps.setInt(1, orderCode);
+            ps.setInt(2, orderCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int count = rs.getInt(1);
+                    System.out.println("🔍 Service booking #" + orderCode + " exists: " + (count > 0));
+                    return count > 0;
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERROR checking if service booking exists: " + e.getMessage());
             e.printStackTrace();
         }
         
@@ -389,7 +452,28 @@ public class PayOSService {
     }
 
     /**
-     * Cập nhật trạng thái cho booking Spa/Service (nếu tồn tại theo orderCode)
+     * Cập nhật trạng thái thanh toán cho service booking (theo order_id, cập nhật tất cả bookings cùng order)
+     * Public để có thể gọi từ PayOSController khi verify payment
+     */
+    public boolean updateServiceBookingPaymentStatus(int orderCode, String status) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "UPDATE dbo.Booking SET status = ?, updated_at = GETDATE() WHERE order_id = ? OR booking_id = ?")) {
+            ps.setString(1, status);
+            ps.setInt(2, orderCode);
+            ps.setInt(3, orderCode);
+            int rows = ps.executeUpdate();
+            System.out.println("Service booking payment update rows: " + rows + " for orderCode: " + orderCode);
+            return rows > 0;
+        } catch (Exception e) {
+            System.err.println("ERROR updating service booking payment status: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Cập nhật trạng thái cho booking Spa/Service (nếu tồn tại theo bookingId đơn lẻ - dùng cho refund)
      */
     private boolean updateServiceBookingStatus(int bookingId, String status) {
         try (Connection conn = DBConnection.getConnection();
@@ -432,6 +516,33 @@ public class PayOSService {
         }
         
         return orderInfo;
+    }
+    
+    /**
+     * Lấy payment status từ PayOS API
+     */
+    public String getPaymentStatusFromPayOS(int orderCode) {
+        try {
+            System.out.println("🔍 Checking payment status from PayOS for orderCode: " + orderCode);
+            String endpoint = "/payment-requests/" + orderCode;
+            String response = PayOSUtils.makePayOSRequest(endpoint, "GET", null, null);
+            
+            if (response != null) {
+                JsonObject json = PayOSUtils.parsePayOSResponse(response);
+                if (json.has("data")) {
+                    JsonObject data = json.getAsJsonObject("data");
+                    if (data.has("status")) {
+                        String status = data.get("status").getAsString();
+                        System.out.println("📊 PayOS payment status for orderCode " + orderCode + ": " + status);
+                        return status;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error getting payment status from PayOS: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
     }
     
 }

@@ -114,7 +114,7 @@ public class HealthCheckBookingService {
             booking.setPetId(pet.getId());
             booking.setAppointmentStart(appointmentStart);
             booking.setAppointmentEnd(appointmentEnd);
-            booking.setStatus("pending");
+            booking.setStatus("Chưa thanh toán");
             booking.setNote(note != null ? note.trim() : "");
             booking.setCreatedAt(new Timestamp(System.currentTimeMillis()));
             booking.setDoctorId(doctorId);

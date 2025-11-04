@@ -45,7 +45,7 @@
     
     if (pet != null) {
         petName = pet.getPetName() != null ? pet.getPetName() : "Chưa có tên";
-        species = pet.getSpecies() != null ? pet.getSpecies() : "Chưa có thông tin";
+        species = pet.getSpeciesDisplayName();
         breed = pet.getBreed() != null ? pet.getBreed() : "Chưa có thông tin";
         gender = pet.getGender() != null ? (pet.getGender().equals("male") ? "Đực" : "Cái") : "Chưa có thông tin";
         age = pet.getAge();

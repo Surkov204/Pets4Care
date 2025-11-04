@@ -95,14 +95,6 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
         }
-        .quantity-input {
-            width: 80px;
-            text-align: center;
-            padding: 0.5rem;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1.1rem;
-        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -202,6 +194,31 @@
 
     <!-- Main Content -->
     <main class="container mx-auto px-6 py-10">
+        <!-- Success/Error Messages -->
+        <% 
+            String successMessage = (String) session.getAttribute("successMessage");
+            String errorMessage = (String) session.getAttribute("errorMessage");
+            if (successMessage != null) {
+                session.removeAttribute("successMessage");
+        %>
+        <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle mr-2"></i>
+                <span><%= successMessage %></span>
+            </div>
+        </div>
+        <% } %>
+        <% if (errorMessage != null) {
+            session.removeAttribute("errorMessage");
+        %>
+        <div class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                <span><%= errorMessage %></span>
+            </div>
+        </div>
+        <% } %>
+        
         <!-- Service Detail Card -->
         <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
             <div class="grid md:grid-cols-2 gap-8">
@@ -274,22 +291,59 @@
 
                     <!-- Description -->
                     <div class="border-t pt-4">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-2">📝 Mô tả dịch vụ</h3>
-                        <p class="text-gray-700 leading-relaxed">
-                            <%= service.getDescription() != null && !service.getDescription().trim().isEmpty() 
-                                ? service.getDescription() 
-                                : "Dịch vụ spa chuyên nghiệp cho thú cưng của bạn. Được thực hiện bởi đội ngũ kỹ thuật viên giàu kinh nghiệm với các sản phẩm an toàn, tự nhiên." %>
-                        </p>
-                    </div>
-
-                    <!-- Quantity Selection -->
-                    <div class="flex items-center gap-4 border-t pt-4">
-                        <label for="quantity" class="text-lg font-semibold text-gray-800">Số lượng:</label>
-                        <div class="flex items-center gap-2">
-                            <button type="button" onclick="decreaseQuantity()" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg font-bold">-</button>
-                            <input type="number" id="quantity" name="quantity" value="1" min="1" max="10" class="quantity-input" readonly>
-                            <button type="button" onclick="increaseQuantity()" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg font-bold">+</button>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                            <i class="fas fa-info-circle mr-2 text-blue-500"></i>Mô tả chi tiết dịch vụ
+                        </h3>
+                        <div class="text-gray-700 leading-relaxed bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-sm description-content">
+                            <% 
+                            String description = service.getDescription();
+                            if (description == null || description.trim().isEmpty()) {
+                                description = "Dịch vụ spa chuyên nghiệp cho thú cưng của bạn. Được thực hiện bởi đội ngũ kỹ thuật viên giàu kinh nghiệm với các sản phẩm an toàn, tự nhiên.";
+                            }
+                            // Format description: replace newlines with HTML line breaks
+                            description = description.replace("\r\n", "<br>").replace("\n", "<br>");
+                            %>
+                            <div id="descriptionText" class="whitespace-pre-line" style="white-space: pre-wrap; word-wrap: break-word;"><%= description %></div>
                         </div>
+                        <div id="descriptionToggle" class="mt-3 text-center" style="display: none;">
+                            <button onclick="toggleDescription()" 
+                                    class="text-blue-600 hover:text-blue-800 font-semibold text-sm transition-colors flex items-center gap-2 mx-auto">
+                                <span id="toggleText">Xem thêm</span>
+                                <i class="fas fa-chevron-down" id="toggleIcon"></i>
+                            </button>
+                        </div>
+                        <style>
+                            .description-content {
+                                font-size: 15px;
+                                line-height: 1.8;
+                            }
+                            .description-content br {
+                                display: block;
+                                margin: 8px 0;
+                            }
+                            #descriptionText.collapsed {
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                max-height: 7.2em; /* 4 lines * 1.8 line-height */
+                                position: relative;
+                            }
+                            #descriptionText.collapsed::after {
+                                content: '';
+                                position: absolute;
+                                bottom: 0;
+                                left: 0;
+                                right: 0;
+                                height: 2em;
+                                background: linear-gradient(to bottom, transparent, rgba(249, 250, 251, 0.9));
+                                pointer-events: none;
+                            }
+                            #toggleIcon {
+                                transition: transform 0.3s ease;
+                            }
+                            #toggleIcon.expanded {
+                                transform: rotate(180deg);
+                            }
+                        </style>
                     </div>
 
                     <!-- Add to Cart Button -->
@@ -308,14 +362,14 @@
         </div>
 
         <!-- Reviews Section -->
-        <div class="bg-white rounded-lg shadow-lg p-8 mt-8">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-3xl font-bold text-gray-800">⭐ Đánh giá dịch vụ</h2>
+        <div class="bg-white rounded-lg shadow-lg p-5 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-800">⭐ Đánh giá dịch vụ</h2>
                 <div class="text-right">
-                    <div class="text-2xl font-bold text-orange-600">
+                    <div class="text-lg font-bold text-orange-600">
                         <%= avgRating > 0 ? String.format("%.1f", avgRating) : "0.0" %>/5.0
                     </div>
-                    <div class="text-sm text-gray-600">
+                    <div class="text-xs text-gray-600">
                         <% if (reviews != null && !reviews.isEmpty()) { %>
                             Từ <%= reviews.size() %> đánh giá
                         <% } else { %>
@@ -326,20 +380,20 @@
             </div>
             
             <% if (reviews == null || reviews.isEmpty()) { %>
-            <div class="text-center py-16 bg-gray-50 rounded-lg">
-                <div class="text-6xl mb-4">📝</div>
-                <p class="text-gray-600 text-lg font-medium mb-2">Chưa có đánh giá nào cho dịch vụ này</p>
-                <p class="text-gray-500 text-sm">Hãy là người đầu tiên đánh giá dịch vụ này sau khi sử dụng!</p>
+            <div class="text-center py-8 bg-gray-50 rounded-lg">
+                <div class="text-4xl mb-2">📝</div>
+                <p class="text-gray-600 text-base font-medium mb-1">Chưa có đánh giá nào cho dịch vụ này</p>
+                <p class="text-gray-500 text-xs">Hãy là người đầu tiên đánh giá dịch vụ này sau khi sử dụng!</p>
             </div>
             <% } else { %>
             <!-- Rating Summary -->
-            <div class="mb-6 pb-4 border-b">
-                <div class="mb-3">
-                    <button onclick="filterReviews(0)" id="filter-all" class="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition mr-2 font-medium">
+            <div class="mb-4 pb-3 border-b">
+                <div class="mb-2">
+                    <button onclick="filterReviews(0)" id="filter-all" class="px-2 py-1 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition mr-2 font-medium">
                         Tất cả
                     </button>
                 </div>
-                <div class="space-y-2">
+                <div class="space-y-1">
                     <% 
                         int[] ratingCounts = new int[6]; // 0-5
                         if (reviews != null) {
@@ -351,47 +405,47 @@
                         }
                     %>
                     <% for (int star = 5; star >= 1; star--) { %>
-                        <div class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-1.5 rounded transition-colors" 
+                        <div class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded transition-colors" 
                              onclick="filterReviews(<%= star %>)" 
                              id="filter-rating-<%= star %>"
                              data-rating="<%= star %>">
-                            <div class="flex items-center gap-1.5 min-w-[80px]">
-                                <span class="text-gray-700 text-sm font-medium"><%= star %> sao</span>
+                            <div class="flex items-center gap-1 min-w-[70px]">
+                                <span class="text-gray-700 text-xs font-medium"><%= star %> sao</span>
                                 <div class="flex">
                                     <% for (int i = 0; i < star; i++) { %>
                                     <i class="fas fa-star text-yellow-400 text-xs"></i>
                                     <% } %>
                                 </div>
                             </div>
-                            <div class="flex-1 bg-gray-200 rounded-full h-2 max-w-xs">
+                            <div class="flex-1 bg-gray-200 rounded-full h-1.5 max-w-xs">
                                 <% 
                                     double percentage = 0;
                                     if (reviews != null && reviews.size() > 0) {
                                         percentage = (ratingCounts[star] * 100.0) / reviews.size();
                                     }
                                 %>
-                                <div class="bg-yellow-400 h-2 rounded-full" 
+                                <div class="bg-yellow-400 h-1.5 rounded-full" 
                                      style="width: <%= String.format("%.1f", percentage) %>%"></div>
                             </div>
-                            <span class="text-gray-600 text-xs font-medium min-w-[2rem] text-right"><%= ratingCounts[star] %></span>
+                            <span class="text-gray-600 text-xs font-medium min-w-[1.5rem] text-right"><%= ratingCounts[star] %></span>
                         </div>
                     <% } %>
                 </div>
             </div>
             
             <!-- Reviews List -->
-            <div class="space-y-6" id="reviews-container">
+            <div class="space-y-3" id="reviews-container">
                 <% 
                 if (reviews != null && !reviews.isEmpty()) {
                     for (Review review : reviews) {
                         if (review == null) continue;
                 %>
-                <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow review-item" 
+                <div class="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow review-item" 
                      data-rating="<%= review.getRating() %>"
                      style="opacity: 1; transition: opacity 0.3s ease;">
-                    <div class="flex items-start gap-4">
+                    <div class="flex items-start gap-3">
                         <!-- Avatar -->
-                        <div class="w-14 h-14 bg-gradient-to-br from-orange-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                        <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                             <% 
                                 String customerName = review.getCustomerName();
                                 String initial = "U";
@@ -405,28 +459,52 @@
                         
                         <!-- Review Content -->
                         <div class="flex-1">
-                            <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center justify-between mb-2">
                                 <div>
-                                    <span class="font-semibold text-gray-800 text-lg">
+                                    <span class="font-semibold text-gray-800 text-sm">
                                         <%= customerName != null && !customerName.isEmpty() ? customerName : "Khách hàng" %>
                                     </span>
-                                    <span class="text-gray-500 text-sm ml-2">
+                                    <span class="text-gray-500 text-xs ml-2">
                                         <% if (review.getCreatedAt() != null) { %>
                                             <%= new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(review.getCreatedAt()) %>
                                         <% } %>
                                     </span>
                                 </div>
-                                <div class="flex items-center gap-1">
+                                <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-0.5">
+                                        <% 
+                                            int rating = review.getRating();
+                                            for (int i = 1; i <= 5; i++) {
+                                                if (i <= rating) {
+                                        %>
+                                        <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                        <% } else { %>
+                                        <i class="far fa-star text-yellow-400 text-xs"></i>
+                                        <% } } %>
+                                        <span class="ml-1 text-gray-600 text-xs font-medium"><%= rating %>/5</span>
+                                    </div>
                                     <% 
-                                        int rating = review.getRating();
-                                        for (int i = 1; i <= 5; i++) {
-                                            if (i <= rating) {
+                                        // Hiển thị nút edit/delete nếu là comment của chính customer
+                                        if (currentUser != null && review.getCustomerId() == currentUser.getCustomerId()) {
                                     %>
-                                    <i class="fas fa-star text-yellow-400"></i>
-                                    <% } else { %>
-                                    <i class="far fa-star text-yellow-400"></i>
-                                    <% } } %>
-                                    <span class="ml-2 text-gray-600 font-medium"><%= rating %>/5</span>
+                                    <div class="flex items-center gap-1.5">
+                                        <button onclick="editReview(<%= review.getReviewId() %>, <%= review.getRating() %>, '<%= 
+                                            (review.getComment() != null ? review.getComment()
+                                                .replace("\\", "\\\\")
+                                                .replace("'", "\\'")
+                                                .replace("\"", "&quot;")
+                                                .replace("\n", "\\n")
+                                                .replace("\r", "\\r")
+                                                .replace("\t", "\\t") : "") %>')" 
+                                                class="text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors">
+                                            <i class="fas fa-edit mr-0.5"></i>Sửa
+                                        </button>
+                                        <button onclick="deleteReview(<%= review.getReviewId() %>, <%= service.getServiceId() %>)" 
+                                                class="text-red-600 hover:text-red-800 text-xs font-medium transition-colors">
+                                            <i class="fas fa-trash mr-0.5"></i>Xóa
+                                        </button>
+                                    </div>
+                                    <% } %>
                                 </div>
                             </div>
                             
@@ -434,11 +512,11 @@
                                 String comment = review.getComment();
                                 if (comment != null && !comment.trim().isEmpty()) {
                             %>
-                            <div class="bg-gray-50 rounded-lg p-4 mt-3">
-                                <p class="text-gray-700 leading-relaxed"><%= comment %></p>
+                            <div class="bg-gray-50 rounded-lg p-2 mt-2" id="comment-<%= review.getReviewId() %>">
+                                <p class="text-gray-700 text-sm leading-relaxed"><%= comment %></p>
                             </div>
                             <% } else { %>
-                            <p class="text-gray-500 italic text-sm mt-2">Khách hàng này chưa để lại nhận xét.</p>
+                            <p class="text-gray-500 italic text-xs mt-1">Khách hàng này chưa để lại nhận xét.</p>
                             <% } %>
                         </div>
                     </div>
@@ -455,6 +533,54 @@
                 <p class="text-gray-500 text-sm">Đang hiển thị 50 đánh giá mới nhất</p>
             </div>
             <% } %>
+            <% } %>
+            
+            <!-- Comment Form - Chỉ hiển thị nếu customer đã mua dịch vụ -->
+            <% 
+                Boolean hasPurchasedService = (Boolean) request.getAttribute("hasPurchasedService");
+                if (hasPurchasedService != null && hasPurchasedService) {
+            %>
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">💬 Để lại đánh giá của bạn</h3>
+                <form method="POST" action="<%= request.getContextPath() %>/spa-booking" class="space-y-3">
+                    <input type="hidden" name="action" value="submit-service-review">
+                    <input type="hidden" name="serviceId" value="<%= service.getServiceId() %>">
+                    
+                    <!-- Rating -->
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1.5">Đánh giá của bạn</label>
+                        <div class="flex items-center gap-1.5" id="rating-stars">
+                            <% for (int i = 1; i <= 5; i++) { %>
+                            <i class="far fa-star text-2xl text-yellow-400 cursor-pointer hover:text-yellow-500 transition-colors" 
+                               data-rating="<%= i %>" 
+                               onclick="selectRating(<%= i %>)"></i>
+                            <% } %>
+                        </div>
+                        <input type="hidden" name="rating" id="selectedRating" value="5" required>
+                    </div>
+                    
+                    <!-- Comment -->
+                    <div>
+                        <label for="comment" class="block text-xs font-medium text-gray-700 mb-1.5">Nhận xét của bạn</label>
+                        <textarea name="comment" id="comment" rows="3" 
+                                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                  placeholder="Chia sẻ trải nghiệm của bạn về dịch vụ này..."></textarea>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div>
+                        <button type="submit" 
+                                class="px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold text-sm rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all duration-200 shadow-md hover:shadow-lg">
+                            <i class="fas fa-paper-plane mr-1.5"></i>Gửi đánh giá
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <% } else { %>
+            <div class="mt-4 pt-4 border-t border-gray-200 text-center py-4 bg-gray-50 rounded-lg">
+                <p class="text-gray-600 text-sm mb-1">📝 Bạn cần đặt và sử dụng dịch vụ này để có thể đánh giá</p>
+                <p class="text-gray-500 text-xs">Hãy đặt lịch và trải nghiệm dịch vụ để chia sẻ ý kiến của bạn!</p>
+            </div>
             <% } %>
         </div>
     </main>
@@ -509,28 +635,6 @@
             }
         });
 
-        // Quantity controls
-        function increaseQuantity() {
-            const qtyInput = document.getElementById('quantity');
-            const hiddenQtyInput = document.getElementById('hiddenQuantity');
-            let currentQty = parseInt(qtyInput.value) || 1;
-            if (currentQty < 10) {
-                currentQty++;
-                qtyInput.value = currentQty;
-                hiddenQtyInput.value = currentQty;
-            }
-        }
-
-        function decreaseQuantity() {
-            const qtyInput = document.getElementById('quantity');
-            const hiddenQtyInput = document.getElementById('hiddenQuantity');
-            let currentQty = parseInt(qtyInput.value) || 1;
-            if (currentQty > 1) {
-                currentQty--;
-                qtyInput.value = currentQty;
-                hiddenQtyInput.value = currentQty;
-            }
-        }
 
         // Filter reviews by rating
         let currentFilter = 0; // 0 = all, 1-5 = specific rating
@@ -606,6 +710,273 @@
             const allButton = document.getElementById('filter-all');
             if (allButton) {
                 allButton.classList.add('bg-blue-600');
+            }
+        });
+        
+        // Rating selection
+        function selectRating(rating) {
+            document.getElementById('selectedRating').value = rating;
+            const stars = document.querySelectorAll('#rating-stars i');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove('far');
+                    star.classList.add('fas');
+                } else {
+                    star.classList.remove('fas');
+                    star.classList.add('far');
+                }
+            });
+        }
+        
+        // Edit review
+        function editReview(reviewId, currentRating, currentComment) {
+            console.log('editReview called:', { reviewId, currentRating, currentComment });
+            
+            // Xử lý currentComment nếu null hoặc undefined
+            if (currentComment === null || currentComment === undefined || currentComment === 'null') {
+                currentComment = '';
+            }
+            
+            // Escape HTML cho comment để hiển thị an toàn trong textarea
+            const escapedComment = String(currentComment || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+            
+            // Tạo modal để edit
+            const modal = document.createElement('div');
+            modal.id = 'editReviewModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+            
+            // Tạo form HTML với reviewId được set trực tiếp
+            const formHtml = `
+                <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">✏️ Sửa đánh giá</h3>
+                    <form method="POST" action="<%= request.getContextPath() %>/spa-booking" id="editReviewForm" enctype="application/x-www-form-urlencoded">
+                        <input type="hidden" name="action" value="edit-service-review">
+                        <input type="hidden" name="reviewId" id="hiddenReviewId" value="` + reviewId + `">
+                        <input type="hidden" name="serviceId" value="<%= service.getServiceId() %>">
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Đánh giá của bạn</label>
+                            <div class="flex items-center gap-2" id="edit-rating-stars">
+                                <% for (int i = 1; i <= 5; i++) { %>
+                                <i class="far fa-star text-3xl text-yellow-400 cursor-pointer hover:text-yellow-500 transition-colors" 
+                                   data-rating="<%= i %>" 
+                                   onclick="selectEditRating(<%= i %>)"></i>
+                                <% } %>
+                            </div>
+                            <input type="hidden" name="rating" id="editSelectedRating" value="${currentRating}" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="editComment" class="block text-sm font-medium text-gray-700 mb-2">Nhận xét của bạn</label>
+                            <textarea name="comment" id="editComment" rows="4" 
+                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                      placeholder="Chia sẻ trải nghiệm của bạn về dịch vụ này...">${escapedComment}</textarea>
+                        </div>
+                        
+                        <div class="flex justify-end gap-3">
+                            <button type="button" onclick="closeEditModal()" 
+                                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                                Hủy
+                            </button>
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all duration-200">
+                                <i class="fas fa-save mr-2"></i>Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            modal.innerHTML = formHtml;
+            document.body.appendChild(modal);
+            
+            // Set rating ban đầu sau khi DOM được thêm vào
+            setTimeout(() => {
+                // Verify reviewId đã được set
+                const hiddenReviewId = document.getElementById('hiddenReviewId');
+                if (hiddenReviewId) {
+                    if (!hiddenReviewId.value || hiddenReviewId.value === '') {
+                        hiddenReviewId.value = reviewId;
+                        console.log('Set hiddenReviewId value to:', reviewId);
+                    } else {
+                        console.log('hiddenReviewId already has value:', hiddenReviewId.value);
+                    }
+                } else {
+                    console.error('hiddenReviewId input not found!');
+                }
+                
+                selectEditRating(currentRating);
+                
+                // Thêm event listener cho form submit để debug
+                const form = document.getElementById('editReviewForm');
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        const ratingInput = document.getElementById('editSelectedRating');
+                        const commentInput = document.getElementById('editComment');
+                        const reviewIdInput = document.getElementById('hiddenReviewId');
+                        
+                        if (!ratingInput || !commentInput || !reviewIdInput) {
+                            console.error('Form inputs not found!', {
+                                ratingInput: !!ratingInput,
+                                commentInput: !!commentInput,
+                                reviewIdInput: !!reviewIdInput
+                            });
+                            e.preventDefault();
+                            alert('Lỗi: Không tìm thấy form inputs');
+                            return false;
+                        }
+                        
+                        const rating = ratingInput.value;
+                        const comment = commentInput.value;
+                        const reviewIdValue = reviewIdInput.value;
+                        
+                        console.log('Submitting edit review:', {
+                            reviewId: reviewIdValue,
+                            rating: rating,
+                            comment: comment,
+                            serviceId: '<%= service.getServiceId() %>'
+                        });
+                        
+                        // Kiểm tra reviewId có giá trị không
+                        if (!reviewIdValue || reviewIdValue === '') {
+                            console.error('ReviewId is empty!');
+                            e.preventDefault();
+                            alert('Lỗi: Không tìm thấy review ID');
+                            return false;
+                        }
+                        
+                        // Kiểm tra rating có giá trị không
+                        if (!rating || rating === '0' || rating === '') {
+                            console.error('Rating is invalid:', rating);
+                            e.preventDefault();
+                            alert('Vui lòng chọn đánh giá từ 1 đến 5 sao');
+                            return false;
+                        }
+                        
+                        // Log form data trước khi submit
+                        const formData = new FormData(form);
+                        console.log('Form data entries:');
+                        for (let [key, value] of formData.entries()) {
+                            console.log(key + ':', value);
+                        }
+                        
+                        // Không prevent default - cho phép form submit bình thường
+                        console.log('Form will submit now...');
+                    });
+                } else {
+                    console.error('editReviewForm not found!');
+                }
+            }, 100);
+            
+            // Đóng modal khi click bên ngoài
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeEditModal();
+                }
+            });
+        }
+        
+        function selectEditRating(rating) {
+            const ratingInput = document.getElementById('editSelectedRating');
+            if (!ratingInput) {
+                console.error('editSelectedRating input not found');
+                return;
+            }
+            ratingInput.value = rating;
+            
+            const stars = document.querySelectorAll('#edit-rating-stars i');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove('far');
+                    star.classList.add('fas');
+                } else {
+                    star.classList.remove('fas');
+                    star.classList.add('far');
+                }
+            });
+        }
+        
+        function closeEditModal() {
+            const modal = document.getElementById('editReviewModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        // Delete review
+        function deleteReview(reviewId, serviceId) {
+            if (confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath() %>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete-service-review';
+                
+                const reviewIdInput = document.createElement('input');
+                reviewIdInput.type = 'hidden';
+                reviewIdInput.name = 'reviewId';
+                reviewIdInput.value = reviewId;
+                
+                const serviceIdInput = document.createElement('input');
+                serviceIdInput.type = 'hidden';
+                serviceIdInput.name = 'serviceId';
+                serviceIdInput.value = serviceId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(reviewIdInput);
+                form.appendChild(serviceIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        // Toggle description expand/collapse
+        function toggleDescription() {
+            const descriptionText = document.getElementById('descriptionText');
+            const toggleText = document.getElementById('toggleText');
+            const toggleIcon = document.getElementById('toggleIcon');
+            
+            if (descriptionText.classList.contains('collapsed')) {
+                // Expand
+                descriptionText.classList.remove('collapsed');
+                toggleText.textContent = 'Thu gọn';
+                toggleIcon.classList.add('expanded');
+            } else {
+                // Collapse
+                descriptionText.classList.add('collapsed');
+                toggleText.textContent = 'Xem thêm';
+                toggleIcon.classList.remove('expanded');
+            }
+        }
+        
+        // Check if description needs toggle button on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const descriptionText = document.getElementById('descriptionText');
+            const toggleButton = document.getElementById('descriptionToggle');
+            
+            if (descriptionText && toggleButton) {
+                // Wait a bit for layout to settle
+                setTimeout(function() {
+                    // Check if content is taller than 4 lines
+                    const fullHeight = descriptionText.scrollHeight;
+                    const lineHeight = parseFloat(getComputedStyle(descriptionText).lineHeight);
+                    const maxHeight = lineHeight * 4;
+                    
+                    if (fullHeight > maxHeight) {
+                        // Show toggle button and collapse initially
+                        toggleButton.style.display = 'block';
+                        descriptionText.classList.add('collapsed');
+                    }
+                }, 100);
             }
         });
     </script>

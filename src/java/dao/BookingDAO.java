@@ -183,7 +183,7 @@ public List<Booking> getAllBookings() {
             "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
             "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
             "WHERE b.customer_id = ? " +
-            "ORDER BY b.appointment_start DESC";
+            "ORDER BY b.created_at DESC, b.appointment_start DESC";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -544,11 +544,82 @@ public List<Booking> getAllBookings() {
         String sql = "UPDATE dbo.Booking SET status = ? WHERE booking_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            // Log trước khi update
+            logger.info("=== UPDATE BOOKING STATUS ===");
+            logger.info("Booking ID: " + bookingId);
+            logger.info("New Status: '" + status + "'");
+            logger.info("Status length: " + status.length());
+            
+            // Kiểm tra booking có tồn tại không
+            String checkSql = "SELECT booking_id, status FROM dbo.Booking WHERE booking_id = ?";
+            try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+                checkPs.setInt(1, bookingId);
+                try (ResultSet rs = checkPs.executeQuery()) {
+                    if (rs.next()) {
+                        String currentStatus = rs.getString("status");
+                        logger.info("Current status in DB: '" + currentStatus + "'");
+                    } else {
+                        logger.severe("Booking ID " + bookingId + " does not exist in database!");
+                        return false;
+                    }
+                }
+            }
+            
+            // Thực hiện update
             ps.setString(1, status);
             ps.setInt(2, bookingId);
-            return ps.executeUpdate() > 0;
+            int rowsAffected = ps.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                logger.info("✅ Successfully updated booking ID " + bookingId + " status to: '" + status + "'");
+                logger.info("Rows affected: " + rowsAffected);
+                
+                // Verify update
+                try (PreparedStatement verifyPs = conn.prepareStatement(checkSql)) {
+                    verifyPs.setInt(1, bookingId);
+                    try (ResultSet rs = verifyPs.executeQuery()) {
+                        if (rs.next()) {
+                            String updatedStatus = rs.getString("status");
+                            logger.info("Verified status after update: '" + updatedStatus + "'");
+                            if (!status.equals(updatedStatus)) {
+                                logger.warning("⚠️ Status mismatch! Expected: '" + status + "', Got: '" + updatedStatus + "'");
+                            }
+                        }
+                    }
+                }
+                return true;
+            } else {
+                logger.warning("⚠️ No rows affected when updating booking ID " + bookingId + " status to: '" + status + "'");
+                logger.warning("This usually means the booking_id does not exist or the status is already set to this value");
+                return false;
+            }
         } catch (SQLException e) {
-            logger.severe("Error updating booking status: " + e.getMessage());
+            logger.severe("❌ SQL Error updating booking status");
+            logger.severe("Booking ID: " + bookingId + ", Status: '" + status + "'");
+            logger.severe("SQL Error Code: " + e.getErrorCode() + ", SQL State: " + e.getSQLState());
+            logger.severe("Error Message: " + e.getMessage());
+            
+            // Kiểm tra nếu là lỗi constraint violation
+            if (e.getErrorCode() == 547 || e.getSQLState().startsWith("23")) {
+                logger.severe("🚫 CONSTRAINT VIOLATION DETECTED!");
+                logger.severe("Status '" + status + "' is NOT allowed by constraint CK_Booking_Status_Allowed");
+                logger.severe("Please run fix_booking_constraint.sql to update the constraint");
+                logger.severe("Allowed statuses should be:");
+                logger.severe("  - Chờ xác nhận");
+                logger.severe("  - Đã xác nhận");
+                logger.severe("  - Đã thanh toán");
+                logger.severe("  - Đã hủy");
+                logger.severe("  - Yêu cầu hoàn tiền");
+                logger.severe("  - Hoàn thành");
+                logger.severe("  - Chưa thanh toán");
+            }
+            e.printStackTrace();
+        } catch (Exception e) {
+            logger.severe("❌ Unexpected error updating booking status");
+            logger.severe("Booking ID: " + bookingId + ", Status: '" + status + "'");
+            logger.severe("Error Type: " + e.getClass().getName());
+            logger.severe("Error Message: " + e.getMessage());
             e.printStackTrace();
         }
         return false;

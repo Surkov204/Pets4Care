@@ -41,3 +41,5 @@ GO
 PRINT 'Đã cập nhật các booking có status confirmed sang Đã xác nhận'
 GO
 
+
+

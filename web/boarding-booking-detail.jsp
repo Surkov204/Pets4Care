@@ -217,14 +217,16 @@
                     </div>
                     <div class="text-right">
                         <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium
-                            <% if ("pending".equals(booking.getStatus())) { %>status-pending<% } %>
-                            <% if ("confirmed".equals(booking.getStatus())) { %>status-confirmed<% } %>
-                            <% if ("cancelled".equals(booking.getStatus())) { %>status-cancelled<% } %>
-                            <% if ("completed".equals(booking.getStatus())) { %>status-completed<% } %>">
-                            <% if ("pending".equals(booking.getStatus())) { %><i class="fas fa-clock mr-1"></i>Chờ xác nhận<% } %>
-                            <% if ("confirmed".equals(booking.getStatus())) { %><i class="fas fa-check mr-1"></i>Đã xác nhận<% } %>
-                            <% if ("cancelled".equals(booking.getStatus())) { %><i class="fas fa-ban mr-1"></i>Đã hủy<% } %>
-                            <% if ("completed".equals(booking.getStatus())) { %><i class="fas fa-check-circle mr-1"></i>Hoàn thành<% } %>
+                            <% if ("Chờ xác nhận".equals(booking.getStatus()) || "pending".equals(booking.getStatus())) { %>status-pending<% } %>
+                            <% if ("Chưa nhận thú cưng".equals(booking.getStatus())) { %>bg-blue-100 text-blue-800<% } %>
+                            <% if ("Đang ở".equals(booking.getStatus()) || "Đang thuê".equals(booking.getStatus())) { %>status-confirmed<% } %>
+                            <% if ("Đã nhận về".equals(booking.getStatus()) || "Hoàn thành".equals(booking.getStatus()) || "completed".equals(booking.getStatus())) { %>status-completed<% } %>
+                            <% if ("cancelled".equals(booking.getStatus()) || "Đã hủy".equals(booking.getStatus())) { %>status-cancelled<% } %>">
+                            <% if ("Chờ xác nhận".equals(booking.getStatus()) || "pending".equals(booking.getStatus())) { %><i class="fas fa-clock mr-1"></i>Chờ xác nhận<% } %>
+                            <% if ("Chưa nhận thú cưng".equals(booking.getStatus())) { %><i class="fas fa-inbox mr-1"></i>Chưa nhận thú cưng<% } %>
+                            <% if ("Đang ở".equals(booking.getStatus()) || "Đang thuê".equals(booking.getStatus())) { %><i class="fas fa-bed mr-1"></i>Đang ở<% } %>
+                            <% if ("Đã nhận về".equals(booking.getStatus()) || "Hoàn thành".equals(booking.getStatus()) || "completed".equals(booking.getStatus())) { %><i class="fas fa-check-circle mr-1"></i>Đã nhận về<% } %>
+                            <% if ("cancelled".equals(booking.getStatus()) || "Đã hủy".equals(booking.getStatus())) { %><i class="fas fa-ban mr-1"></i>Đã hủy<% } %>
                         </span>
                     </div>
                 </div>
@@ -294,7 +296,7 @@
                 <div class="pet-info-section rounded-lg p-6 mb-8">
                     <h3 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
                         <i class="fas fa-paw mr-3 text-blue-600"></i>Thông tin thú cưng
-                        <span class="ml-3 text-sm font-normal text-gray-500">(<%= customerPets != null ? customerPets.size() : 0 %> thú cưng)</span>
+                        <span class="ml-3 text-sm font-normal text-gray-500">(<%= customerPets != null ? customerPets.size() : 0 %> thú cưng trong booking này)</span>
                     </h3>
                     
                     <% if (customerPets != null && !customerPets.isEmpty()) { %>
@@ -310,7 +312,7 @@
                                 <div class="flex-1">
                                     <h4 class="text-xl font-bold text-gray-800 mb-1"><%= pet.getPetName() %></h4>
                                     <p class="text-sm text-gray-600 font-medium">
-                                        <%= pet.getSpecies() != null ? pet.getSpecies() : "Không xác định" %>
+                                        <%= pet.getSpeciesDisplayName() %>
                                         <% if (pet.getBreed() != null && !pet.getBreed().trim().isEmpty()) { %>
                                         - <%= pet.getBreed() %>
                                         <% } %>
@@ -415,7 +417,17 @@
                            class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
                             <i class="fas fa-arrow-left mr-2"></i>Quay lại
                         </a>
-                        <% if (!"cancelled".equals(booking.getStatus()) && !"completed".equals(booking.getStatus())) { %>
+                        <% 
+                        String bookingStatus = booking.getStatus();
+                        boolean canCancel = !"Đã nhận về".equals(bookingStatus) && 
+                                           !"Hoàn thành".equals(bookingStatus) && 
+                                           !"completed".equals(bookingStatus) &&
+                                           !"cancelled".equals(bookingStatus) &&
+                                           !"Đã hủy".equals(bookingStatus) &&
+                                           !"Đang ở".equals(bookingStatus) &&
+                                           !"Đang thuê".equals(bookingStatus);
+                        %>
+                        <% if (canCancel) { %>
                         <form method="POST" action="<%= request.getContextPath() %>/spa-booking" class="inline">
                             <input type="hidden" name="action" value="cancel-boarding-booking">
                             <input type="hidden" name="bookingId" value="<%= booking.getBookingId() %>">
@@ -424,7 +436,7 @@
                                 <i class="fas fa-ban mr-2"></i>Hủy lịch
                             </button>
                         </form>
-                        <% } else if ("cancelled".equals(booking.getStatus())) { %>
+                        <% } else if ("cancelled".equals(bookingStatus) || "Đã hủy".equals(bookingStatus)) { %>
                         <form method="POST" action="<%= request.getContextPath() %>/spa-booking" class="inline">
                             <input type="hidden" name="action" value="delete-boarding-booking">
                             <input type="hidden" name="bookingId" value="<%= booking.getBookingId() %>">

@@ -3,20 +3,27 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/order/confirm-failed.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/home.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/login.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/cart/cart.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/register.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/dao/FeedbackDAO.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/service/CustomerService.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/META-INF/context.xml</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/service/OrderService.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ChatbotController.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ToyDetailServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/order/order-detail.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/utils/PayOSUtils.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/service/ChatbotService.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/WEB-INF/web.xml</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ChatHistoryServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/WEB-INF/classes/payos.properties</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/refund.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/UpdateOrderStatusServlet.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/Staff.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/order/order-history.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/PayOSWebhookServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ManageCustomerServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/toy/toy-detail.jsp</file>
@@ -28,7 +35,9 @@
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/service/IOrderService.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/utils/EmailUtils.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/staff/mySchedule.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/order/order-success.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/PetInfoServlet.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/logout.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/listener/DBConnectionListener.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/dao/StatisticService.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/utils/GoogleUtils.java</file>
@@ -36,17 +45,23 @@
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/dat-lich-kham.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/BookingServiceItem.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/dao/StatisticDAO.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/dao/BookingDAO.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/dao/DoctorDAO.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/HomeController.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/service/StatisticService.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/Feedback.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/ChatHistory.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/spa-service.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/doctor/doctor-profile.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/PayOSController.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/staff/index.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/CancelOrderServlet.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/doctor/doctor-dashboard.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/user/pet-info.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/order/invoice-cancelled.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/dao/IStatisticDAO.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ProductDetailServlet.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/order/confirm-success.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/user/user-info.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/service/PayOSService.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/utils/PayOSConfig.java</file>
@@ -54,16 +69,21 @@
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/CartServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/dao/StaffDAO.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ManageToyServlet.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/test-spa-booking.html</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/Order.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/staff/dashboard.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ChatFeedbackServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/spa-cart.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/OrderDetail.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ChatOrderServlet.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/Doctor.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/order/order-failed.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/doctor/medical-record.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/images/pets/placeholder.svg</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/OrderDetailServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/Admin.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/utils/PasswordUtil.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/doctor/appointments.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/utils/GoogleConstants.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/service/ICustomerService.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/OrderServlet.java</file>

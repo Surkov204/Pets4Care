@@ -98,7 +98,7 @@
         <style>
             body {
                 font-family: 'Baloo 2', cursive;
-                background: linear-gradient(120deg, #f0e68c 50%, #daa520 100%);
+                background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 25%, #f3e5f5 50%, #e1bee7 75%, #fce4ec 100%);
                 min-height: 100vh;
                 display: flex;
                 justify-content: center;
@@ -106,8 +106,8 @@
                 overflow-x: hidden;
             }
 
-            /* Floating paw prints animation */
-            .floating-paws {
+            /* Floating cute elements: paws, hearts, stars, bubbles */
+            .floating-elements {
                 position: absolute;
                 top: 0;
                 left: 0;
@@ -117,40 +117,75 @@
                 overflow: hidden;
             }
 
-            .paw {
+            .element {
                 position: absolute;
-                font-size: 2rem;
-                opacity: 0.1;
-                animation: float 10s infinite linear;
+                font-size: 1.5rem;
+                opacity: 0.15;
+                animation: gentleFloat 12s infinite linear;
             }
 
-            .paw:nth-child(1) {
+            .element:nth-child(1) {
                 top: 10%;
                 left: 10%;
                 animation-delay: 0s;
             }
-            .paw:nth-child(2) {
+            .element:nth-child(2) {
                 top: 20%;
                 left: 80%;
-                animation-delay: 2s;
+                animation-delay: 1s;
             }
-            .paw:nth-child(3) {
+            .element:nth-child(3) {
                 top: 70%;
                 left: 20%;
-                animation-delay: 4s;
+                animation-delay: 2s;
             }
-            .paw:nth-child(4) {
+            .element:nth-child(4) {
                 top: 50%;
                 left: 90%;
-                animation-delay: 6s;
+                animation-delay: 3s;
             }
-            .paw:nth-child(5) {
+            .element:nth-child(5) {
                 top: 80%;
                 left: 50%;
+                animation-delay: 4s;
+            }
+            .element:nth-child(6) {
+                top: 30%;
+                left: 30%;
+                animation-delay: 5s;
+            }
+            .element:nth-child(7) {
+                top: 60%;
+                left: 70%;
+                animation-delay: 6s;
+            }
+            .element:nth-child(8) {
+                top: 15%;
+                left: 60%;
+                animation-delay: 7s;
+            }
+            .element:nth-child(9) {
+                top: 40%;
+                left: 5%;
                 animation-delay: 8s;
             }
+            .element:nth-child(10) {
+                top: 90%;
+                left: 85%;
+                animation-delay: 9s;
+            }
+            .element:nth-child(11) {
+                top: 5%;
+                left: 40%;
+                animation-delay: 10s;
+            }
+            .element:nth-child(12) {
+                top: 85%;
+                left: 15%;
+                animation-delay: 11s;
+            }
 
-            @keyframes float {
+            @keyframes gentleFloat {
                 0% {
                     transform: translateY(100vh) rotate(0deg);
                 }
@@ -160,10 +195,11 @@
             }
 
             .register-box {
-                background: #fff3f7;
+                background: #fefefe;
                 padding: 2rem 3rem;
-                border-radius: 20px;
-                box-shadow: 0 8px 20px rgba(255, 180, 190, 0.4);
+                border-radius: 25px;
+                border: 3px dotted #ffb3ba;
+                box-shadow: 0 10px 25px rgba(255, 179, 186, 0.3);
                 width: 100%;
                 max-width: 480px;
                 position: relative;
@@ -183,12 +219,13 @@
             }
 
             .register-title {
-                font-size: 2rem;
-                color: #ff7090;
+                font-size: 2.2rem;
+                color: #ff8a80;
                 text-align: center;
                 margin-bottom: 1.5rem;
                 font-weight: bold;
                 animation: bounceIn 1s ease-out;
+                text-shadow: 0 2px 4px rgba(255, 138, 128, 0.3);
             }
 
             @keyframes bounceIn {
@@ -209,12 +246,12 @@
             }
 
             .cute-btn {
-                background: linear-gradient(90deg, #ffb3d9 45%, #c7e9ff 100%);
-                color: #ff4d94;
+                background: linear-gradient(90deg, #fce4ec 0%, #f8bbd9 50%, #f3e5f5 100%);
+                color: #e91e63;
                 font-weight: bold;
-                border-radius: 20px;
-                border: 2px solid #ffb3d9;
-                box-shadow: 0 4px 12px rgba(255, 179, 217, 0.4);
+                border-radius: 25px;
+                border: 2px solid #fce4ec;
+                box-shadow: 0 5px 15px rgba(252, 228, 236, 0.4);
                 padding: 12px 24px;
                 width: 100%;
                 font-size: 1rem;
@@ -222,20 +259,20 @@
                 cursor: pointer;
                 position: relative;
                 overflow: hidden;
-                animation: pulse 2s infinite;
+                animation: gentlePulse 2.5s infinite;
             }
 
-            @keyframes pulse {
+            @keyframes gentlePulse {
                 0%, 100% {
                     transform: scale(1);
                 }
                 50% {
-                    transform: scale(1.02);
+                    transform: scale(1.03);
                 }
             }
 
             .cute-btn::before {
-                content: '🐾';
+                content: '💖';
                 position: absolute;
                 top: 50%;
                 left: 10px;
@@ -246,11 +283,11 @@
             }
 
             .cute-btn:hover {
-                background: linear-gradient(90deg, #ff99cc 40%, #a8e6ff 95%);
-                color: #e60073;
-                box-shadow: 0 6px 20px rgba(255, 153, 204, 0.6);
-                transform: scale(1.08) rotate(-1deg);
-                border-color: #ff99cc;
+                background: linear-gradient(90deg, #ffccdd 0%, #ba68c8 50%, #e1bee7 100%);
+                color: #c2185b;
+                box-shadow: 0 8px 25px rgba(255, 204, 221, 0.6);
+                transform: scale(1.05) rotate(-0.5deg);
+                border-color: #ffccdd;
             }
 
             .cute-btn:hover::before {
@@ -259,61 +296,74 @@
 
             .cute-btn:active {
                 transform: scale(0.98) rotate(0deg);
-                box-shadow: 0 2px 8px rgba(255, 153, 204, 0.4);
+                box-shadow: 0 3px 10px rgba(255, 204, 221, 0.4);
+            }
+
+            .input-container {
+                position: relative;
             }
 
             input {
                 font-family: inherit;
-                border-radius: 12px;
-                border: 1px solid #ffd6e2;
-                padding: 10px;
+                border-radius: 15px;
+                border: 2px solid #fce4ec;
+                padding: 12px 40px 12px 12px;
                 width: 100%;
-                background: #fff8fb;
+                background: #fffef9;
                 margin-bottom: 1rem;
                 transition: all 0.3s ease;
-                position: relative;
             }
 
             input:focus {
-                border: 1.5px solid #ff94b8;
-                background: #fff7fc;
+                border: 2px solid #ba68c8;
+                background: #fefefe;
                 outline: none;
-                box-shadow: 0 0 10px rgba(255, 148, 184, 0.3);
-                transform: translateY(-2px);
+                box-shadow: 0 0 15px rgba(186, 104, 200, 0.4);
+                transform: translateY(-3px);
             }
 
             label {
                 display: block;
                 margin-bottom: 0.5rem;
-                color: #ff7090;
+                color: #ff8a80;
                 font-weight: bold;
                 transition: color 0.3s ease;
             }
 
-            input:focus + label {
-                color: #ff94b8;
+            input:focus + label, input:focus ~ label {
+                color: #ff6b6b;
+            }
+
+            .input-icon {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 1.2rem;
+                color: #ffb3ba;
+                pointer-events: none;
             }
 
             .error {
-                color: red;
+                color: #ff6b6b;
                 font-size: 0.9rem;
-                animation: shake 0.5s ease-in-out;
+                animation: gentleShake 0.5s ease-in-out;
             }
 
-            @keyframes shake {
+            @keyframes gentleShake {
                 0%, 100% {
                     transform: translateX(0);
                 }
                 25% {
-                    transform: translateX(-5px);
+                    transform: translateX(-3px);
                 }
                 75% {
-                    transform: translateX(5px);
+                    transform: translateX(3px);
                 }
             }
 
             .error-message {
-                color: red;
+                color: #ff6b6b;
                 font-size: 0.9rem;
                 margin-top: -0.5rem;
                 margin-bottom: 1rem;
@@ -335,7 +385,7 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                opacity: 0.5;
+                opacity: 0.6;
                 transition: opacity 0.3s ease;
             }
 
@@ -346,11 +396,11 @@
             @keyframes successPulse {
                 from {
                     transform: scale(1);
-                    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+                    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
                 }
                 to {
                     transform: scale(1.05);
-                    box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+                    box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
                 }
             }
 
@@ -358,7 +408,7 @@
                 position: absolute;
                 width: 10px;
                 height: 10px;
-                background: #ff7090;
+                background: #ff8a80;
                 animation: confettiFall 3s linear forwards;
             }
 
@@ -379,7 +429,7 @@
                     margin: 1rem;
                 }
                 .register-title {
-                    font-size: 1.5rem;
+                    font-size: 1.8rem;
                 }
             }
 
@@ -389,7 +439,7 @@
                     margin: 0.5rem;
                 }
                 .register-title {
-                    font-size: 1.25rem;
+                    font-size: 1.5rem;
                 }
             }
         </style>
@@ -398,12 +448,19 @@
 
     <body>
 
-        <div class="floating-paws">
-            <div class="paw">🐾</div>
-            <div class="paw">🐾</div>
-            <div class="paw">🐾</div>
-            <div class="paw">🐾</div>
-            <div class="paw">🐾</div>
+        <div class="floating-elements">
+            <div class="element">🐾</div>
+            <div class="element">💖</div>
+            <div class="element">⭐</div>
+            <div class="element">🫧</div>
+            <div class="element">🐶</div>
+            <div class="element">💕</div>
+            <div class="element">🌟</div>
+            <div class="element">🦄</div>
+            <div class="element">🐱</div>
+            <div class="element">🌸</div>
+            <div class="element">✨</div>
+            <div class="element">🦋</div>
         </div>
         <div class="register-box">
             <h2 class="register-title">🐶 Đăng Ký Thành Viên</h2>
@@ -484,127 +541,108 @@
                 </div>
             </div>
         </div>
+        <!-- Leaflet CSS & JS -->
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script>
-let map, marker, lat = null, lng = null;
+        <script>
+                                let map, marker, selectedLat, selectedLng;
 
-function openMapPopup() {
-  const popup = document.getElementById("map-popup");
-  popup.classList.remove("hidden");
+                                function openMapPopup() {
+                                    document.getElementById("map-popup").classList.remove("hidden");
 
-  setTimeout(() => {
-    if (!map) {
-      map = L.map("map");
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(map);
+                                    setTimeout(() => {
+                                        if (!map) {
+                                            map = L.map("map");
+                                            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                                                attribution: "&copy; OpenStreetMap contributors"
+                                            }).addTo(map);
 
-      // Khi click chọn vị trí
-      map.on("click", async function (e) {
-        lat = e.latlng.lat;
-        lng = e.latlng.lng;
+                                            // Ưu tiên định vị vị trí hiện tại (nếu được)
+                                            if (navigator.geolocation) {
+                                                navigator.geolocation.getCurrentPosition(
+                                                        pos => map.setView([pos.coords.latitude, pos.coords.longitude], 15),
+                                                        () => map.setView([21.0285, 105.8542], 13)
+                                                );
+                                            } else {
+                                                map.setView([21.0285, 105.8542], 13);
+                                            }
 
-        if (marker) map.removeLayer(marker);
-        marker = L.marker([lat, lng]).addTo(map);
+                                            // Khi click chọn vị trí
+                                            map.on("click", function (e) {
+                                                selectedLat = e.latlng.lat;
+                                                selectedLng = e.latlng.lng;
 
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
-            { headers: { "User-Agent": "PetcityApp/1.0 (contact@localhost)" } }
-          );
-          const data = await res.json();
+                                                if (marker)
+                                                    map.removeLayer(marker);
+                                                marker = L.marker([selectedLat, selectedLng]).addTo(map);
 
-          if (data && data.display_name) {
-            document.getElementById("address").value = data.display_name;
-            document.getElementById("map-status").classList.remove("hidden");
-          } else if (data && data.address) {
-            const addr = `${data.address.road || ""}, ${data.address.suburb || ""}, ${data.address.city || data.address.town || ""}`;
-            document.getElementById("address").value = addr.trim() || "Không rõ địa chỉ";
-            document.getElementById("map-status").classList.remove("hidden");
-          } else {
-            document.getElementById("address").value = "Không xác định được địa chỉ.";
-          }
-        } catch (err) {
-          console.error("Reverse geocode error:", err);
-        }
-      });
-    }
+                                                // Gọi API reverse geocoding để fill địa chỉ
+                                                fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" + selectedLat + "&lon=" + selectedLng)
+                                                        .then(r => r.json())
+                                                        .then(data => {
+                                                            if (data && data.display_name) {
+                                                                document.getElementById("address").value = data.display_name;
+                                                                document.getElementById("map-status").classList.remove("hidden");
+                                                            } else {
+                                                                alert("Không tìm được địa chỉ tại vị trí đã chọn.");
+                                                            }
+                                                        })
+                                                        .catch(() => alert("Không truy vấn được địa chỉ. Vui lòng thử lại."));
+                                            });
+                                        }
 
-    // Xoá marker cũ nếu có
-    if (marker) {
-      map.removeLayer(marker);
-      marker = null;
-    }
+                                        // Nếu đã có địa chỉ trước đó → geocode lại để hiển thị marker
+                                        const addr = document.getElementById("address").value;
+                                        if (addr && addr.trim().length > 5) {
+                                            geocodeAddress(addr, true);
+                                        }
 
-    // Focus map theo ô address (nếu có)
-    const addr = document.getElementById("address").value;
-    if (addr && addr.trim().length > 5) {
-      fetch("https://nominatim.openstreetmap.org/search?format=json&q=" + encodeURIComponent(addr))
-        .then(r => r.json())
-        .then(results => {
-          if (results && results.length > 0) {
-            const { lat: a, lon: o } = results[0];
-            lat = parseFloat(a);
-            lng = parseFloat(o);
-            map.setView([lat, lng], 15);
-            marker = L.marker([lat, lng]).addTo(map);
-          } else {
-            map.setView([21.0285, 105.8542], 13); // Hà Nội mặc định
-          }
-        });
-    } else {
-      map.setView([21.0285, 105.8542], 13);
-    }
+                                        setTimeout(() => map.invalidateSize(), 300);
+                                    }, 300);
+                                }
 
-    setTimeout(() => map.invalidateSize(), 300);
-  }, 300);
-}
+                                function confirmLocation() {
+                                    if (selectedLat && selectedLng) {
+                                        document.getElementById("latitude").value = selectedLat;
+                                        document.getElementById("longitude").value = selectedLng;
+                                        document.getElementById("map-status").classList.remove("hidden");
+                                        closeMapPopup();
+                                    } else {
+                                        alert("📍 Vui lòng chọn vị trí trên bản đồ trước khi xác nhận.");
+                                    }
+                                }
 
-function closeMapPopup() {
-  document.getElementById("map-popup").classList.add("hidden");
-}
+                                function closeMapPopup() {
+                                    document.getElementById("map-popup").classList.add("hidden");
+                                }
 
-async function confirmLocation() {
-  if (!lat || !lng) {
-    alert("📍 Vui lòng click chọn vị trí trên bản đồ trước khi xác nhận.");
-    return;
-  }
+        // Hàm geocode (tìm toạ độ từ địa chỉ đã nhập)
+                                function geocodeAddress(address, centerOnly = false) {
+                                    fetch("https://nominatim.openstreetmap.org/search?format=json&q=" + encodeURIComponent(address))
+                                            .then(r => r.json())
+                                            .then(results => {
+                                                if (results && results.length > 0) {
+                                                    const {lat, lon, display_name} = results[0];
+                                                    selectedLat = parseFloat(lat);
+                                                    selectedLng = parseFloat(lon);
+                                                    if (map) {
+                                                        map.setView([selectedLat, selectedLng], 16);
+                                                        if (marker)
+                                                            map.removeLayer(marker);
+                                                        marker = L.marker([selectedLat, selectedLng]).addTo(map);
+                                                    }
+                                                    if (!centerOnly) {
+                                                        document.getElementById("address").value = display_name;
+                                                    }
+                                                } else {
+                                                    alert("Không tìm thấy vị trí cho địa chỉ đã nhập.");
+                                                }
+                                            })
+                                            .catch(() => alert("Không truy vấn được vị trí."));
+                                }
+        </script>
 
-  document.getElementById("latitude").value = lat;
-  document.getElementById("longitude").value = lng;
-
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
-      { headers: { "User-Agent": "PetcityApp/1.0 (contact@localhost)" } }
-    );
-    const data = await res.json();
-
-    let addr = "";
-    if (data && data.display_name) {
-      addr = data.display_name;
-    } else if (data && data.address) {
-      const a = data.address;
-      addr = `${a.road || ""}, ${a.suburb || a.village || ""}, ${a.city || a.town || a.county || ""}, ${a.state || ""}`;
-    } else {
-      // Nếu API không có gì, hiển thị toạ độ
-      addr = `Vị trí: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    }
-
-    document.getElementById("address").value = addr.trim();
-    document.getElementById("map-status").classList.remove("hidden");
-  } catch (err) {
-    console.error("Reverse geocode error:", err);
-    document.getElementById("address").value = `Vị trí: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    document.getElementById("map-status").classList.remove("hidden");
-  }
-
-  closeMapPopup();
-}
-
-</script>
 
     </body>
 </html>

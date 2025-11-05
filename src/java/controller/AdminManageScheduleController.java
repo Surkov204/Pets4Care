@@ -1,13 +1,7 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package controller;
 
 import dao.WorkScheduleDAO;
 import java.io.IOException;
-import java.io.PrintWriter;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +16,7 @@ public class AdminManageScheduleController extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
         String action = req.getParameter("action");
+        String weekOffset = req.getParameter("weekOffset"); // ✅ giữ lại tuần hiện tại
 
         switch (action) {
             case "assign" -> {
@@ -36,6 +31,11 @@ public class AdminManageScheduleController extends HttpServlet {
             }
         }
 
-        resp.sendRedirect(req.getContextPath() + "/admin/manage-staff.jsp?tab=worktable");
+        // ✅ Redirect về đúng tab và đúng tuần
+        String redirectUrl = req.getContextPath() + "/admin/manage-staff?tab=worktable";
+        if (weekOffset != null && !weekOffset.isEmpty()) {
+            redirectUrl += "&weekOffset=" + weekOffset;
+        }
+        resp.sendRedirect(redirectUrl);
     }
 }

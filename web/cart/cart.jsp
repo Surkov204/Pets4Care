@@ -183,7 +183,7 @@
                 </div>
 
                 <% if (currentUser != null) {%>
-                <form action="<%= request.getContextPath()%>/orderservlet" method="post" class="mt-6 space-y-4">
+                <form id="checkout" action="<%= request.getContextPath()%>/orderservlet" method="post" class="mt-6 space-y-4">
                     <label class="block text-gray-700 font-semibold">Phương thức thanh toán:</label>
                     <select name="payment_method" required class="w-full border rounded px-4 py-2">
                         <option value="">-- Chọn phương thức --</option>
@@ -191,8 +191,8 @@
                         <option value="PayOS">💳 Thanh toán online (PayOS)</option>
                     </select>
                     <label class="block text-gray-700 font-semibold mt-4">Địa chỉ nhận hàng:</label>
-                    <input type="text" name="shipping_address" placeholder="Số nhà, đường, phường/xã..." required
-                           class="w-full border rounded px-4 py-2 mb-3" />
+                    <input type="text" name="shipping_address" id="shipping_address" placeholder="Số nhà, đường, phường/xã..." required
+                           class="w-full border rounded px-4 py-2 mb-3" value="<%= (currentUser!=null && currentUser.getAddressCustomer()!=null) ? currentUser.getAddressCustomer() : "" %>" />
 
                     <!-- Trường ẩn để lưu toạ độ nếu chọn từ bản đồ -->
                     <input type="hidden" name="latitude" id="latitude" />
@@ -273,7 +273,25 @@
                             iconAnchor: [13, 41]
                         })
                     }).addTo(map);
+
+                    // Reverse geocode to fill address (avoid JSP EL by not using template literals)
+                    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + selectedLat + '&lon=' + selectedLng)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data && data.display_name) {
+                                $('#shipping_address').val(data.display_name);
+                                $('#map-status').removeClass('hidden');
+                            } else {
+                                alert('Không tìm được địa chỉ tại vị trí đã chọn.');
+                            }
+                        })
+                        .catch(() => alert('Không truy vấn được địa chỉ. Vui lòng thử lại.'));
                 });
+            }
+            // If address already filled, geocode and show marker at that location
+            const addr = $('#shipping_address').val();
+            if (addr && addr.trim().length > 5) {
+                geocodeAddress(addr, true);
             }
         }
 
@@ -291,6 +309,30 @@
         function closeMapPopup() {
             $('#map-popup').addClass('hidden');
         }
+
+    // Forward geocoding from address to coordinates
+    function geocodeAddress(address, centerOnly = false) {
+        fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(address))
+            .then(r => r.json())
+            .then(results => {
+                if (results && results.length > 0) {
+                    const { lat, lon, display_name } = results[0];
+                    selectedLat = parseFloat(lat);
+                    selectedLng = parseFloat(lon);
+                    if (map) {
+                        map.setView([selectedLat, selectedLng], 16);
+                        if (marker) map.removeLayer(marker);
+                        marker = L.marker([selectedLat, selectedLng]).addTo(map);
+                    }
+                    if (!centerOnly) {
+                        $('#shipping_address').val(display_name);
+                    }
+                } else {
+                    alert('Không tìm thấy vị trí cho địa chỉ đã nhập.');
+                }
+            })
+            .catch(() => alert('Không truy vấn được vị trí.'));
+    }
     </script>
 
 

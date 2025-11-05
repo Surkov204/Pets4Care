@@ -1,7 +1,6 @@
 package controller;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import model.Customer;
 import model.GoogleUser;
@@ -11,7 +10,6 @@ import java.io.IOException;
 import service.IUserService;
 import utils.*;
 
-@WebServlet(name = "GoogleLoginServlet", urlPatterns = {"/logingoogle"})
 public class GoogleLoginServlet extends HttpServlet {
 
 	private final IUserService userService = new UserService();

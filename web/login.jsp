@@ -491,6 +491,79 @@
         margin: 0; /* Điều chỉnh lại margin */
     }
 
+    /* Account Types Info Box */
+    .account-types-info {
+        margin-top: 1.5rem;
+        padding: 1.2rem;
+        background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+        border-radius: var(--border-radius-small);
+        border-left: 4px solid var(--primary);
+        font-size: 0.9rem;
+    }
+
+    .account-types-info h4 {
+        color: var(--primary);
+        font-weight: 700;
+        margin-bottom: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+    }
+
+    .account-types-info p {
+        color: var(--text);
+        margin-bottom: 0.6rem;
+        line-height: 1.6;
+    }
+
+    .account-types-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin-top: 0.8rem;
+    }
+
+    .account-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.9rem;
+        background: white;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text);
+        box-shadow: 0 2px 4px rgba(111, 213, 221, 0.15);
+        transition: var(--transition);
+    }
+
+    .account-type-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(111, 213, 221, 0.25);
+    }
+
+    .account-type-badge.customer { border-left: 3px solid #6FD5DD; }
+    .account-type-badge.doctor { border-left: 3px solid #FF8C94; }
+    .account-type-badge.staff { border-left: 3px solid #FFC94D; }
+    .account-type-badge.admin { border-left: 3px solid #9333ea; }
+
+    @media (max-width: 480px) {
+        .account-types-info {
+            padding: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .account-types-list {
+            gap: 0.4rem;
+        }
+
+        .account-type-badge {
+            padding: 0.4rem 0.7rem;
+            font-size: 0.8rem;
+        }
+    }
+
     </style>
 </head>
 
@@ -562,6 +635,31 @@
 
         <div class="register-link">
             Bạn chưa có tài khoản? <a href="register.jsp">🎉 Đăng ký ngay</a>
+        </div>
+
+        <!-- Account Types Information -->
+        <div class="account-types-info">
+            <h4>
+                <i class="fas fa-info-circle"></i> 
+                Hỗ trợ đăng nhập cho nhiều loại tài khoản
+            </h4>
+            <p>
+                Trang đăng nhập này hỗ trợ các loại tài khoản sau. Vui lòng sử dụng email và mật khẩu đã đăng ký để đăng nhập:
+            </p>
+            <div class="account-types-list">
+                <span class="account-type-badge customer">
+                    <i class="fas fa-user"></i> Khách hàng
+                </span>
+                <span class="account-type-badge doctor">
+                    <i class="fas fa-user-md"></i> Bác sĩ
+                </span>
+                <span class="account-type-badge staff">
+                    <i class="fas fa-user-tie"></i> Nhân viên
+                </span>
+                <span class="account-type-badge admin">
+                    <i class="fas fa-user-shield"></i> Quản trị viên
+                </span>
+            </div>
         </div>
 
         <c:if test="${not empty error}">

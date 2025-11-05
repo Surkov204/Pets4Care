@@ -270,7 +270,9 @@
             <div class="user-section">
                 <div class="avatar-dropdown">
                     <div class="avatar" onclick="toggleDropdown()">
-                        <img src="${pageContext.request.contextPath}/images/staff-avatar.png" alt="Staff">
+                        <img src="${pageContext.request.contextPath}/${sessionScope.staff.avatar != null ? sessionScope.staff.avatar : 'images/staff-avatar.png'}" 
+                             alt="Staff"
+                             style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
                         <span>${sessionScope.staff.name}</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
@@ -294,13 +296,12 @@
             <aside class="staff-sidebar">
                 <ul>
                     <li><a href="${pageContext.request.contextPath}/staff/dashboard.jsp">
-                    <i class="fas fa-home"></i> Dashboard
-                    </a></li>
+                            <i class="fas fa-home"></i> Dashboard
+                        </a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/viewOrder"><i class="fas fa-receipt"></i> View Orders</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/mySchedule"><i class="fas fa-calendar-alt"></i> My Work Schedule</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-users"></i> Customer Profile</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/services-booking"><i class="fas fa-list"></i> Services Booking</a></li>
-                    <li><a href="${pageContext.request.contextPath}/staff/requestShift.jsp"><i class="fas fa-exchange-alt"></i> Request Shift</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/chatCustomer.jsp"><i class="fas fa-comments"></i> Chat with Customer</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/products"><i class="fas fa-box"></i> View Product</a></li>
                 </ul>
@@ -351,7 +352,6 @@
                                 <th>Stock</th>
                                 <th>Supplier</th>
                                 <th>Status</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -376,29 +376,18 @@
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
-                                    <td>
-                                        <a href="/Pets4Care/staff/products?action=view&id=${product.productId}"
-                                           class="btn-action view">
-                                            <i class="fas fa-eye"></i> View
-                                        </a>
-                                        <a href="/Pets4Care/staff/products?action=edit&id=${product.productId}"
-                                           class="btn-action edit">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </a>
-                                    </td>
                                 </tr>
                             </c:forEach>
 
                             <c:if test="${empty products}">
                                 <tr>
-                                    <td colspan="8" style="text-align:center; color:var(--text-light); padding:1rem;">
+                                    <td colspan="7" style="text-align:center; color:var(--text-light); padding:1rem;">
                                         Không có sản phẩm nào được tìm thấy 🐶
                                     </td>
                                 </tr>
                             </c:if>
                         </tbody>
                     </table>
-
                     <!-- Pagination -->
                     <c:if test="${totalPages > 1}">
                         <div class="pagination">
@@ -536,7 +525,7 @@
                 dropdown.classList.toggle('show');
             }
 
-        // Close dropdown when clicking outside
+            // Close dropdown when clicking outside
             document.addEventListener('click', function (event) {
                 const dropdown = document.getElementById('dropdownMenu');
                 const avatar = document.querySelector('.avatar');

@@ -64,9 +64,9 @@ public class ServicesBookingServlet extends HttpServlet {
             } else if (status != null && !status.trim().isEmpty()) {
                 bookings = bookingDAO.getBookingsByStatus(status.trim());
             } else {
-                bookings = bookingDAO.getAllBookings();
+                  bookings = bookingDAO.getAllBookingsForStaffView();
             }
-            
+            System.out.println("[DEBUG] >>> FINISHED getAllBookingsForStaffView(): " + bookings.size());
             request.setAttribute("bookings", bookings);
             request.setAttribute("keyword", keyword);
             request.setAttribute("status", status);

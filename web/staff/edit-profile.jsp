@@ -78,7 +78,9 @@
             <div class="user-section">
                 <div class="avatar-dropdown">
                     <div class="avatar" onclick="toggleDropdown()">
-                        <img src="${pageContext.request.contextPath}/images/staff-avatar.png" alt="Staff">
+                        <img src="${pageContext.request.contextPath}/${sessionScope.staff.avatar != null ? sessionScope.staff.avatar : 'images/staff-avatar.png'}" 
+                             alt="Staff"
+                             style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
                         <span>${sessionScope.staff.name}</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
@@ -135,7 +137,23 @@
                             <i class="fas fa-user"></i> Thông tin cá nhân
                         </h3>
 
-                        <form action="${pageContext.request.contextPath}/staff/update-profile" method="post" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <form action="${pageContext.request.contextPath}/staff/update-profile" 
+                              method="post" 
+                              enctype="multipart/form-data" 
+                              style="display: flex; flex-direction: column; gap: 1rem;">
+                            <!-- Avatar Section -->
+                            <div style="text-align:center; margin-bottom: 20px;">
+                                <img id="avatarPreview"
+                                     src="${pageContext.request.contextPath}/${sessionScope.staff.avatar != null ? sessionScope.staff.avatar : 'images/staff-avatar.png'}"
+                                     alt="Avatar"
+                                     style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:2px solid #ddd;">
+                                <br>
+                                <label for="avatarFile" style="cursor:pointer; color:#17a2b8; margin-top:8px; display:inline-block;">
+                                    <i class="fas fa-camera"></i> Thay đổi ảnh đại diện
+                                </label>
+                                <input type="file" id="avatarFile" name="avatarFile" accept="image/*" style="display:none;"
+                                       onchange="previewAvatar(event)">
+                            </div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                                 <div>
                                     <label for="name" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Họ và tên *:</label>
@@ -226,7 +244,7 @@
                 dropdown.classList.toggle('show');
             }
 
-        // Close dropdown when clicking outside
+            // Close dropdown when clicking outside
             document.addEventListener('click', function (event) {
                 const dropdown = document.getElementById('dropdownMenu');
                 const avatar = document.querySelector('.avatar');
@@ -236,13 +254,13 @@
                 }
             });
 
-        // Email validation function
+            // Email validation function
             function validateEmail(email) {
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 return emailRegex.test(email);
             }
 
-        // Modal confirmation functions
+            // Modal confirmation functions
             function showConfirmModal() {
                 // Validate form first
                 const form = document.querySelector('form');
@@ -289,21 +307,21 @@
                 document.querySelector('form').submit();
             }
 
-        // Close modal when clicking outside
+            // Close modal when clicking outside
             document.getElementById('confirmModal').addEventListener('click', function (event) {
                 if (event.target === this) {
                     hideConfirmModal();
                 }
             });
 
-        // Close modal with Escape key
+            // Close modal with Escape key
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
                     hideConfirmModal();
                 }
             });
 
-        // Toggle password visibility
+            // Toggle password visibility
             document.getElementById('togglePassword').addEventListener('click', function () {
                 const passwordInput = document.getElementById('password');
                 const passwordIcon = document.getElementById('passwordIcon');
@@ -318,6 +336,14 @@
                     passwordIcon.classList.add('fa-eye');
                 }
             });
+            function previewAvatar(event) {
+                const reader = new FileReader();
+                reader.onload = function () {
+                    const preview = document.getElementById('avatarPreview');
+                    preview.src = reader.result;
+                };
+                reader.readAsDataURL(event.target.files[0]);
+            }
         </script>
 
     </body>

@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="java.util.*, model.CartItem, model.Customer" %>
+<%@ page import="java.util.*, model.CartItem, model.Customer, dao.UserDAO, model.Order" %>
 <%@ page session="true" %>
 <html lang="vi">
     <head>
@@ -18,7 +18,7 @@
             }
             .quantity-input {
                 transition: all 0.3s ease;
-            }
+            } 
             .quantity-input:focus {
                 border-color: var(--primary) !important;
                 box-shadow: 0 0 0 3px rgba(111, 213, 221, 0.2) !important;
@@ -110,7 +110,21 @@
             <div class="text-center py-20 bg-gray-50 rounded">
                 <div class="text-5xl mb-4">🛒</div>
                 <p class="text-lg text-gray-600 mb-4">Giỏ hàng trống</p>
-                <a href="<%= request.getContextPath()%>/home" class="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600 transition">🎾 Tiếp tục mua sắm</a>
+                <div class="space-x-4">
+                    <a href="<%= request.getContextPath()%>/home" class="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600 transition">🎾 Tiếp tục mua sắm</a>
+                    <%
+                        // Hiển thị nút xem lịch sử đơn hàng nếu user đã đăng nhập
+                        if (currentUser != null) {
+                    %>
+                    <a href="<%= request.getContextPath()%>/order/order-history.jsp"
+                       class="inline-block px-6 py-3 rounded font-semibold transition-all duration-300"
+                       style="background: var(--card-bg-alt); color: var(--text); border: 2px solid rgba(111, 213, 221, 0.3); border-radius: var(--border-radius-small); text-decoration: none; font-family: 'Quicksand', sans-serif;"
+                       onmouseover="this.style.background = 'rgba(111, 213, 221, 0.1)'; this.style.transform = 'translateY(-2px)'"
+                       onmouseout="this.style.background = 'var(--card-bg-alt)'; this.style.transform = 'translateY(0)'">
+                        📦 Xem lịch sử đơn hàng
+                    </a>
+                    <% } %>
+                </div>
             </div>
             <% } else { %>
             <div class="space-y-6">
@@ -139,6 +153,10 @@
                 <div class="flex justify-between items-center border-t pt-4">
 
                     <div class="mt-6 text-center space-x-4">
+                        <%
+                            // Hiển thị link lịch sử đơn hàng nếu người dùng đã đăng nhập
+                            if (currentUser != null) {
+                        %>
                         <a href="<%= request.getContextPath()%>/order/order-history.jsp"
                            class="inline-block px-6 py-3 rounded font-semibold transition-all duration-300"
                            style="background: var(--card-bg-alt); color: var(--text); border: 2px solid rgba(111, 213, 221, 0.3); border-radius: var(--border-radius-small); text-decoration: none; font-family: 'Quicksand', sans-serif;"
@@ -146,7 +164,9 @@
                            onmouseout="this.style.background = 'var(--card-bg-alt)'; this.style.transform = 'translateY(0)'">
                             📦 Xem lịch sử đơn hàng
                         </a>
-
+                        <% 
+                            }
+                        %>
                         <a href="<%= request.getContextPath()%>/home" 
                            class="inline-block px-6 py-3 rounded font-semibold transition-all duration-300"
                            style="background: linear-gradient(135deg, var(--accent), var(--accent-pink)); color: white; border-radius: var(--border-radius-small); box-shadow: var(--shadow-button); text-decoration: none; font-family: 'Quicksand', sans-serif;"
@@ -168,7 +188,7 @@
                     <select name="payment_method" required class="w-full border rounded px-4 py-2">
                         <option value="">-- Chọn phương thức --</option>
                         <option value="Tiền mặt">💵 Tiền mặt khi nhận hàng</option>
-                        <option value="Chuyển khoản">🏦 Chuyển khoản ngân hàng</option>
+                        <option value="PayOS">💳 Thanh toán online (PayOS)</option>
                     </select>
                     <label class="block text-gray-700 font-semibold mt-4">Địa chỉ nhận hàng:</label>
                     <input type="text" name="shipping_address" placeholder="Số nhà, đường, phường/xã..." required

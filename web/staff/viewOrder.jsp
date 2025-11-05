@@ -5,6 +5,7 @@
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>🐾 View Orders | Pet4Care</title>
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/staff.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -126,7 +127,9 @@
             <div class="user-section">
                 <div class="avatar-dropdown">
                     <div class="avatar" onclick="toggleDropdown()">
-                        <img src="${pageContext.request.contextPath}/images/staff-avatar.png" alt="Staff">
+                        <img src="${pageContext.request.contextPath}/${sessionScope.staff.avatar != null ? sessionScope.staff.avatar : 'images/staff-avatar.png'}" 
+                             alt="Staff"
+                             style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
                         <span>${sessionScope.staff.name}</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>

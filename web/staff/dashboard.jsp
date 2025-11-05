@@ -1,9 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>🐾 Staff Dashboard | Pet4Care</title>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <link rel="stylesheet" href="${pageContext.request.contextPath}/css/staff.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <style>
@@ -152,12 +156,209 @@
             #notifyList {
                 color: #222; /* 👈 Chữ đậm, dễ đọc trên nền trắng */
             }
+            .attendance-section {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 24px;
+                margin-top: 25px;
+            }
 
+            .attendance-card, .salary-card {
+                flex: 1;
+                background: #fff;
+                border-radius: 16px;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+                padding: 20px 25px;
+                transition: all 0.3s ease;
+            }
 
+            .attendance-card:hover, .salary-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            }
+
+            .attendance-card h3, .salary-card h3 {
+                color: #334155;
+                font-weight: 600;
+                margin-bottom: 10px;
+            }
+
+            .attendance-subtext {
+                color: #64748b;
+                font-size: 13px;
+                margin-bottom: 15px;
+            }
+
+            .attendance-actions {
+                margin-bottom: 10px;
+            }
+
+            .btn-checkin, .btn-checkout, .btn-calc-salary {
+                border: none;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                padding: 10px 20px;
+                transition: all 0.3s ease;
+            }
+
+            .btn-checkin {
+                background: #22c55e;
+                color: #fff;
+            }
+
+            .btn-checkin:hover {
+                background: #16a34a;
+            }
+
+            .btn-checkout {
+                background: #ef4444;
+                color: #fff;
+            }
+
+            .btn-checkout:hover {
+                background: #dc2626;
+            }
+
+            .salary-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 15px;
+            }
+
+            .btn-calc-salary {
+                background: #3b82f6;
+                color: #fff;
+                font-size: 13px;
+            }
+
+            .btn-calc-salary:hover {
+                background: #2563eb;
+            }
+
+            .salary-table {
+                width: 100%;
+                border-collapse: collapse;
+                text-align: center;
+            }
+
+            .salary-table th {
+                background: #f1f5f9;
+                color: #475569;
+                padding: 10px;
+                font-weight: 600;
+            }
+
+            .salary-table td {
+                padding: 10px;
+                border-top: 1px solid #e2e8f0;
+                color: #334155;
+                font-size: 14px;
+            }
+
+            .salary-table .empty-msg {
+                color: #94a3b8;
+                font-style: italic;
+                text-align: center;
+            }
+
+            .attendance-toast {
+                margin-top: 15px;
+                background: #dcfce7;
+                color: #166534;
+                padding: 10px 14px;
+                border-radius: 10px;
+                text-align: center;
+                font-weight: 500;
+            }
+
+            /* ============ SMART TOGGLE ATTENDANCE BUTTON ============ */
+            .btn-toggle {
+                width: 80%;
+                font-size: 20px;
+                padding: 16px 0;
+                border: none;
+                border-radius: 50px;
+                cursor: pointer;
+                font-weight: 700;
+                transition: all 0.3s ease;
+                color: #fff;
+                background: linear-gradient(135deg, #22c55e, #16a34a);
+                box-shadow: 0 6px 15px rgba(34,197,94,0.4);
+            }
+
+            .btn-toggle:hover {
+                transform: scale(1.03);
+            }
+
+            .attendance-card form[action$="toggle"] .btn-toggle:has(+ input[value="checkout"]),
+            .btn-toggle.checkout {
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+                box-shadow: 0 6px 15px rgba(239,68,68,0.4);
+            }
+
+            /* Card styling giữ nguyên */
+            .attendance-card {
+                flex: 1;
+                background: #fff;
+                border-radius: 16px;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+                padding: 30px 25px;
+                text-align: center;
+                transition: all 0.3s ease;
+            }
+
+            .attendance-card:hover {
+                transform: translateY(-3px);
+            }
+
+            .attendance-card h3 {
+                color: #334155;
+                font-weight: 600;
+                margin-bottom: 10px;
+            }
+
+            .attendance-subtext {
+                color: #64748b;
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+            .btn-checkin {
+                background: linear-gradient(135deg, #22c55e, #16a34a);
+                color: #fff;
+                font-size: 18px;
+                padding: 14px 40px;
+                border: none;
+                border-radius: 40px;
+                cursor: pointer;
+                transition: 0.3s ease;
+                box-shadow: 0 5px 12px rgba(34,197,94,0.4);
+            }
+            .btn-checkin:hover {
+                background: linear-gradient(135deg, #16a34a, #15803d);
+                transform: scale(1.03);
+            }
+
+            .btn-checkout {
+                background: linear-gradient(135deg, #facc15, #eab308);
+                color: #333;
+                font-size: 18px;
+                padding: 14px 40px;
+                border: none;
+                border-radius: 40px;
+                cursor: pointer;
+                transition: 0.3s ease;
+                box-shadow: 0 5px 12px rgba(250,204,21,0.4);
+            }
+            .btn-checkout:hover {
+                background: linear-gradient(135deg, #eab308, #ca8a04);
+                transform: scale(1.03);
+            }
         </style>
     </head>
     <body>
-
+        <% System.out.println("[JSP DEBUG] sessionScope.isCheckedIn = " + session.getAttribute("isCheckedIn"));%>
         <header class="staff-header">
             <c:if test="${not empty sessionScope.swapSuccess}">
                 <div style="background:#d1fae5;color:#065f46;padding:10px;border-radius:10px;margin:10px 0;">
@@ -180,7 +381,9 @@
                 </div>
                 <div class="avatar-dropdown">
                     <div class="avatar" onclick="toggleDropdown()">
-                        <img src="${pageContext.request.contextPath}/images/staff-avatar.png" alt="Staff">
+                        <img src="${pageContext.request.contextPath}/${sessionScope.staff.avatar != null ? sessionScope.staff.avatar : 'images/staff-avatar.png'}" 
+                             alt="Staff"
+                             style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
                         <span>${sessionScope.staff.name}</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
@@ -207,7 +410,6 @@
                     <li><a href="${pageContext.request.contextPath}/staff/mySchedule"><i class="fas fa-calendar-alt"></i> My Work Schedule</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-users"></i> Customer Profile</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/services-booking"><i class="fas fa-list"></i> Services Booking</a></li>
-                    <li><a href="${pageContext.request.contextPath}/staff/requestShift.jsp"><i class="fas fa-exchange-alt"></i> Request Shift</a></li>
                     <li class="chat-item">
                         <a href="${pageContext.request.contextPath}/staff/chatCustomer" id="chatMenuItem">
                             <i class="fas fa-comments"></i> Chat with Customer
@@ -224,6 +426,67 @@
                     <h2>Chào mừng trở lại, ${sessionScope.staff.name} 🐾</h2>
                     <p>Chúc bạn một ngày làm việc vui vẻ cùng thú cưng nhé!</p>
                 </section>
+                <!-- Attendance & Payroll Section -->
+                <section class="attendance-section">
+                    <!-- Card bên trái: Check-in / Check-out -->
+                    <div class="attendance-card">
+                        <h3><i class="fas fa-clock"></i> Chấm công</h3>
+
+                        <form id="attendanceForm">
+                            <c:choose>
+                                <c:when test="${isCheckedIn}">
+                                    <button type="button" id="attendanceButton" class="btn-checkout">Check-out</button>
+                                    <p id="attendanceStatus" class="attendance-subtext">Bạn đang trong ca làm.</p>
+                                </c:when>
+                                <c:otherwise>
+                                    <button type="button" id="attendanceButton" class="btn-checkin">Check-in</button>
+                                    <p id="attendanceStatus" class="attendance-subtext">Bạn chưa bắt đầu ca làm.</p>
+                                </c:otherwise>
+                            </c:choose>
+                        </form>
+                    </div>
+
+                    <!-- Card bên phải: Bảng lương -->
+                    <div class="salary-card">
+                        <div class="salary-header">
+                            <h3><i class="fas fa-coins"></i> Lương hiện tại</h3>
+                            <button type="button" id="generatePayrollBtn" class="btn-calc-salary">
+                                <i class="fas fa-calculator"></i> Tính lương tháng này
+                            </button>
+                        </div>
+
+                        <table class="salary-table">
+                            <thead>
+                                <tr>
+                                    <th>Tháng</th>
+                                    <th>Tổng giờ</th>
+                                    <th>Lương/Giờ (₫)</th>
+                                    <th>Tổng Lương (₫)</th>
+                                    <th>Ngày Tạo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:if test="${not empty sessionScope.latestPayroll}">
+                                    <tr>
+                                        <td>${sessionScope.latestPayroll.periodStart} → ${sessionScope.latestPayroll.periodEnd}</td>
+                                        <td>${sessionScope.latestPayroll.totalHours}</td>
+                                        <td>${sessionScope.latestPayroll.hourlyRate}</td>
+                                        <td><b>${sessionScope.latestPayroll.totalSalary}</b></td>
+                                        <td>${sessionScope.latestPayroll.createdAt}</td>
+                                    </tr>
+                                </c:if>
+                                <c:if test="${empty sessionScope.latestPayroll}">
+                                    <tr><td colspan="5" class="empty-msg">Chưa có dữ liệu lương.</td></tr>
+                                </c:if>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <c:if test="${not empty sessionScope.attendanceMsg}">
+                    <div class="attendance-toast">${sessionScope.attendanceMsg}</div>
+                    <c:remove var="attendanceMsg" scope="session"/>
+                </c:if>
 
                 <section class="cards-grid">
                     <div class="dashboard-card" onclick="window.location.href = '${pageContext.request.contextPath}/staff/viewOrder'">
@@ -255,6 +518,7 @@
         </footer>
 
         <script>
+
             function toggleDropdown() {
                 const dropdown = document.getElementById('dropdownMenu');
                 dropdown.classList.toggle('show');
@@ -332,8 +596,8 @@
                                     // Dựa trên hình ảnh, ta dùng tiêu đề "Yêu cầu đổi ca mới" để nhận diện
                                     // (Tốt nhất là dùng một trường 'type' hoặc 'status' từ API, nhưng ta tạm dùng 'title')
 
-                                        if (n.title === 'Yêu cầu đổi ca mới' || n.title === 'Yêu cầu làm thay') {
-                                            actionButtons = `
+                                    if (n.title === 'Yêu cầu đổi ca mới' || n.title === 'Yêu cầu làm thay') {
+                                        actionButtons = `
                                                 <div style="display:flex; gap:10px; margin-top:10px;">
                                                     <form action="${pageContext.request.contextPath}/staff/acceptShiftRequest" method="post" style="margin:0;">
                                                         <input type="hidden" name="requestId" value="${'$'}{n.id}">
@@ -350,7 +614,7 @@
                                                     </form>
                                                 </div>
                                             `;
-                                        }
+                                    }
 
                                     return ''
                                             + '<div style="padding:10px 14px;border-bottom:1px solid #eee;">'
@@ -378,19 +642,144 @@
                     const formData = new FormData(form);
                     const parentDiv = form.closest("div");
 
-                    fetch(form.action, { method: "POST", body: formData })
-                        .then(res => {
-                            if (!res.ok) throw new Error("Network error");
-                            parentDiv.innerHTML = `<p style="color:#28a745;font-size:13px;">✅ Cảm ơn bạn! Phản hồi đã được gửi.</p>`;
-                            updateNotifyBadge();
-                        })
-                        .catch(err => console.error("❌ Lỗi gửi phản hồi:", err));
+                    fetch(form.action, {method: "POST", body: formData})
+                            .then(res => {
+                                if (!res.ok)
+                                    throw new Error("Network error");
+                                parentDiv.innerHTML = `<p style="color:#28a745;font-size:13px;">✅ Cảm ơn bạn! Phản hồi đã được gửi.</p>`;
+                                updateNotifyBadge();
+                            })
+                            .catch(err => console.error("❌ Lỗi gửi phản hồi:", err));
                 }
+            });
+            document.addEventListener("DOMContentLoaded", () => {
+                const btn = document.getElementById("attendanceButton");
+                const generateBtn = document.getElementById("generatePayrollBtn");
+                
+                async function verifyCompanyNetwork() {
+                    try {
+                        const res = await fetch("${pageContext.request.contextPath}/staff/verifyNetwork");
+                        const data = await res.json();
+
+                        if (data.isCompanyNetwork)
+                            return true;
+
+                        Swal.fire({
+                            icon: "warning",
+                            title: "Sai Wi-Fi!",
+                            text: "Vui lòng kết nối với Wi-Fi công ty 'Dung' trước khi check-in/check-out.",
+                            confirmButtonText: "OK"
+                        });
+                        return false;
+                    } catch (err) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Không xác định được mạng!",
+                            text: "Hãy thử lại khi có kết nối Internet ổn định.",
+                            confirmButtonText: "OK"
+                        });
+                        return false;
+                    }
+                }
+
+                btn.addEventListener("click", async () => {
+                        const inCompanyWifi = await verifyCompanyNetwork();
+                        if (!inCompanyWifi) return; // ❌ dừng nếu sai Wi-Fi{
+                        
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append("action", "toggle");
+
+                        const res = await fetch("${pageContext.request.contextPath}/staff/attendance", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                            body: formData.toString()
+                        });
+
+                        const data = await res.json();
+
+                        if (data.status === "error") {
+                            Swal.fire({
+                                icon: "warning",
+                                title: "Thông báo",
+                                text: data.message,
+                                confirmButtonText: "OK"
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Thành công!",
+                                text: data.message,
+                                confirmButtonText: "OK"
+                            }).then(() => {
+                                const btn = document.getElementById("attendanceButton");
+                                const status = document.getElementById("attendanceStatus");
+
+                                if (btn.classList.contains("btn-checkin")) {
+                                    // Đổi từ check-in sang check-out (xanh → vàng)
+                                    btn.classList.remove("btn-checkin");
+                                    btn.classList.add("btn-checkout");
+                                    btn.textContent = "Check-out";
+                                    status.textContent = "Bạn đang trong ca làm.";
+                                } else {
+                                    // Đổi từ check-out sang check-in (vàng → xanh)
+                                    btn.classList.remove("btn-checkout");
+                                    btn.classList.add("btn-checkin");
+                                    btn.textContent = "Check-in";
+                                    status.textContent = "Bạn chưa bắt đầu ca làm.";
+                                }
+                            });
+                        }
+                    } catch (err) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Lỗi hệ thống",
+                            text: "Không thể kết nối máy chủ. Hãy thử lại sau.",
+                            confirmButtonText: "OK"
+                        });
+                    }
+                });
+
+                generateBtn.addEventListener("click", async () => {
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append("action", "generate");
+
+                        const res = await fetch("${pageContext.request.contextPath}/staff/attendance", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                            body: formData.toString()
+                        });
+
+                        const data = await res.json();
+                        if (data.status === "success") {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Thành công!",
+                                text: data.message,
+                                confirmButtonText: "OK"
+                            }).then(() => window.location.reload());
+                        } else {
+                            Swal.fire({
+                                icon: "warning",
+                                title: "Không thành công",
+                                text: data.message,
+                                confirmButtonText: "OK"
+                            });
+                        }
+                    } catch (err) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Lỗi hệ thống",
+                            text: "Không thể kết nối máy chủ.",
+                            confirmButtonText: "OK"
+                        });
+                    }
+                });
             });
             updateNotifyBadge();
             updateChatBadge();
             setInterval(updateChatBadge, 5000);
         </script>
-
     </body>
 </html>

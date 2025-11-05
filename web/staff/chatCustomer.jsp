@@ -206,17 +206,17 @@
     <body>
         <header class="staff-header">
             <div class="logo-section">
-                <img src="${pageContext.request.contextPath}/images/logo.png" alt="Pet4Care">
                 <div>
                     <h1>Pet4Care</h1>
-                    <p>Staff Dashboard</p>
                 </div>
             </div>
             <div class="user-section">
                 <div class="notif"><i class="fas fa-bell"></i></div>
                 <div class="chat"><i class="fas fa-comments"></i></div>
                 <div class="avatar">
-                    <img src="${pageContext.request.contextPath}/images/staff-avatar.png" alt="Staff">
+                    <img src="${pageContext.request.contextPath}/${sessionScope.staff.avatar != null ? sessionScope.staff.avatar : 'images/staff-avatar.png'}" 
+                         alt="Staff"
+                         style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
                     <span>${sessionScope.staff.name}</span>
                 </div>
                 <form action="logout" method="post">

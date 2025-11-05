@@ -4,21 +4,25 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import model.CartItem;
 import model.Customer;
+import service.IOrderService;
+import service.OrderService;
 import utils.DBConnection;
 import utils.EmailUtils;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 
-@WebServlet(urlPatterns = {"/orderservlet"})
 public class OrderServlet extends HttpServlet {
+
+    private final IOrderService orderService = new OrderService();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -52,7 +56,8 @@ public class OrderServlet extends HttpServlet {
         JsonArray itemsJson = new JsonArray();
         for (CartItem item : cart.values()) {
             JsonObject obj = new JsonObject();
-            obj.addProperty("product_id", item.getProduct().getProductId());
+            // Use toy_id key which the stored procedure expects
+            obj.addProperty("toy_id", item.getProduct().getProductId());
             obj.addProperty("quantity", item.getQuantity());
             obj.addProperty("unit_price", item.getProduct().getPrice());
             itemsJson.add(obj);
@@ -69,15 +74,51 @@ public class OrderServlet extends HttpServlet {
             cs.setObject(6, lat); // có thể là null
             cs.setObject(7, lng); // có thể là null
 
-            boolean hasResult = cs.execute();
+            // Execute and try to locate a result set that contains the generated order id
+            boolean hasResult = false;
             int orderId = -1;
+            try {
+                hasResult = cs.execute();
 
-            if (hasResult) {
-                try (ResultSet rs = cs.getResultSet()) {
-                    if (rs.next()) {
-                        orderId = rs.getInt("order_id");
+                // The callable may return update counts and/or result sets in multiple steps.
+                // Iterate until we find a ResultSet that contains an order_id column.
+                boolean more = hasResult;
+                // First check current state
+                while (true) {
+                    if (more) {
+                        try (ResultSet rs = cs.getResultSet()) {
+                            if (rs != null) {
+                                if (rs.next()) {
+                                    // try to get column named order_id or first column
+                                    try {
+                                        orderId = rs.getInt("order_id");
+                                    } catch (SQLException ex) {
+                                        // fallback to first column
+                                        orderId = rs.getInt(1);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        // no current ResultSet; check update count - ignore
+                        int updateCount = cs.getUpdateCount();
+                        if (updateCount == -1) {
+                            // No more results
+                        }
                     }
+
+                    // Move to next result (if any). If there are no more results, break.
+                    if (!cs.getMoreResults() && cs.getUpdateCount() == -1) {
+                        break;
+                    }
+                    more = cs.getMoreResults();
                 }
+
+            } catch (SQLException ex) {
+                // In case of SQL error from stored proc, capture message for debug and show friendly error
+                ex.printStackTrace();
+                session.setAttribute("orderError", "Lỗi khi tạo đơn: " + ex.getMessage());
             }
 
             System.out.println("====== DEBUG ĐẶT HÀNG ======");
@@ -94,16 +135,52 @@ public class OrderServlet extends HttpServlet {
                 session.removeAttribute("cart");
 
                 String encodedMethod = java.net.URLEncoder.encode(paymentMethod, "UTF-8");
-                response.sendRedirect("order/order-success.jsp?orderId=" + orderId + "&method=" + encodedMethod);
+
+                // Nếu chọn PayOS, chuyển hướng đến tạo link thanh toán
+                if ("PayOS".equals(paymentMethod)) {
+                    response.sendRedirect(request.getContextPath() + "/payos/create-payment?orderId=" + orderId);
+                } else {
+                    response.sendRedirect("order/order-success.jsp?orderId=" + orderId + "&method=" + encodedMethod);
+                }
             } else {
+                // If stored proc didn't return order id, set session error for display and redirect back to cart
+                if (session.getAttribute("orderError") == null) {
+                    session.setAttribute("orderError", "Không thể tạo đơn hàng. Vui lòng thử lại sau.");
+                }
                 response.sendRedirect("cart/cart.jsp?error=order_failed");
             }
 
         } catch (Exception e) {
             e.printStackTrace();
+            session.setAttribute("orderError", "Lỗi hệ thống khi tạo đơn: " + e.getMessage());
             response.sendRedirect("cart/cart.jsp?error=order_failed");
         }
     }
 
-}
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String path = req.getServletPath();
 
+        if ("/admin/manage-order".equals(path)) {
+            String keyword = req.getParameter("keyword");
+            String status = req.getParameter("status");
+
+            List<model.Order> orders;
+
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                orders = orderService.searchOrders(keyword);
+            } else if (status != null && !"all".equals(status)) {
+                orders = orderService.filterOrdersByStatus(status);
+            } else {
+                orders = orderService.getAllOrders();
+            }
+
+            req.setAttribute("orders", orders);
+            req.setAttribute("keyword", keyword);
+            req.setAttribute("status", status);
+            req.getRequestDispatcher("/admin/manage-order.jsp").forward(req, resp);
+        } else {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+        }
+    }
+}

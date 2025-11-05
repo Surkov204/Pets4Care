@@ -13,8 +13,8 @@ public class DBConnectionListener implements ServletContextListener {
         try {
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             conn = DriverManager.getConnection(
-                "jdbc:sqlserver://localhost:1433;databaseName=Pets4Care;encrypt=false;",
-                "sa", "your_password"
+                "jdbc:sqlserver://localhost:1433;databaseName=SHOP_PET_Database;encrypt=false;trustServerCertificate=true",
+                "sa", "12345"
             );
             sce.getServletContext().setAttribute("DBConnection", conn);
             System.out.println("✅ Database connected successfully!");

@@ -34,6 +34,10 @@
             <file>file:/D:/Pet4Cares/Pets4Care/src/java/controller/OrderDetailServlet.java</file>
             <file>file:/D:/Pet4Cares/Pets4Care/src/java/controller/EditCustomerServlet.java</file>
             <file>file:/D:/Pet4Cares/Pets4Care/src/java/controller/AdminCustomerServlet.java</file>
+            <file>file:/D:/Pet4Cares/Pets4Care/src/java/dao/StaffDAO.java</file>
+            <file>file:/D:/Pet4Cares/Pets4Care/src/java/controller/AdminStaffServlet.java</file>
+            <file>file:/D:/Pet4Cares/Pets4Care/web/admin/view-staff.jsp</file>
+            <file>file:/D:/Pet4Cares/Pets4Care/web/admin/manage-staff.jsp</file>
         </group>
     </open-files>
 </project-private>

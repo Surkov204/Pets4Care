@@ -248,6 +248,7 @@ public class UserDAO {
         customer.setPhone(rs.getString("phone"));
         customer.setStatus(rs.getString("status"));
         customer.setGoogleId(rs.getString("google_id"));
+        customer.setRole(rs.getString("role"));
         return customer;
     }
 
@@ -350,4 +351,15 @@ public class UserDAO {
         return 0;
     }
 
+    public boolean updateRole(int customerId, String role) {
+        String sql = "UPDATE Customer SET role = ? WHERE customer_id = ?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, role);
+            ps.setInt(2, customerId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
 }

@@ -52,7 +52,7 @@ public class ShiftRequestController extends HttpServlet {
             } else if ("deny".equalsIgnoreCase(action)) {
                 reqDAO.updateStatus(id, "Rejected", null);
                 System.out.println("[ADMIN] ❌ Đã từ chối yêu cầu đổi ca #" + id);
-            }
+                }
 
             // Quay lại trang quản lý
             response.sendRedirect(request.getContextPath() + "/shift-request");

@@ -113,6 +113,30 @@ public class BoardingRoomDAO {
     }
     
     /**
+     * Lấy roomId đầu tiên theo roomType
+     */
+    public Integer getRoomIdByType(String roomType) {
+        String sql = "SELECT TOP 1 room_id FROM BoardingRoom WHERE room_type = ? ORDER BY room_id";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, roomType);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return rs.getInt("room_id");
+            }
+            
+        } catch (SQLException e) {
+            logger.severe("Error getting room ID by type: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+    
+    /**
      * Kiểm tra phòng có sẵn trong khoảng thời gian
      */
     public boolean isRoomAvailable(int roomId, Timestamp checkInDate, Timestamp checkOutDate) {
@@ -299,7 +323,17 @@ public class BoardingRoomDAO {
         room.setRoomId(rs.getInt("room_id"));
         room.setRoomName(rs.getString("room_name"));
         room.setRoomType(rs.getString("room_type"));
-        room.setCapacity(rs.getInt("capacity"));
+        // Map total_rooms từ database sang capacity trong model
+        try {
+            room.setCapacity(rs.getInt("total_rooms"));
+        } catch (SQLException e) {
+            // Fallback nếu không có total_rooms, thử capacity
+            try {
+                room.setCapacity(rs.getInt("capacity"));
+            } catch (SQLException e2) {
+                room.setCapacity(1); // Default value
+            }
+        }
         room.setPricePerDay(rs.getDouble("price_per_day"));
         room.setDescription(rs.getString("description"));
         room.setStatus(rs.getString("status"));

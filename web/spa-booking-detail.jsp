@@ -328,11 +328,11 @@
                 </div>
             </div>
 
-            <!-- Pet Information -->
+            <!-- Pet Information - Chỉ hiển thị thú cưng đã được chọn cho booking này -->
             <% if (customerPets != null && !customerPets.isEmpty()) { %>
             <div class="detail-card bg-white border border-gray-200 mb-8">
                 <div class="p-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">🐾 Thông tin thú cưng</h3>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">🐾 Thú cưng đã đặt dịch vụ</h3>
                     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <% for (Pet pet : customerPets) { %>
                         <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
@@ -340,7 +340,7 @@
                                 <div class="text-2xl mr-3"><%= pet.getSpeciesEmoji() %></div>
                                 <div>
                                     <h4 class="font-bold text-gray-800"><%= pet.getPetName() %></h4>
-                                    <p class="text-sm text-gray-600"><%= pet.getSpecies() %> - <%= pet.getBreed() %></p>
+                                    <p class="text-sm text-gray-600"><%= pet.getSpeciesDisplayName() %> - <%= pet.getBreed() %></p>
                                 </div>
                             </div>
                             <div class="space-y-2 text-sm">

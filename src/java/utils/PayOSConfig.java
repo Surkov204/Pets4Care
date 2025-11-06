@@ -21,7 +21,8 @@ public class PayOSConfig {
            properties.setProperty("payos.client.id", "aa93b610-c20b-4ffa-8c08-d006e01df689");
            properties.setProperty("payos.api.key", "0d00713c-3627-4033-a87e-ba646b371a95");
            properties.setProperty("payos.checksum.key", "d94677a139bd68e80dc67adf1fd3945db9c43679928823bfdf72f86d70d4ffd2");
-           properties.setProperty("payos.base.url", BASE_URL_PRIMARY);
+           // Try fallback URL instead of primary
+           properties.setProperty("payos.base.url", BASE_URL_FALLBACK);
            properties.setProperty("payos.webhook.url", "https://webhook.site/b15f91fa-1b0f-423a-90cf-35c6c0426fe0");
            // Endpoint refund có thể thay đổi theo tài liệu/phiên bản
            properties.setProperty("payos.refund.endpoint", REFUND_ENDPOINT_DEFAULT);

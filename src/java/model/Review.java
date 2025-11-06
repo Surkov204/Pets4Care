@@ -6,6 +6,8 @@ public class Review {
 
     private int    reviewId;
     private int    productId;
+    private int    serviceId;       // For spa service reviews
+    private int    bookingId;       // Link to Booking_Service
     private int    customerId;
     private int    rating;          // 1-5
     private String comment;
@@ -20,6 +22,12 @@ public class Review {
 
     public int getProductId()          { return productId;         }
     public void setProductId(int productId){ this.productId = productId;   }
+
+    public int getServiceId()          { return serviceId;         }
+    public void setServiceId(int serviceId){ this.serviceId = serviceId;   }
+
+    public int getBookingId()          { return bookingId;         }
+    public void setBookingId(int bookingId){ this.bookingId = bookingId;   }
 
     public int getCustomerId()             { return customerId;          }
     public void setCustomerId(int customerId){ this.customerId = customerId; }

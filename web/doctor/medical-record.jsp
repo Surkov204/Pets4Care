@@ -280,6 +280,10 @@
                                         </c:if>
                                     </td>
                                     <td>
+                                        <button onclick="openUpdateModal(${record.bookingId}, '${record.petName}', '${record.customerName}', '${record.status}')"
+                                                class="btn-small" style="background: #2196F3; margin-right: 5px;">
+                                            <i class="fas fa-edit"></i> Cập nhật
+                                        </button>
                                         <a href="appointment-detail.jsp?id=${record.bookingId}" class="btn-small">
                                             <i class="fas fa-eye"></i> Chi tiết
                                         </a>
@@ -328,6 +332,107 @@
                 </div>
             </div>
         </div>
+
+        <!-- Update Medical Record Modal -->
+        <div id="updateModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+            <div class="modal-content" style="background-color: #fefefe; margin: 2% auto; padding: 0; border-radius: 10px; width: 90%; max-width: 800px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px 10px 0 0;">
+                    <span class="close" onclick="closeUpdateModal()" style="float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+                    <h2 style="margin: 0;"><i class="fas fa-notes-medical"></i> Cập nhật hồ sơ y tế</h2>
+                    <p id="modalPetInfo" style="margin: 10px 0 0 0; opacity: 0.9;"></p>
+                </div>
+
+                <form action="${pageContext.request.contextPath}/doctor/update-medical-record" method="post" style="padding: 20px;">
+                    <input type="hidden" id="bookingId" name="bookingId">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <!-- Left Column -->
+                        <div>
+                            <h3 style="color: #667eea; margin-bottom: 15px;"><i class="fas fa-clipboard-list"></i> Thông tin khám bệnh</h3>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Triệu chứng:</label>
+                                <textarea name="symptoms" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Mô tả triệu chứng..."></textarea>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Chẩn đoán:</label>
+                                <textarea name="diagnosis" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Kết quả chẩn đoán..."></textarea>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Phương pháp điều trị:</label>
+                                <textarea name="treatment" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Phương pháp điều trị..."></textarea>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Đơn thuốc:</label>
+                                <textarea name="prescription" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Tên thuốc, liều lượng, cách dùng..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div>
+                            <h3 style="color: #667eea; margin-bottom: 15px;"><i class="fas fa-heartbeat"></i> Chỉ số sức khỏe</h3>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Cân nặng (kg):</label>
+                                <input type="number" name="weight" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="VD: 5.5">
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nhiệt độ (°C):</label>
+                                <input type="number" name="temperature" step="0.1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="VD: 38.5">
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nhịp tim (bpm):</label>
+                                <input type="number" name="heartRate" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="VD: 120">
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Huyết áp:</label>
+                                <input type="text" name="bloodPressure" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="VD: 120/80">
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Ngày tái khám:</label>
+                                <input type="date" name="followUpDate" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Trạng thái:</label>
+                                <select name="status" id="statusSelect" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                    <option value="confirmed">Đã xác nhận</option>
+                                    <option value="in_progress">Đang khám</option>
+                                    <option value="completed">Hoàn thành</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Full Width Fields -->
+                    <div style="margin-top: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Ghi chú thêm:</label>
+                        <textarea name="notes" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Ghi chú bổ sung..."></textarea>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Ghi chú tái khám:</label>
+                        <textarea name="followUpNotes" rows="2" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Lưu ý cho lần tái khám..."></textarea>
+                    </div>
+
+                    <div style="margin-top: 25px; text-align: right; border-top: 1px solid #ddd; padding-top: 20px;">
+                        <button type="button" onclick="closeUpdateModal()" style="background: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                            <i class="fas fa-times"></i> Hủy
+                        </button>
+                        <button type="submit" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer;">
+                            <i class="fas fa-save"></i> Lưu hồ sơ
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </main>
 </div>
 
@@ -345,11 +450,49 @@ function toggleDropdown() {
 document.addEventListener('click', function(event) {
     const dropdown = document.getElementById('dropdownMenu');
     const avatar = document.querySelector('.avatar');
-    
+
     if (!avatar.contains(event.target)) {
         dropdown.classList.remove('show');
     }
 });
+
+// Modal functions
+function openUpdateModal(bookingId, petName, customerName, status) {
+    document.getElementById('bookingId').value = bookingId;
+    document.getElementById('modalPetInfo').textContent = 'Thú cưng: ' + petName + ' | Chủ: ' + customerName;
+    document.getElementById('statusSelect').value = status;
+    document.getElementById('updateModal').style.display = 'block';
+}
+
+function closeUpdateModal() {
+    document.getElementById('updateModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('updateModal');
+    if (event.target == modal) {
+        closeUpdateModal();
+    }
+}
+
+// Show success/error messages
+window.onload = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'updated') {
+        alert('✅ Cập nhật hồ sơ y tế thành công!');
+        // Remove query params from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('error')) {
+        const error = urlParams.get('error');
+        let message = '❌ Có lỗi xảy ra!';
+        if (error === 'unauthorized') message = '❌ Bạn không có quyền cập nhật hồ sơ này!';
+        else if (error === 'booking_not_found') message = '❌ Không tìm thấy lịch hẹn!';
+        else if (error === 'update_failed') message = '❌ Cập nhật thất bại!';
+        alert(message);
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
 </script>
 
 </body>

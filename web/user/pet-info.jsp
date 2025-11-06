@@ -507,6 +507,15 @@
                              <div><strong>Giới tính:</strong> <%= pet.getGender().equals("male") ? "Đực" : "Cái" %></div>
                              <div><strong>Cập nhật lần cuối:</strong> <%= pet.getUpdatedAt() %></div>
                          </div>
+
+                         <!-- Medical Records Button -->
+                         <div class="mt-4 pt-4 border-t border-blue-200">
+                             <a href="<%= request.getContextPath()%>/customer/pet-medical-records?petId=<%= pet.getId() %>"
+                                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg">
+                                 <i class="fas fa-notes-medical mr-2"></i>
+                                 <span>Xem hồ sơ y tế</span>
+                             </a>
+                         </div>
                      </div>
                      <% } %>
 

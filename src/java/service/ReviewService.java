@@ -25,5 +25,39 @@ public class ReviewService implements IReviewService {
         return dao.hasPurchasedAndCompleted(customerId, productId);
     }
 
+    @Override
+    public List<Review> listByService(int serviceId, int limit) {
+        return dao.listByService(serviceId, limit);
+    }
+
+    @Override
+    public boolean hasCompletedBooking(int customerId, int serviceId, int bookingId) {
+        return dao.hasCompletedBooking(customerId, serviceId, bookingId);
+    }
+
+    @Override
+    public Review getReviewByBooking(int bookingId, int serviceId, int customerId) {
+        return dao.getReviewByBooking(bookingId, serviceId, customerId);
+    }
+
+    @Override
+    public boolean hasPurchasedService(int customerId, int serviceId) {
+        return dao.hasPurchasedService(customerId, serviceId);
+    }
+
+    @Override
+    public boolean update(Review r) {
+        return dao.update(r);
+    }
+
+    @Override
+    public boolean delete(int reviewId) {
+        return dao.delete(reviewId);
+    }
+
+    @Override
+    public Review getReviewById(int reviewId) {
+        return dao.getReviewById(reviewId);
+    }
     
 }

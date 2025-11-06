@@ -19,9 +19,14 @@
     if (errorMessage == null) errorMessage = (String) session.getAttribute("errorMessage");
     if (successMessage == null) successMessage = (String) session.getAttribute("successMessage");
     
+    // Kiểm tra có cần hiển thị popup hoàn tiền không
+    String showRefundPopup = (String) session.getAttribute("showRefundPopup");
+    boolean showRefund = "true".equals(showRefundPopup);
+    
     // Xóa thông báo khỏi session sau khi hiển thị
     if (session.getAttribute("errorMessage") != null) session.removeAttribute("errorMessage");
     if (session.getAttribute("successMessage") != null) session.removeAttribute("successMessage");
+    if (session.getAttribute("showRefundPopup") != null) session.removeAttribute("showRefundPopup");
     
     if (spaBookings == null) spaBookings = new ArrayList<>();
     if (boardingServices == null) boardingServices = new ArrayList<>();
@@ -93,6 +98,31 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
         }
+        
+        /* Cải thiện thông báo hoàn tiền */
+        .refund-notice {
+            animation: fadeInUp 0.4s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Cải thiện status badge */
+        .status-badge {
+            transition: all 0.2s ease;
+        }
+        
+        .status-badge:hover {
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -156,11 +186,6 @@
                     <i class="fas fa-spa"></i> Dịch vụ Spa
                 </a>
             </div>
-            <div>
-                <a href="<%= request.getContextPath()%>/spa-booking?action=cart">
-                    <i class="fas fa-shopping-cart"></i> Giỏ Spa
-                </a>
-            </div>
         </div>
     </header>
 
@@ -189,9 +214,6 @@
                 <div class="flex space-x-4">
                     <a href="<%= request.getContextPath()%>/spa-service" class="btn-primary">
                         <i class="fas fa-plus mr-2"></i>Đặt lịch mới
-                    </a>
-                    <a href="<%= request.getContextPath()%>/spa-cart" class="btn-primary">
-                        <i class="fas fa-shopping-cart mr-2"></i>Giỏ Spa
                     </a>
                 </div>
             </div>
@@ -249,20 +271,37 @@
                 <% if (boardingServices != null && !boardingServices.isEmpty()) { %>
                 <div class="space-y-4">
                     <% for (Map<String, Object> boarding : boardingServices) { %>
-                    <div class="bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-green-400 rounded-lg p-6">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 class="text-xl font-bold text-green-700 mb-2">
+                    <div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 p-6">
+                        <div class="flex justify-between items-start mb-5">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold text-gray-800 mb-3">
                                     <%= boarding.get("serviceName") %>
                                 </h3>
-                                <div class="flex items-center space-x-4 text-sm text-gray-600">
-                                    <span><i class="fas fa-calendar-alt mr-1"></i>Nhận: <%= boarding.get("checkInDate") %></span>
-                                    <span><i class="fas fa-calendar-check mr-1"></i>Trả: <%= boarding.get("checkOutDate") %></span>
-                                    <span><i class="fas fa-paw mr-1"></i><%= boarding.get("petInfo") %></span>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600 mb-4">
+                                    <div class="flex items-center bg-gray-50 px-3 py-2 rounded-lg">
+                                        <i class="fas fa-calendar-alt mr-2 text-blue-500"></i>
+                                        <span class="font-medium">Nhận: <%= boarding.get("checkInDate") %> 
+                                        <% if (boarding.get("checkInTime") != null && !boarding.get("checkInTime").toString().isEmpty()) { %>
+                                        <span class="text-gray-500"><%= boarding.get("checkInTime") %></span>
+                                        <% } %>
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center bg-gray-50 px-3 py-2 rounded-lg">
+                                        <i class="fas fa-calendar-check mr-2 text-green-500"></i>
+                                        <span class="font-medium">Trả: <%= boarding.get("checkOutDate") %> 
+                                        <% if (boarding.get("checkOutTime") != null && !boarding.get("checkOutTime").toString().isEmpty()) { %>
+                                        <span class="text-gray-500"><%= boarding.get("checkOutTime") %></span>
+                                        <% } %>
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center bg-gray-50 px-3 py-2 rounded-lg">
+                                        <i class="fas fa-paw mr-2 text-purple-500"></i>
+                                        <span class="font-medium"><%= boarding.get("petInfo") %></span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="text-right">
-                                <div class="text-2xl font-bold text-green-600">
+                            <div class="text-right ml-6">
+                                <div class="text-2xl font-bold text-gray-800 mb-1">
                                     <% 
                                     Object totalPriceObj = boarding.get("totalPrice");
                                     if (totalPriceObj instanceof java.math.BigDecimal) {
@@ -275,40 +314,47 @@
                                     }
                                     %>₫
                                 </div>
-                                <div class="text-sm text-gray-500">Tổng cộng</div>
+                                <div class="text-xs text-gray-500">Tổng cộng</div>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center space-x-2">
+                        <div class="flex justify-between items-center pt-4 border-t border-gray-100">
+                            <div class="flex items-center">
                                 <% 
                                 String status = (String) boarding.get("status");
                                 if (status == null) status = "pending";
                                 %>
-                                <span class="px-3 py-1 rounded-full text-sm font-medium
-                                    <% if ("pending".equals(status)) { %>bg-yellow-100 text-yellow-800<% } %>
-                                    <% if ("confirmed".equals(status)) { %>bg-green-100 text-green-800<% } %>
-                                    <% if ("cancelled".equals(status)) { %>bg-red-100 text-red-800<% } %>
-                                    <% if ("completed".equals(status)) { %>bg-blue-100 text-blue-800<% } %>">
-                                    <% if ("pending".equals(status)) { %><i class="fas fa-clock mr-1"></i>Chờ xác nhận<% } %>
-                                    <% if ("confirmed".equals(status)) { %><i class="fas fa-check mr-1"></i>Đã xác nhận<% } %>
-                                    <% if ("cancelled".equals(status)) { %><i class="fas fa-ban mr-1"></i>Đã hủy<% } %>
-                                    <% if ("completed".equals(status)) { %><i class="fas fa-check-circle mr-1"></i>Hoàn thành<% } %>
+                                <span class="px-4 py-2 rounded-full text-sm font-semibold shadow-sm
+                                    <% if ("Chờ xác nhận".equals(status) || "pending".equals(status)) { %>bg-yellow-50 text-yellow-700 border border-yellow-200<% } %>
+                                    <% if ("Chưa nhận thú cưng".equals(status)) { %>bg-blue-50 text-blue-700 border border-blue-200<% } %>
+                                    <% if ("Đang ở".equals(status) || "Đang thuê".equals(status)) { %>bg-green-50 text-green-700 border border-green-200<% } %>
+                                    <% if ("Đã nhận về".equals(status) || "Hoàn thành".equals(status) || "completed".equals(status)) { %>bg-purple-50 text-purple-700 border border-purple-200<% } %>
+                                    <% if ("cancelled".equals(status) || "Đã hủy".equals(status)) { %>bg-red-50 text-red-700 border border-red-200<% } %>">
+                                    <% if ("Chờ xác nhận".equals(status) || "pending".equals(status)) { %><i class="fas fa-clock mr-2"></i>Chờ xác nhận<% } %>
+                                    <% if ("Chưa nhận thú cưng".equals(status)) { %><i class="fas fa-inbox mr-2"></i>Chưa nhận thú cưng<% } %>
+                                    <% if ("Đang ở".equals(status) || "Đang thuê".equals(status)) { %><i class="fas fa-bed mr-2"></i>Đang ở<% } %>
+                                    <% if ("Đã nhận về".equals(status) || "Hoàn thành".equals(status) || "completed".equals(status)) { %><i class="fas fa-check-circle mr-2"></i>Đã nhận về<% } %>
+                                    <% if ("cancelled".equals(status) || "Đã hủy".equals(status)) { %><i class="fas fa-ban mr-2"></i>Đã hủy<% } %>
                                 </span>
                             </div>
                             <div class="flex space-x-2">
                                 <button onclick="viewBoardingDetails(<%= boarding.get("bookingId") %>)" 
-                                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
-                                    <i class="fas fa-eye mr-1"></i>Xem chi tiết
+                                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 shadow-sm hover:shadow-md">
+                                    <i class="fas fa-eye mr-2"></i>Xem chi tiết
                                 </button>
-                                <% if (!"cancelled".equals(status)) { %>
+                                <% 
+                                // Chỉ cho phép hủy ở "Chờ xác nhận" hoặc "Chưa nhận thú cưng"
+                                boolean canCancel = ("Chờ xác nhận".equals(status) || "pending".equals(status) || "Chưa nhận thú cưng".equals(status));
+                                boolean isCancelled = ("cancelled".equals(status) || "Đã hủy".equals(status));
+                                %>
+                                <% if (canCancel) { %>
                                 <button onclick="cancelBoardingBooking(<%= boarding.get("bookingId") %>)" 
-                                        class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition">
-                                    <i class="fas fa-ban mr-1"></i>Hủy
+                                        class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 shadow-sm hover:shadow-md">
+                                    <i class="fas fa-ban mr-2"></i>Hủy
                                 </button>
-                                <% } else { %>
+                                <% } else if (isCancelled) { %>
                                 <button onclick="deleteBoardingBooking(<%= boarding.get("bookingId") %>)" 
-                                        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
-                                    <i class="fas fa-trash mr-1"></i>Xóa khỏi danh sách
+                                        class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200 shadow-sm hover:shadow-md">
+                                    <i class="fas fa-trash mr-2"></i>Xóa khỏi danh sách
                                 </button>
                                 <% } %>
                             </div>
@@ -373,9 +419,9 @@
                     <% for (Booking booking : spaBookings) { %>
                     <div class="booking-card bg-white border border-gray-200">
                         <div class="p-6">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 class="text-xl font-bold text-gray-800 mb-2">
+                            <div class="flex justify-between items-start mb-5">
+                                <div class="flex-1">
+                                    <h3 class="text-2xl font-bold text-gray-800 mb-3 leading-tight">
                                         <% 
                                         // Lấy tên dịch vụ từ booking
                                         String serviceName = booking.getServiceNames();
@@ -386,92 +432,149 @@
                                         }
                                         %>
                                     </h3>
-                                    <div class="flex items-center space-x-4 text-sm text-gray-600">
-                                        <div class="flex items-center">
-                                            <i class="fas fa-calendar mr-2"></i>
-                                            <fmt:formatDate value="<%= booking.getAppointmentStart() %>" pattern="dd/MM/yyyy"/>
+                                    <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                                        <div class="flex items-center bg-gray-50 px-3 py-1.5 rounded-lg">
+                                            <i class="fas fa-calendar-alt mr-2 text-blue-500"></i>
+                                            <span class="font-medium"><fmt:formatDate value="<%= booking.getAppointmentStart() %>" pattern="dd/MM/yyyy"/></span>
                                         </div>
-                                        <div class="flex items-center">
-                                            <i class="fas fa-clock mr-2"></i>
-                                            <fmt:formatDate value="<%= booking.getAppointmentStart() %>" pattern="HH:mm"/>
-                                            - 
-                                            <fmt:formatDate value="<%= booking.getAppointmentEnd() %>" pattern="HH:mm"/>
+                                        <div class="flex items-center bg-gray-50 px-3 py-1.5 rounded-lg">
+                                            <i class="fas fa-clock mr-2 text-purple-500"></i>
+                                            <span class="font-medium">
+                                                <fmt:formatDate value="<%= booking.getAppointmentStart() %>" pattern="HH:mm"/>
+                                                - 
+                                                <fmt:formatDate value="<%= booking.getAppointmentEnd() %>" pattern="HH:mm"/>
+                                            </span>
                                         </div>
+                                        <% if (booking.getPetName() != null && !booking.getPetName().trim().isEmpty()) { %>
+                                        <div class="flex items-center bg-green-50 px-3 py-1.5 rounded-lg">
+                                            <i class="fas fa-paw mr-2 text-green-500"></i>
+                                            <span class="font-medium text-gray-700"><%= booking.getPetName() %></span>
+                                        </div>
+                                        <% } %>
                                     </div>
                                 </div>
-                                <div class="text-right">
+                                <div class="text-right ml-4">
                                     <% 
-                                        String displayStatus = spaStatusMap.get(booking.getBookingId());
-                                        if (displayStatus == null || displayStatus.isEmpty()) {
-                                            displayStatus = "Chưa thanh toán"; // default
-                                        }
-                                        String statusClass = "";
-                                        String statusIcon = "";
-                                        if (displayStatus.contains("Hoàn thành")) {
-                                            statusClass = "status-completed";
-                                            statusIcon = "✅";
-                                        } else if (displayStatus.contains("Đã thanh toán")) {
-                                            statusClass = "status-confirmed";
-                                            statusIcon = "✅";
-                                        } else {
-                                            statusClass = "status-pending";
-                                            statusIcon = "⏳";
-                                        }
+                                    // Khai báo biến một lần cho toàn bộ phần booking
+                                    String bookingStatus = booking.getStatus();
+                                    String displayStatus = spaStatusMap.get(booking.getBookingId());
+                                    if (displayStatus == null || displayStatus.isEmpty()) {
+                                        displayStatus = "Hủy thanh toán"; // default
+                                    }
+                                    
+                                    // Cho phép hủy CHỈ khi status là "Đã thanh toán" (không cho "Hủy thanh toán" hoặc "Chưa thanh toán")
+                                    boolean isPaidBooking = (bookingStatus != null && 
+                                                           ("Đã thanh toán".equals(bookingStatus) || 
+                                                            "Đã thanh toán".equalsIgnoreCase(bookingStatus)));
+                                    boolean isPaidDisplay = (displayStatus != null && 
+                                                           displayStatus.equals("Đã thanh toán"));
+                                    // Chỉ cho phép hủy nếu là "Đã thanh toán", KHÔNG phải "Hủy thanh toán"
+                                    boolean canCancel = (isPaidBooking || isPaidDisplay) && 
+                                                       !displayStatus.equals("Hủy thanh toán");
+                                    // Kiểm tra đã hủy - CHỈ các status đã hủy thực sự, KHÔNG phải "Hủy thanh toán"
+                                    boolean isCancelled = "Đã hủy".equals(bookingStatus) || 
+                                                         "Yêu cầu hoàn tiền".equals(bookingStatus) ||
+                                                         (displayStatus != null && 
+                                                          (displayStatus.equals("Đã hủy") || 
+                                                           displayStatus.equals("Đã hủy lịch") ||
+                                                           displayStatus.contains("Yêu cầu hoàn tiền")));
+                                    // Hiển thị thông báo hoàn tiền nếu booking đã bị hủy và đã thanh toán
+                                    boolean needsRefundNotice = "Yêu cầu hoàn tiền".equals(bookingStatus) || 
+                                                               (displayStatus != null && displayStatus.contains("Đã hủy lịch"));
+                                    
+                                    // Xác định class và icon cho status
+                                    String statusClass = "";
+                                    String statusIcon = "";
+                                    if (displayStatus.contains("Hủy") || displayStatus.contains("Đã hủy") || displayStatus.equalsIgnoreCase("cancelled") || displayStatus.equalsIgnoreCase("đã hủy") || displayStatus.contains("Đã hủy lịch")) {
+                                        statusClass = "bg-gradient-to-r from-pink-100 to-rose-100 text-pink-700 border border-pink-200";
+                                        statusIcon = "❌";
+                                    } else if (displayStatus.contains("Yêu cầu hoàn tiền")) {
+                                        statusClass = "bg-orange-100 text-orange-800 border border-orange-200";
+                                        statusIcon = "💰";
+                                    } else if (displayStatus.contains("Hoàn thành")) {
+                                        statusClass = "status-completed";
+                                        statusIcon = "✅";
+                                    } else if (displayStatus.contains("Đã thanh toán")) {
+                                        statusClass = "status-confirmed";
+                                        statusIcon = "✅";
+                                    } else {
+                                        statusClass = "status-pending";
+                                        statusIcon = "⏳";
+                                    }
                                     %>
-                                    <span class="px-3 py-1 rounded-full text-sm font-semibold <%= statusClass %>">
-                                        <%= statusIcon %> <%= displayStatus %>
+                                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold shadow-sm <%= statusClass %>">
+                                        <span class="mr-2"><%= statusIcon %></span>
+                                        <%= displayStatus %>
                                     </span>
                                 </div>
                             </div>
-
+                            
                             <% if (booking.getNote() != null && !booking.getNote().trim().isEmpty()) { %>
-                            <div class="mb-4">
-                                <p class="text-gray-600"><strong>Ghi chú:</strong> <%= booking.getNote() %></p>
+                            <div class="mb-4 p-3 bg-blue-50 rounded-lg border-l-3 border-blue-400">
+                                <p class="text-sm text-gray-700">
+                                    <i class="fas fa-sticky-note mr-2 text-blue-500"></i>
+                                    <strong class="text-blue-800">Ghi chú:</strong> 
+                                    <span class="text-gray-700"><%= booking.getNote() %></span>
+                                </p>
                             </div>
                             <% } %>
-
-                            <div class="flex justify-between items-center">
-                                <div class="text-sm text-gray-500">
-                                    <i class="fas fa-calendar-plus mr-1"></i>
-                                    Tạo lúc: <fmt:formatDate value="<%= booking.getCreatedAt() %>" pattern="dd/MM/yyyy HH:mm"/>
+                            
+                            <% if (needsRefundNotice) { %>
+                            <div class="mb-5 p-5 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg shadow-sm">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-amber-100">
+                                            <i class="fas fa-exclamation-triangle text-amber-600 text-xl"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4 flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-money-bill-wave text-amber-600 mr-2"></i>
+                                            <h4 class="text-base font-bold text-amber-900">Thông báo hoàn tiền</h4>
+                                        </div>
+                                        <p class="text-sm text-amber-800 mb-3 leading-relaxed">
+                                            Lịch hẹn đã được hủy. Vui lòng đến tiệm để được hoàn tiền theo chính sách của chúng tôi.
+                                        </p>
+                                        <div class="flex items-start bg-amber-100/50 rounded-md p-3 border border-amber-200">
+                                            <i class="fas fa-info-circle text-amber-600 mr-2 mt-0.5"></i>
+                                            <p class="text-xs text-amber-700 leading-relaxed">
+                                                Biên lai hoàn tiền đã được gửi vào email của bạn.
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="flex space-x-2">
+                            </div>
+                            <% } %>
+                            
+                            <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+                                <div class="flex items-center text-sm text-gray-500 bg-gray-50 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-calendar-plus mr-2 text-gray-400"></i>
+                                    <span class="font-medium">Tạo lúc: <fmt:formatDate value="<%= booking.getCreatedAt() %>" pattern="dd/MM/yyyy HH:mm"/></span>
+                                </div>
+                                <div class="flex space-x-3 items-center">
                                     <a href="<%= request.getContextPath()%>/spa-booking?action=detail&id=<%= booking.getBookingId() %>" 
-                                       class="btn-primary">
-                                        <i class="fas fa-eye mr-1"></i>Xem chi tiết
+                                       class="btn-primary inline-flex items-center px-5 py-2.5 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200">
+                                        Xem chi tiết
                                     </a>
-                                    <% 
-                                    // Kiểm tra có thể chỉnh sửa không - chỉ cho phép chỉnh sửa khi đang pending
-                                    boolean canEdit = "pending".equals(booking.getStatus());
-                                    // Kiểm tra có thể hủy không - sử dụng trạng thái từ booking object thay vì query database
-                                    boolean canCancel = "pending".equals(booking.getStatus()) || "confirmed".equals(booking.getStatus());
-                                    %>
                                     
-                                    <% if (canEdit) { %>
-                                    <a href="<%= request.getContextPath()%>/spa-booking?action=edit&id=<%= booking.getBookingId() %>" 
-                                       class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-                                        <i class="fas fa-edit mr-1"></i>Chỉnh sửa
-                                    </a>
+                                    <% if (canCancel && !isCancelled) { %>
+                                    <button type="button" 
+                                            class="btn-danger inline-flex items-center px-5 py-2.5 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200" 
+                                            onclick="confirmCancelBooking(<%= booking.getBookingId() %>)">
+                                        <i class="fas fa-times mr-2"></i>Hủy lịch
+                                    </button>
                                     <% } %>
                                     
-                                    <% if (canCancel) { %>
-                                    <form method="POST" action="<%= request.getContextPath()%>/spa-booking" style="display: inline;">
-                                        <input type="hidden" name="action" value="cancel">
-                                        <input type="hidden" name="bookingId" value="<%= booking.getBookingId() %>">
-                                        <button type="submit" class="btn-danger" 
-                                                onclick="return confirm('Bạn có chắc chắn muốn hủy lịch hẹn này?')">
-                                            <i class="fas fa-times mr-1"></i>Hủy lịch
-                                        </button>
-                                    </form>
-                                    <% } else if ("cancelled".equals(booking.getStatus())) { %>
+                                    <!-- Nút xóa: CHỈ cho phép xóa nếu CHƯA thanh toán -->
+                                    <% 
+                                    boolean canDelete = !"Đã thanh toán".equals(bookingStatus) && 
+                                                        !(displayStatus != null && displayStatus.contains("Đã thanh toán")) &&
+                                                        !isCancelled;
+                                    %>
+                                    <% if (canDelete) { %>
                                     <button onclick="deleteSpaBooking(<%= booking.getBookingId() %>)" 
-                                            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
-                                        <i class="fas fa-trash mr-1"></i>Xóa khỏi danh sách
-                                    </button>
-                                    <% } else if ("completed".equalsIgnoreCase(booking.getStatus()) || "đã thanh toán".equals(booking.getStatus()) || "hoàn thành".equalsIgnoreCase(booking.getStatus())) { %>
-                                    <button onclick="deleteSpaBooking(<%= booking.getBookingId() %>)" 
-                                            class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
-                                        <i class="fas fa-trash mr-1"></i>Xóa khỏi lịch sử
+                                            class="inline-flex items-center px-4 py-2.5 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-all duration-200 shadow-md hover:shadow-lg">
+                                        <i class="fas fa-trash mr-2"></i>Xóa
                                     </button>
                                     <% } %>
                                 </div>
@@ -833,6 +936,141 @@
                 form.submit();
             }
         }
+        
+        // Hàm hủy booking với confirmation và popup thông báo hoàn tiền
+        function confirmCancelBooking(bookingId) {
+            // Hiển thị dialog xác nhận đẹp hơn
+            const confirmMessage = 'Bạn có chắc chắn muốn hủy lịch hẹn này?\n\n' +
+                                  '📌 Lưu ý: Sau khi hủy, bạn cần đến cửa hàng để được hoàn tiền.\n' +
+                                  'Biên lai hoàn tiền sẽ được gửi vào email của bạn.';
+            
+            if (confirm(confirmMessage)) {
+                // Tạo form để hủy booking
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%= request.getContextPath()%>/spa-booking';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'cancel';
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'bookingId';
+                bookingIdInput.value = bookingId;
+                
+                form.appendChild(actionInput);
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        // Hiển thị popup thông báo hoàn tiền sau khi hủy thành công
+        <% if (showRefund) { %>
+        document.addEventListener('DOMContentLoaded', function() {
+            showRefundPopup();
+        });
+        <% } %>
+        
+        function showRefundPopup() {
+            // Tạo modal popup đẹp
+            const modal = document.createElement('div');
+            modal.id = 'refundPopup';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+            modal.style.animation = 'fadeIn 0.3s ease-out';
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all" style="animation: slideUp 0.3s ease-out">
+                    <div class="p-6">
+                        <!-- Icon và Header -->
+                        <div class="text-center mb-4">
+                            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-yellow-100 mb-4">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 text-3xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-800 mb-2">💰 Thông báo hoàn tiền</h3>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="mb-6">
+                            <p class="text-gray-700 text-center mb-4">
+                                Lịch hẹn của bạn đã được hủy thành công.
+                            </p>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                                <p class="text-sm text-yellow-800 font-semibold mb-2">
+                                    <i class="fas fa-info-circle mr-2"></i>Vui lòng đến cửa hàng để được hoàn tiền
+                                </p>
+                                <ul class="text-xs text-yellow-700 space-y-1 ml-6 list-disc">
+                                    <li>Mang theo CMND/CCCD để xác nhận</li>
+                                    <li>Biên lai hoàn tiền đã được gửi vào email của bạn</li>
+                                    <li>Thời gian hoàn tiền: Trong vòng 3-5 ngày làm việc</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div class="flex justify-center space-x-3">
+                            <button onclick="closeRefundPopup()" 
+                                    class="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                                <i class="fas fa-check mr-2"></i>Đã hiểu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Thêm animation CSS nếu chưa có
+            if (!document.getElementById('refundPopupStyles')) {
+                const style = document.createElement('style');
+                style.id = 'refundPopupStyles';
+                style.textContent = `
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    @keyframes slideUp {
+                        from { 
+                            opacity: 0;
+                            transform: translateY(20px);
+                        }
+                        to { 
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // Đóng modal khi click bên ngoài
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeRefundPopup();
+                }
+            });
+            
+            // Đóng modal khi nhấn ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeRefundPopup();
+                }
+            });
+        }
+        
+        function closeRefundPopup() {
+            const modal = document.getElementById('refundPopup');
+            if (modal) {
+                modal.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
+            }
+        }
+        
     </script>
 </body>
 </html>

@@ -35,6 +35,10 @@ public class PayOSUtils {
         
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
         
+        // Set connection timeouts to prevent hanging
+        conn.setConnectTimeout(30000); // 30 seconds
+        conn.setReadTimeout(30000); // 30 seconds
+        
         conn.setRequestMethod(method);
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("x-client-id", PayOSConfig.getClientId());
@@ -64,8 +68,10 @@ public class PayOSUtils {
         
         StringBuilder response = new StringBuilder();
         
+        // Đọc response từ input stream hoặc error stream tùy response code
         try (BufferedReader br = new BufferedReader(new InputStreamReader(
-                responseCode >= 200 && responseCode < 300 ? conn.getInputStream() : conn.getErrorStream()))) {
+                responseCode >= 200 && responseCode < 300 ? conn.getInputStream() : conn.getErrorStream(),
+                StandardCharsets.UTF_8))) {
             String line;
             while ((line = br.readLine()) != null) {
                 response.append(line);
@@ -80,7 +86,8 @@ public class PayOSUtils {
             return responseBody;
         } else {
             System.err.println("❌ PayOS API Error: " + responseCode + " - " + responseBody);
-            throw new IOException("PayOS API Error: " + responseCode + " - " + responseBody);
+            // Vẫn throw exception nhưng kèm theo response body để có thể parse error
+            throw new IOException("PayOS API returned error code " + responseCode + ": " + responseBody);
         }
     }
 
@@ -447,7 +454,13 @@ public static String generateChecksum(String amount, String orderCode, String re
         
         // Step 5: Trim whitespace
         String finalResult = step4.trim();
-        System.out.println("✅ Final normalized result: " + finalResult);
+        
+        // Step 6: Giới hạn độ dài tối đa 25 ký tự (PayOS requirement)
+        if (finalResult.length() > 25) {
+            System.out.println("⚠️ Description too long (" + finalResult.length() + " chars), truncating to 25 chars");
+            finalResult = finalResult.substring(0, 25).trim();
+        }
+        System.out.println("✅ Final normalized description (length: " + finalResult.length() + "): " + finalResult);
         System.out.println("🧹 ===== DESCRIPTION NORMALIZATION COMPLETE =====");
         
         return finalResult;

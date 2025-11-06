@@ -161,14 +161,25 @@ public class UpdatePetServlet extends HttpServlet {
             }
 
             // Save or update pet
-            boolean success = petService.saveOrUpdatePet(pet);
+            boolean success;
+            if (pet.getId() > 0) {
+                // Update existing pet
+                success = petService.updatePet(pet);
+            } else {
+                // Add new pet
+                success = petService.savePet(pet);
+            }
 
             if (success) {
-                request.getSession().setAttribute("successMessage", "Cập nhật thông tin thú cưng thành công!");
-                logger.info("Pet updated successfully for customer ID: " + customer.getCustomerId());
+                if (pet.getId() > 0) {
+                    request.getSession().setAttribute("successMessage", "Cập nhật thông tin thú cưng thành công!");
+                } else {
+                    request.getSession().setAttribute("successMessage", "Thêm thú cưng mới thành công!");
+                }
+                logger.info("Pet " + (pet.getId() > 0 ? "updated" : "added") + " successfully for customer ID: " + customer.getCustomerId());
             } else {
-                request.getSession().setAttribute("errorMessage", "Có lỗi xảy ra khi cập nhật thông tin thú cưng!");
-                logger.warning("Failed to update pet for customer ID: " + customer.getCustomerId());
+                request.getSession().setAttribute("errorMessage", "Có lỗi xảy ra khi " + (pet.getId() > 0 ? "cập nhật" : "thêm") + " thông tin thú cưng!");
+                logger.warning("Failed to " + (pet.getId() > 0 ? "update" : "add") + " pet for customer ID: " + customer.getCustomerId());
             }
 
             // Redirect back to pet info page

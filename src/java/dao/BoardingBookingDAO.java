@@ -68,7 +68,7 @@ public class BoardingBookingDAO {
                         "emergency_phone1 NVARCHAR(20) NOT NULL," +
                         "emergency_phone2 NVARCHAR(20)," +
                         "total_price DECIMAL(10,2) NOT NULL DEFAULT 0," +
-                        "status NVARCHAR(20) DEFAULT 'pending'," +
+                        "status NVARCHAR(20) DEFAULT N'Chờ xác nhận'," +
                         "created_at DATETIME2 DEFAULT GETDATE()," +
                         "updated_at DATETIME2 DEFAULT GETDATE()" +
                         ")";
@@ -211,7 +211,7 @@ public class BoardingBookingDAO {
             pstmt.setString(11, booking.getEmergencyPhone1());
             pstmt.setString(12, booking.getEmergencyPhone2() != null ? booking.getEmergencyPhone2() : "");
             pstmt.setBigDecimal(13, booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO);
-            pstmt.setString(14, booking.getStatus() != null ? booking.getStatus() : "pending");
+            pstmt.setString(14, booking.getStatus() != null ? booking.getStatus() : "Chờ xác nhận");
             pstmt.setTimestamp(15, booking.getCreatedAt() != null ? booking.getCreatedAt() : new Timestamp(System.currentTimeMillis()));
             pstmt.setTimestamp(16, booking.getUpdatedAt() != null ? booking.getUpdatedAt() : new Timestamp(System.currentTimeMillis()));
             
@@ -496,7 +496,7 @@ public class BoardingBookingDAO {
             booking.setTotalPrice(totalPrice);
             
             String status = rs.getString("status");
-            booking.setStatus(status != null ? status : "pending");
+            booking.setStatus(status != null ? status : "Chờ xác nhận");
             
             // Timestamp fields
             booking.setCreatedAt(rs.getTimestamp("created_at"));

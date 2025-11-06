@@ -1,6 +1,6 @@
 <%@page import="model.Customer"%>
 <%@page import="model.CartItem"%>
-<%@page import="model.BoardingRoom"%>
+<%@page import="model.PetServiceModel"%>
 <%@page import="model.Pet"%>
 <%@page import="model.Review"%>
 <%@page import="java.util.Map"%>
@@ -22,23 +22,13 @@
         }
     }
     
-    // Get room from request attributes
-    BoardingRoom room = (BoardingRoom) request.getAttribute("room");
+    // Get service from request attributes
+    PetServiceModel service = (PetServiceModel) request.getAttribute("service");
     List<Review> reviews = (List<Review>) request.getAttribute("reviews");
+    List<Pet> customerPets = (List<Pet>) request.getAttribute("customerPets");
     
-    // Debug logging
-    System.out.println("=== boarding-room-detail.jsp DEBUG ===");
-    System.out.println("room attribute: " + (room != null ? "NOT NULL" : "NULL"));
-    if (room != null) {
-        System.out.println("room ID: " + room.getRoomId());
-        System.out.println("room Name: " + room.getRoomName());
-    }
-    
-    if (room == null) {
-        System.out.println("ERROR: room is null, redirecting to spa-service.jsp");
-        String roomIdParam = request.getParameter("roomId");
-        System.out.println("roomId from request param: " + roomIdParam);
-        response.sendRedirect(request.getContextPath() + "/spa-service.jsp");
+    if (service == null) {
+        response.sendRedirect(request.getContextPath() + "/spa-booking?action=services");
         return;
     }
     
@@ -57,16 +47,13 @@
             avgRating = (double) totalRating / count;
         }
     }
-    
-    Boolean hasPurchasedRoom = (Boolean) request.getAttribute("hasPurchasedRoom");
-    if (hasPurchasedRoom == null) hasPurchasedRoom = false;
 %>
 
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title><%= room.getRoomName() %> - Petcity</title>
+    <title><%= service.getName() %> - Petcity</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700;800&family=Baloo+2:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -201,7 +188,7 @@
             <span class="mx-2">/</span>
             <a href="${pageContext.request.contextPath}/spa-service" class="hover:text-orange-600">Dịch vụ Spa</a>
             <span class="mx-2">/</span>
-            <span class="text-gray-800"><%= room.getRoomName() %></span>
+            <span class="text-gray-800"><%= service.getName() %></span>
         </nav>
     </div>
 
@@ -232,19 +219,38 @@
         </div>
         <% } %>
         
-        <!-- Room Detail Card -->
+        <!-- Service Detail Card -->
         <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
             <div class="grid md:grid-cols-2 gap-8">
-                <!-- Left: Room Icon/Image -->
+                <!-- Left: Service Icon/Image -->
                 <div class="text-center">
                     <div class="service-icon-large">
-                        <%= room.getRoomEmoji() %>
+                        <% 
+                            String icon = "🛁"; // default
+                            String serviceName = service.getName().toLowerCase();
+                            if (serviceName.contains("cắt") || serviceName.contains("tỉa")) {
+                                icon = "✂️";
+                            } else if (serviceName.contains("móng")) {
+                                icon = "💅";
+                            } else if (serviceName.contains("tai") || serviceName.contains("răng")) {
+                                icon = "🦷";
+                            } else if (serviceName.contains("massage")) {
+                                icon = "💆";
+                            } else if (serviceName.contains("cao cấp") || serviceName.contains("spa")) {
+                                icon = "✨";
+                            } else if (serviceName.contains("thuốc") || serviceName.contains("ký sinh")) {
+                                icon = "🧴";
+                            } else if (serviceName.contains("da") || serviceName.contains("lông")) {
+                                icon = "🌿";
+                            }
+                        %>
+                        <%= icon %>
                     </div>
                 </div>
 
-                <!-- Right: Room Info -->
+                <!-- Right: Service Info -->
                 <div class="space-y-6">
-                    <h1 class="text-4xl font-bold text-gray-800"><%= room.getRoomName() %></h1>
+                    <h1 class="text-4xl font-bold text-gray-800"><%= service.getName() %></h1>
                     
                     <!-- Rating -->
                     <div class="flex items-center gap-2">
@@ -271,28 +277,28 @@
                     <!-- Price -->
                     <div>
                         <span class="price-tag-large">
-                            <fmt:formatNumber value="<%= room.getPricePerDay() %>" type="currency" currencySymbol="₫" maxFractionDigits="0"/>/ngày
+                            <fmt:formatNumber value="<%= service.getPrice() %>" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
                         </span>
                     </div>
 
-                    <!-- Available Rooms -->
+                    <!-- Duration -->
                     <div class="flex items-center gap-4">
                         <div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg">
-                            <i class="fas fa-door-open mr-2"></i>
-                            <span class="font-semibold">Số phòng còn lại: <%= room.getCapacity() %></span>
+                            <i class="far fa-clock mr-2"></i>
+                            <span class="font-semibold">Thời gian: <%= service.getDuration() %> phút</span>
                         </div>
                     </div>
 
                     <!-- Description -->
                     <div class="border-t pt-4">
                         <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                            <i class="fas fa-info-circle mr-2 text-blue-500"></i>Mô tả chi tiết phòng
+                            <i class="fas fa-info-circle mr-2 text-blue-500"></i>Mô tả chi tiết dịch vụ
                         </h3>
                         <div class="text-gray-700 leading-relaxed bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-sm description-content">
                             <% 
-                            String description = room.getDescription();
+                            String description = service.getDescription();
                             if (description == null || description.trim().isEmpty()) {
-                                description = "Phòng lưu trú chuyên nghiệp cho thú cưng của bạn. Được chăm sóc bởi đội ngũ giàu kinh nghiệm với không gian thoải mái, an toàn.";
+                                description = "Dịch vụ spa chuyên nghiệp cho thú cưng của bạn. Được thực hiện bởi đội ngũ kỹ thuật viên giàu kinh nghiệm với các sản phẩm an toàn, tự nhiên.";
                             }
                             // Format description: replace newlines with HTML line breaks
                             description = description.replace("\r\n", "<br>").replace("\n", "<br>");
@@ -340,21 +346,16 @@
                         </style>
                     </div>
 
-                    <!-- Booking Button -->
+                    <!-- Add to Cart Button -->
                     <div class="border-t pt-6">
-                        <% if (currentUser != null && room.isAvailable()) { %>
-                        <button onclick="openBookingModal()" class="btn-add-to-cart w-full">
-                            🏠 Đặt phòng ngay
-                        </button>
-                        <% } else if (currentUser == null) { %>
-                        <a href="<%= request.getContextPath()%>/login.jsp" class="btn-add-to-cart w-full text-center">
-                            👤 Đăng nhập để đặt phòng
-                        </a>
-                        <% } else { %>
-                        <button disabled class="btn-add-to-cart w-full opacity-50 cursor-not-allowed">
-                            Phòng đang không khả dụng
-                        </button>
-                        <% } %>
+                        <form method="POST" action="${pageContext.request.contextPath}/spa-booking" id="addToCartForm">
+                            <input type="hidden" name="action" value="add-to-cart">
+                            <input type="hidden" name="serviceId" value="<%= service.getServiceId() %>">
+                            <input type="hidden" name="quantity" id="hiddenQuantity" value="1">
+                            <button type="submit" class="btn-add-to-cart w-full">
+                                🛒 Thêm vào giỏ Spa
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -363,7 +364,7 @@
         <!-- Reviews Section -->
         <div class="bg-white rounded-lg shadow-lg p-5 mt-6">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold text-gray-800">⭐ Đánh giá phòng</h2>
+                <h2 class="text-xl font-bold text-gray-800">⭐ Đánh giá dịch vụ</h2>
                 <div class="text-right">
                     <div class="text-lg font-bold text-orange-600">
                         <%= avgRating > 0 ? String.format("%.1f", avgRating) : "0.0" %>/5.0
@@ -381,8 +382,8 @@
             <% if (reviews == null || reviews.isEmpty()) { %>
             <div class="text-center py-8 bg-gray-50 rounded-lg">
                 <div class="text-4xl mb-2">📝</div>
-                <p class="text-gray-600 text-base font-medium mb-1">Chưa có đánh giá nào cho phòng này</p>
-                <p class="text-gray-500 text-xs">Hãy là người đầu tiên đánh giá phòng này sau khi sử dụng!</p>
+                <p class="text-gray-600 text-base font-medium mb-1">Chưa có đánh giá nào cho dịch vụ này</p>
+                <p class="text-gray-500 text-xs">Hãy là người đầu tiên đánh giá dịch vụ này sau khi sử dụng!</p>
             </div>
             <% } else { %>
             <!-- Rating Summary -->
@@ -498,7 +499,7 @@
                                                 class="text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors">
                                             <i class="fas fa-edit mr-0.5"></i>Sửa
                                         </button>
-                                        <button onclick="deleteReview(<%= review.getReviewId() %>, <%= room.getRoomId() %>)" 
+                                        <button onclick="deleteReview(<%= review.getReviewId() %>, <%= service.getServiceId() %>)" 
                                                 class="text-red-600 hover:text-red-800 text-xs font-medium transition-colors">
                                             <i class="fas fa-trash mr-0.5"></i>Xóa
                                         </button>
@@ -534,15 +535,16 @@
             <% } %>
             <% } %>
             
-            <!-- Comment Form - Chỉ hiển thị nếu customer đã đặt phòng -->
+            <!-- Comment Form - Chỉ hiển thị nếu customer đã mua dịch vụ -->
             <% 
-                if (hasPurchasedRoom != null && hasPurchasedRoom) {
+                Boolean hasPurchasedService = (Boolean) request.getAttribute("hasPurchasedService");
+                if (hasPurchasedService != null && hasPurchasedService) {
             %>
             <div class="mt-4 pt-4 border-t border-gray-200">
                 <h3 class="text-lg font-bold text-gray-800 mb-3">💬 Để lại đánh giá của bạn</h3>
-                <form method="POST" action="<%= request.getContextPath() %>/boarding-room" class="space-y-3">
-                    <input type="hidden" name="action" value="submit-room-review">
-                    <input type="hidden" name="roomId" value="<%= room.getRoomId() %>">
+                <form method="POST" action="<%= request.getContextPath() %>/spa-booking" class="space-y-3">
+                    <input type="hidden" name="action" value="submit-service-review">
+                    <input type="hidden" name="serviceId" value="<%= service.getServiceId() %>">
                     
                     <!-- Rating -->
                     <div>
@@ -562,7 +564,7 @@
                         <label for="comment" class="block text-xs font-medium text-gray-700 mb-1.5">Nhận xét của bạn</label>
                         <textarea name="comment" id="comment" rows="3" 
                                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                                  placeholder="Chia sẻ trải nghiệm của bạn về phòng này..."></textarea>
+                                  placeholder="Chia sẻ trải nghiệm của bạn về dịch vụ này..."></textarea>
                     </div>
                     
                     <!-- Submit Button -->
@@ -576,8 +578,8 @@
             </div>
             <% } else { %>
             <div class="mt-4 pt-4 border-t border-gray-200 text-center py-4 bg-gray-50 rounded-lg">
-                <p class="text-gray-600 text-sm mb-1">📝 Bạn cần đặt và sử dụng phòng này để có thể đánh giá</p>
-                <p class="text-gray-500 text-xs">Hãy đặt phòng và trải nghiệm để chia sẻ ý kiến của bạn!</p>
+                <p class="text-gray-600 text-sm mb-1">📝 Bạn cần đặt và sử dụng dịch vụ này để có thể đánh giá</p>
+                <p class="text-gray-500 text-xs">Hãy đặt lịch và trải nghiệm dịch vụ để chia sẻ ý kiến của bạn!</p>
             </div>
             <% } %>
         </div>
@@ -612,148 +614,6 @@
             <p>© 2025 Petcity. Bản quyền thuộc về G5. ❤️ Made with love for pets</p>
         </div>
     </footer>
-
-    <!-- Booking Modal -->
-    <div id="bookingModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 rounded-t-lg flex justify-between items-center">
-                <h3 class="text-2xl font-bold">Đặt phòng lưu trú</h3>
-                <button onclick="closeBookingModal()" class="text-white hover:text-gray-200 text-2xl">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-6">
-                <% if (currentUser != null && room != null && room.isAvailable()) { %>
-                    <form action="<%= request.getContextPath()%>/boarding-room" method="post" onsubmit="return validateBookingForm()" id="bookingForm">
-                        <input type="hidden" name="action" value="book-room">
-                        <input type="hidden" name="roomId" value="<%= room.getRoomId() %>">
-                        
-                        <div class="grid md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Ngày nhận *</label>
-                                <input type="date" name="checkInDate" id="modalCheckInDate" required 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                       min="<%= java.time.LocalDate.now().toString() %>"
-                                       onchange="updatePriceCalculation()">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Giờ nhận *</label>
-                                <input type="time" name="checkInTime" id="modalCheckInTime" required 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                       value="08:00"
-                                       min="08:00"
-                                       max="22:00"
-                                       onchange="updatePriceCalculation()">
-                                <p class="text-xs text-gray-500 mt-1">Giờ nhận: 08:00 - 22:00</p>
-                            </div>
-                        </div>
-                        
-                        <div class="grid md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Ngày trả *</label>
-                                <input type="date" name="checkOutDate" id="modalCheckOutDate" required 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                       min="<%= java.time.LocalDate.now().toString() %>"
-                                       onchange="updatePriceCalculation()">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Giờ trả *</label>
-                                <input type="time" name="checkOutTime" id="modalCheckOutTime" required 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                       value="17:00"
-                                       min="08:00"
-                                       max="22:00"
-                                       onchange="updatePriceCalculation()">
-                                <p class="text-xs text-gray-500 mt-1">Giờ trả: 08:00 - 22:00</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Chọn thú cưng -->
-                        <div class="mb-4">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Chọn thú cưng *</label>
-                            <div class="border border-gray-300 rounded-lg p-4 max-h-48 overflow-y-auto" id="petSelectionContainer">
-                                <%
-                                    List<Pet> customerPets = (List<Pet>) request.getAttribute("customerPets");
-                                    if (customerPets != null && !customerPets.isEmpty()) {
-                                        for (Pet pet : customerPets) {
-                                %>
-                                <div class="flex items-center mb-3">
-                                    <input type="checkbox" name="selectedPets" value="<%= pet.getId() %>" 
-                                           class="pet-checkbox w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                                           onchange="updatePriceCalculation()">
-                                    <label class="ml-3 text-sm text-gray-700 cursor-pointer">
-                                        <span class="font-medium"><%= pet.getPetName() != null ? pet.getPetName() : "Thú cưng #" + pet.getId() %></span>
-                                        <% if (pet.getSpecies() != null) { %>
-                                        <span class="text-gray-500">(<%= pet.getSpeciesDisplayName() %>)</span>
-                                        <% } %>
-                                    </label>
-                                </div>
-                                <%
-                                        }
-                                    } else {
-                                %>
-                                <p class="text-sm text-gray-500 italic">Bạn chưa có thú cưng nào. Vui lòng thêm thú cưng trong <a href="<%= request.getContextPath()%>/user/user-info.jsp" class="text-purple-600 hover:underline">thông tin tài khoản</a>.</p>
-                                <%
-                                    }
-                                %>
-                            </div>
-                            <input type="hidden" name="petInfo" id="hiddenPetInfo" value="">
-                        </div>
-                        
-                        <!-- Checkbox chung phòng -->
-                        <div class="mb-4">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="shareRoom" id="shareRoomCheckbox" 
-                                       class="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                                       onchange="updatePriceCalculation()">
-                                <span class="ml-2 text-sm text-gray-700">Chung phòng (tất cả thú cưng ở chung 1 phòng, không tăng giá)</span>
-                            </label>
-                        </div>
-                        
-                        <div class="grid md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Số điện thoại khẩn cấp 1 *</label>
-                                <input type="tel" name="emergencyPhone1" id="emergencyPhone1" required 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                       placeholder="Nhập số điện thoại">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Số điện thoại khẩn cấp 2 *</label>
-                                <input type="tel" name="emergencyPhone2" id="emergencyPhone2" required 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                       placeholder="Nhập số điện thoại">
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Yêu cầu đặc biệt</label>
-                            <textarea name="specialNotes" rows="3" 
-                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                      placeholder="Thức ăn đặc biệt, thuốc, thói quen..."></textarea>
-                        </div>
-                        
-                        <!-- Price Display -->
-                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                            <h4 class="font-semibold text-gray-800 mb-2">Tổng giá</h4>
-                            <div id="modalPriceCalculation" class="text-gray-600">
-                                <p>Chọn ngày để tính giá</p>
-                            </div>
-                        </div>
-                        
-                        <div class="flex gap-3">
-                            <button type="button" onclick="closeBookingModal()" 
-                                    class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
-                                Hủy
-                            </button>
-                            <button type="submit" class="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-blue-700 transition">
-                                <i class="fas fa-calendar-check mr-2"></i> Đặt phòng ngay
-                            </button>
-                        </div>
-                    </form>
-                <% } %>
-            </div>
-        </div>
-    </div>
 
     <script>
         // User menu toggle
@@ -894,10 +754,10 @@
             const formHtml = `
                 <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
                     <h3 class="text-2xl font-bold text-gray-800 mb-4">✏️ Sửa đánh giá</h3>
-                    <form method="POST" action="<%= request.getContextPath() %>/boarding-room" id="editReviewForm" enctype="application/x-www-form-urlencoded">
-                        <input type="hidden" name="action" value="edit-room-review">
+                    <form method="POST" action="<%= request.getContextPath() %>/spa-booking" id="editReviewForm" enctype="application/x-www-form-urlencoded">
+                        <input type="hidden" name="action" value="edit-service-review">
                         <input type="hidden" name="reviewId" id="hiddenReviewId" value="` + reviewId + `">
-                        <input type="hidden" name="roomId" value="<%= room.getRoomId() %>">
+                        <input type="hidden" name="serviceId" value="<%= service.getServiceId() %>">
                         
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Đánh giá của bạn</label>
@@ -915,7 +775,7 @@
                             <label for="editComment" class="block text-sm font-medium text-gray-700 mb-2">Nhận xét của bạn</label>
                             <textarea name="comment" id="editComment" rows="4" 
                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                                      placeholder="Chia sẻ trải nghiệm của bạn về phòng này...">${escapedComment}</textarea>
+                                      placeholder="Chia sẻ trải nghiệm của bạn về dịch vụ này...">${escapedComment}</textarea>
                         </div>
                         
                         <div class="flex justify-end gap-3">
@@ -925,7 +785,8 @@
                             </button>
                             <button type="submit" 
                                     class="px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all duration-200">
-                                <i class="fas fa-save mr-2"></i>Lưu thay đổi</button>
+                                <i class="fas fa-save mr-2"></i>Lưu thay đổi
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -978,7 +839,7 @@
                             reviewId: reviewIdValue,
                             rating: rating,
                             comment: comment,
-                            roomId: '<%= room.getRoomId() %>'
+                            serviceId: '<%= service.getServiceId() %>'
                         });
                         
                         // Kiểm tra reviewId có giá trị không
@@ -1048,360 +909,35 @@
         }
         
         // Delete review
-        function deleteReview(reviewId, roomId) {
+        function deleteReview(reviewId, serviceId) {
             if (confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) {
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = '<%= request.getContextPath() %>/boarding-room';
+                form.action = '<%= request.getContextPath() %>/spa-booking';
                 
                 const actionInput = document.createElement('input');
                 actionInput.type = 'hidden';
                 actionInput.name = 'action';
-                actionInput.value = 'delete-room-review';
+                actionInput.value = 'delete-service-review';
                 
                 const reviewIdInput = document.createElement('input');
                 reviewIdInput.type = 'hidden';
                 reviewIdInput.name = 'reviewId';
                 reviewIdInput.value = reviewId;
                 
-                const roomIdInput = document.createElement('input');
-                roomIdInput.type = 'hidden';
-                roomIdInput.name = 'roomId';
-                roomIdInput.value = roomId;
+                const serviceIdInput = document.createElement('input');
+                serviceIdInput.type = 'hidden';
+                serviceIdInput.name = 'serviceId';
+                serviceIdInput.value = serviceId;
                 
                 form.appendChild(actionInput);
                 form.appendChild(reviewIdInput);
-                form.appendChild(roomIdInput);
+                form.appendChild(serviceIdInput);
                 
                 document.body.appendChild(form);
                 form.submit();
             }
         }
-        
-        // Booking Modal Functions
-        function openBookingModal() {
-            document.getElementById('bookingModal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-        
-        function closeBookingModal() {
-            document.getElementById('bookingModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
-        
-        // Close modal when clicking outside
-        document.getElementById('bookingModal')?.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeBookingModal();
-            }
-        });
-        
-        function validateBookingForm() {
-            const checkInDate = document.getElementById('modalCheckInDate')?.value;
-            const checkOutDate = document.getElementById('modalCheckOutDate')?.value;
-            const checkInTime = document.getElementById('modalCheckInTime')?.value;
-            const checkOutTime = document.getElementById('modalCheckOutTime')?.value;
-            const emergencyPhone1 = document.getElementById('emergencyPhone1')?.value;
-            const emergencyPhone2 = document.getElementById('emergencyPhone2')?.value;
-            
-            // Kiểm tra ngày và giờ
-            if (!checkInDate || !checkOutDate || !checkInTime || !checkOutTime) {
-                alert('Vui lòng chọn đầy đủ ngày và giờ nhận/trả!');
-                return false;
-            }
-            
-            // Kiểm tra giờ hợp lệ (08:00 - 22:00)
-            const checkInHour = parseInt(checkInTime.split(':')[0]);
-            const checkOutHour = parseInt(checkOutTime.split(':')[0]);
-            const checkInMinute = parseInt(checkInTime.split(':')[1]) || 0;
-            const checkOutMinute = parseInt(checkOutTime.split(':')[1]) || 0;
-            
-            // Chuyển sang phút để so sánh dễ hơn
-            const checkInMinutes = checkInHour * 60 + checkInMinute;
-            const checkOutMinutes = checkOutHour * 60 + checkOutMinute;
-            
-            // Giờ nhận: 08:00 - 22:00
-            if (checkInMinutes < 8 * 60 || checkInMinutes > 22 * 60) {
-                alert('Giờ nhận phải trong khoảng 08:00 - 22:00!');
-                return false;
-            }
-            
-            // Giờ trả: 08:00 - 22:00
-            if (checkOutMinutes < 8 * 60 || checkOutMinutes > 22 * 60) {
-                alert('Giờ trả phải trong khoảng 08:00 - 22:00!');
-                return false;
-            }
-            
-            // Kiểm tra ngày tháng
-            const checkInDateTime = new Date(checkInDate + 'T' + checkInTime);
-            const checkOutDateTime = new Date(checkOutDate + 'T' + checkOutTime);
-            const now = new Date();
-            
-            if (checkInDateTime < now) {
-                alert('Thời gian nhận không được là quá khứ!');
-                return false;
-            }
-            
-            if (checkOutDateTime <= checkInDateTime) {
-                alert('Thời gian trả phải sau thời gian nhận!');
-                return false;
-            }
-            
-            // Kiểm tra đã chọn ít nhất 1 thú cưng
-            const selectedPets = document.querySelectorAll('input[name="selectedPets"]:checked');
-            if (selectedPets.length === 0) {
-                alert('Vui lòng chọn ít nhất 1 thú cưng!');
-                return false;
-            }
-            
-            // Cập nhật hiddenPetInfo với danh sách pet IDs
-            const petIds = Array.from(selectedPets).map(cb => cb.value).join(',');
-            document.getElementById('hiddenPetInfo').value = petIds;
-            
-            // Kiểm tra số điện thoại
-            if (!emergencyPhone1 || emergencyPhone1.trim() === '') {
-                alert('Vui lòng nhập số điện thoại khẩn cấp 1!');
-                return false;
-            }
-            
-            if (!emergencyPhone2 || emergencyPhone2.trim() === '') {
-                alert('Vui lòng nhập số điện thoại khẩn cấp 2!');
-                return false;
-            }
-            
-            // Hiển thị loading state trong modal
-            const submitButton = document.querySelector('#bookingForm button[type="submit"]');
-            const formContent = document.querySelector('#bookingForm');
-            
-            if (submitButton && formContent) {
-                submitButton.disabled = true;
-                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Đang xử lý...';
-                
-                // Thêm overlay loading
-                const loadingOverlay = document.createElement('div');
-                loadingOverlay.id = 'bookingLoadingOverlay';
-                loadingOverlay.className = 'absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg';
-                loadingOverlay.innerHTML = `
-                    <div class="text-center">
-                        <i class="fas fa-spinner fa-spin text-purple-600 text-3xl mb-2"></i>
-                        <p class="text-gray-700 font-semibold">Đang xử lý đặt phòng...</p>
-                    </div>
-                `;
-                formContent.style.position = 'relative';
-                formContent.appendChild(loadingOverlay);
-            }
-            
-            // Giữ modal mở, form sẽ submit và redirect
-            return true;
-        }
-        
-        // Price calculation for modal
-        function calculateModalPrice() {
-            updatePriceCalculation();
-        }
-        
-        // Update price calculation based on selected pets, share room option, and time
-        function updatePriceCalculation() {
-            const checkInDate = document.getElementById('modalCheckInDate')?.value;
-            const checkOutDate = document.getElementById('modalCheckOutDate')?.value;
-            const checkInTime = document.getElementById('modalCheckInTime')?.value || '08:00';
-            const checkOutTime = document.getElementById('modalCheckOutTime')?.value || '17:00';
-            const selectedPets = document.querySelectorAll('input[name="selectedPets"]:checked');
-            const shareRoom = document.getElementById('shareRoomCheckbox')?.checked;
-            
-            if (!checkInDate || !checkOutDate || !checkInTime || !checkOutTime) {
-                const priceCalcEl = document.getElementById('modalPriceCalculation');
-                if (priceCalcEl) {
-                    priceCalcEl.innerHTML = '<p class="text-gray-500">Chọn ngày và giờ để tính giá</p>';
-                }
-                return;
-            }
-            
-            // Parse dates and times
-            const checkInDateTime = new Date(checkInDate + 'T' + checkInTime);
-            const checkOutDateTime = new Date(checkOutDate + 'T' + checkOutTime);
-            
-            // Validate dates
-            if (checkOutDateTime <= checkInDateTime) {
-                const priceCalcEl = document.getElementById('modalPriceCalculation');
-                if (priceCalcEl) {
-                    priceCalcEl.innerHTML = '<p class="text-red-500">Thời gian trả phải sau thời gian nhận!</p>';
-                }
-                return;
-            }
-            
-            // Calculate boarding days with flexible pricing
-            // Rule: Check-in before 12:00 = full day, after 12:00 = half day
-            //       Check-out before 12:00 = half day, after 12:00 = full day
-            const checkInHour = parseInt(checkInTime.split(':')[0]);
-            const checkOutHour = parseInt(checkOutTime.split(':')[0]);
-            
-            let totalDays = 0;
-            
-            // If same day, calculate based on hours
-            if (checkInDate === checkOutDate) {
-                const hours = (checkOutDateTime - checkInDateTime) / (1000 * 60 * 60);
-                if (hours <= 6) {
-                    // Less than 6 hours = half day
-                    totalDays = 0.5;
-                } else if (hours <= 12) {
-                    // 6-12 hours = 0.75 days
-                    totalDays = 0.75;
-                } else {
-                    // More than 12 hours = full day
-                    totalDays = 1.0;
-                }
-            } else {
-                // Different days: calculate days between dates (not including check-in and check-out dates)
-                const dateIn = new Date(checkInDate);
-                const dateOut = new Date(checkOutDate);
-                const daysDiff = Math.floor((dateOut - dateIn) / (1000 * 60 * 60 * 24));
-                
-                // Days between = daysDiff - 1 (not including check-in and check-out dates)
-                // Example: 08/11 to 10/11 = 2 days diff, but only 1 day between (09/11)
-                const daysBetween = Math.max(0, daysDiff - 1);
-                
-                // Start with full days between (intermediate days - full days)
-                totalDays = daysBetween;
-                
-                // Check-in date: add based on check-in time
-                if (checkInHour < 12) {
-                    // Check-in before 12:00 = full day for check-in date
-                    totalDays += 1.0;
-                } else {
-                    // Check-in after 12:00 = half day for check-in date
-                    totalDays += 0.5;
-                }
-                
-                // Check-out date: add based on check-out time
-                if (checkOutHour < 12) {
-                    // Check-out before 12:00 = half day for check-out date
-                    totalDays += 0.5;
-                } else {
-                    // Check-out after 12:00 = full day for check-out date
-                    totalDays += 1.0;
-                }
-            }
-            
-            // Ensure minimum 0.5 days
-            totalDays = Math.max(totalDays, 0.5);
-            
-            const pricePerDay = <%= room != null ? room.getPricePerDay() : 0 %>;
-            const numberOfPets = selectedPets.length;
-            
-            // Calculate number of rooms
-            const numberOfRooms = shareRoom ? 1 : numberOfPets;
-            
-            if (numberOfPets === 0) {
-                const priceCalcEl = document.getElementById('modalPriceCalculation');
-                if (priceCalcEl) {
-                    priceCalcEl.innerHTML = '<p class="text-gray-500">Vui lòng chọn ít nhất 1 thú cưng</p>';
-                }
-                return;
-            }
-            
-            // Calculate total price
-            const totalPrice = totalDays * pricePerDay * numberOfRooms;
-            
-            const priceCalcEl = document.getElementById('modalPriceCalculation');
-            if (priceCalcEl) {
-                // Format days display
-                let daysDisplay = '';
-                if (totalDays < 1) {
-                    daysDisplay = totalDays === 0.5 ? '0.5 ngày' : totalDays.toFixed(2) + ' ngày';
-                } else if (totalDays === Math.floor(totalDays)) {
-                    daysDisplay = totalDays + ' ngày';
-                } else {
-                    daysDisplay = totalDays.toFixed(2) + ' ngày';
-                }
-                
-                // Use string concatenation to avoid JSP EL parsing issues
-                let priceDetail = '<div class="space-y-2">' +
-                    '<div class="flex justify-between">' +
-                    '<span>Thời gian lưu trú:</span>' +
-                    '<span class="font-semibold">' + daysDisplay + '</span>' +
-                    '</div>' +
-                    '<div class="flex justify-between text-xs text-gray-600">' +
-                    '<span>Nhận: ' + checkInDate + ' lúc ' + checkInTime + '</span>' +
-                    '<span>Trả: ' + checkOutDate + ' lúc ' + checkOutTime + '</span>' +
-                    '</div>' +
-                    '<div class="flex justify-between">' +
-                    '<span>Số thú cưng:</span>' +
-                    '<span class="font-semibold">' + numberOfPets + ' thú cưng</span>' +
-                    '</div>' +
-                    '<div class="flex justify-between">' +
-                    '<span>Số phòng:</span>' +
-                    '<span class="font-semibold">' + numberOfRooms + ' phòng</span>' +
-                    (shareRoom ? '<span class="text-xs text-gray-500 ml-2">(Chung phòng)</span>' : '') +
-                    '</div>' +
-                    '<div class="flex justify-between">' +
-                    '<span>Giá/ngày/phòng:</span>' +
-                    '<span class="font-semibold">' + pricePerDay.toLocaleString() + '₫</span>' +
-                    '</div>' +
-                    '<div class="border-t pt-2">' +
-                    '<div class="flex justify-between text-lg font-bold text-green-600">' +
-                    '<span>Tổng cộng:</span>' +
-                    '<span>' + Math.round(totalPrice).toLocaleString() + '₫</span>' +
-                    '</div>' +
-                    '</div>' +
-                    '</div>';
-                priceCalcEl.innerHTML = priceDetail;
-            }
-        }
-        
-        // Add event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            const checkInDateInput = document.getElementById('modalCheckInDate');
-            const checkOutDateInput = document.getElementById('modalCheckOutDate');
-            const checkInTimeInput = document.getElementById('modalCheckInTime');
-            const checkOutTimeInput = document.getElementById('modalCheckOutTime');
-            const bookingForm = document.getElementById('bookingForm');
-            
-            if (checkInDateInput) {
-                checkInDateInput.addEventListener('change', updatePriceCalculation);
-            }
-            if (checkOutDateInput) {
-                checkOutDateInput.addEventListener('change', updatePriceCalculation);
-            }
-            if (checkInTimeInput) {
-                checkInTimeInput.addEventListener('change', updatePriceCalculation);
-            }
-            if (checkOutTimeInput) {
-                checkOutTimeInput.addEventListener('change', updatePriceCalculation);
-            }
-            
-            // Add event listeners to pet checkboxes
-            const petCheckboxes = document.querySelectorAll('.pet-checkbox');
-            petCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', updatePriceCalculation);
-            });
-            
-            // Add event listener to share room checkbox
-            const shareRoomCheckbox = document.getElementById('shareRoomCheckbox');
-            if (shareRoomCheckbox) {
-                shareRoomCheckbox.addEventListener('change', updatePriceCalculation);
-            }
-            
-            // Check if description needs toggle button on page load
-            const descriptionText = document.getElementById('descriptionText');
-            const toggleButton = document.getElementById('descriptionToggle');
-            
-            if (descriptionText && toggleButton) {
-                // Wait a bit for layout to settle
-                setTimeout(function() {
-                    // Check if content is taller than 4 lines
-                    const fullHeight = descriptionText.scrollHeight;
-                    const lineHeight = parseFloat(getComputedStyle(descriptionText).lineHeight);
-                    const maxHeight = lineHeight * 4;
-                    
-                    if (fullHeight > maxHeight) {
-                        // Show toggle button and collapse initially
-                        toggleButton.style.display = 'block';
-                        descriptionText.classList.add('collapsed');
-                    }
-                }, 100);
-            }
-        });
         
         // Toggle description expand/collapse
         function toggleDescription() {
@@ -1421,6 +957,29 @@
                 toggleIcon.classList.remove('expanded');
             }
         }
+        
+        // Check if description needs toggle button on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const descriptionText = document.getElementById('descriptionText');
+            const toggleButton = document.getElementById('descriptionToggle');
+            
+            if (descriptionText && toggleButton) {
+                // Wait a bit for layout to settle
+                setTimeout(function() {
+                    // Check if content is taller than 4 lines
+                    const fullHeight = descriptionText.scrollHeight;
+                    const lineHeight = parseFloat(getComputedStyle(descriptionText).lineHeight);
+                    const maxHeight = lineHeight * 4;
+                    
+                    if (fullHeight > maxHeight) {
+                        // Show toggle button and collapse initially
+                        toggleButton.style.display = 'block';
+                        descriptionText.classList.add('collapsed');
+                    }
+                }, 100);
+            }
+        });
     </script>
 </body>
 </html>
+

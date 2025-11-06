@@ -1,16 +1,21 @@
 
 import dao.ShiftRequestDAO;
 import dao.NotificationDAO;
+import dao.WorkScheduleDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.util.Date;
 import model.ShiftRequest;
 
 @WebServlet("/admin/approveShiftRequest")
 public class AdminApproveShiftRequestController extends HttpServlet {
+
     private final ShiftRequestDAO shiftDAO = new ShiftRequestDAO();
     private final NotificationDAO notifyDAO = new NotificationDAO();
+    private final WorkScheduleDAO workDAO = new WorkScheduleDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -51,6 +56,16 @@ public class AdminApproveShiftRequestController extends HttpServlet {
             success = shiftDAO.swapShift(requestId);
         } else if ("Leave".equalsIgnoreCase(req.getType())) {
             success = shiftDAO.passShift(requestId);
+        } else if ("Cancel".equalsIgnoreCase(req.getType())) {
+            int staffId = req.getEmployeeID();
+            int shiftId = req.getFromShiftID();
+            LocalDate workDate = req.getFromDate().toLocalDate();
+
+            System.out.println("🟠 [AdminApproveShiftRequest] Hủy ca của staff=" + staffId
+                    + ", shift=" + shiftId + ", date=" + workDate);
+
+            success = workDAO.deleteScheduleByStaffShift(staffId, shiftId, workDate);
+            System.out.println("✅ [AdminApproveShiftRequest] Result = " + success);
         }
 
         if (success) {

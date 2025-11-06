@@ -356,6 +356,84 @@
                     previewImage(document.getElementById('petImage'));
                 }
             }
+            
+            // Modal functions
+            function openAddPetModal() {
+                document.getElementById('modalTitle').textContent = 'Thêm thú cưng mới';
+                document.getElementById('petForm').reset();
+                document.getElementById('petId').value = '';
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('imagePreview').innerHTML = '';
+                document.getElementById('petModal').classList.remove('hidden');
+            }
+            
+            function closePetModal() {
+                document.getElementById('petModal').classList.add('hidden');
+                document.getElementById('petForm').reset();
+                document.getElementById('imagePreview').style.display = 'none';
+            }
+            
+            function editPet(petId) {
+                // Redirect để load pet data
+                window.location.href = '<%= request.getContextPath()%>/petinfoservlet?action=edit&petId=' + petId;
+            }
+            
+            // Auto-open modal if petToEdit exists
+            <% 
+            model.Pet petToEdit = (model.Pet) request.getAttribute("petToEdit");
+            if (petToEdit != null) {
+            %>
+            window.addEventListener('DOMContentLoaded', function() {
+                // Fill form with pet data
+                document.getElementById('modalTitle').textContent = 'Sửa thông tin thú cưng';
+                document.getElementById('petId').value = '<%= petToEdit.getId() %>';
+                document.getElementById('petName').value = '<%= petToEdit.getPetName() != null ? petToEdit.getPetName().replace("'", "\\'").replace("\"", "\\\"") : "" %>';
+                document.getElementById('species').value = '<%= petToEdit.getSpecies() != null ? petToEdit.getSpecies() : "" %>';
+                document.getElementById('breed').value = '<%= petToEdit.getBreed() != null ? petToEdit.getBreed().replace("'", "\\'").replace("\"", "\\\"") : "" %>';
+                document.getElementById('age').value = '<%= petToEdit.getAge() %>';
+                <% if (petToEdit.getGender() != null && petToEdit.getGender().equals("male")) { %>
+                document.getElementById('gender_male').checked = true;
+                <% } else { %>
+                document.getElementById('gender_female').checked = true;
+                <% } %>
+                var desc = '<%= petToEdit.getDescription() != null ? petToEdit.getDescription().replace("'", "\\'").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "") : "" %>';
+                document.getElementById('description').value = desc;
+                var health = '<%= petToEdit.getHealthStatus() != null ? petToEdit.getHealthStatus().replace("'", "\\'").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "") : "" %>';
+                document.getElementById('healthStatus').value = health;
+                document.getElementById('petModal').classList.remove('hidden');
+            });
+            <% } %>
+            
+            function deletePet(petId) {
+                if (confirm('Bạn có chắc chắn muốn xóa thú cưng này?')) {
+                    // Create form and submit
+                    var form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '<%= request.getContextPath()%>/petinfoservlet';
+                    
+                    var actionInput = document.createElement('input');
+                    actionInput.type = 'hidden';
+                    actionInput.name = 'action';
+                    actionInput.value = 'delete';
+                    
+                    var petIdInput = document.createElement('input');
+                    petIdInput.type = 'hidden';
+                    petIdInput.name = 'petId';
+                    petIdInput.value = petId;
+                    
+                    form.appendChild(actionInput);
+                    form.appendChild(petIdInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            }
+            
+            // Close modal when clicking outside
+            document.getElementById('petModal')?.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closePetModal();
+                }
+            });
         </script>
     </head>
 
@@ -439,11 +517,16 @@
         </div>
 
         <!-- MAIN CONTENT -->
-        <main class="main-content max-w-4xl mx-auto mt-4 px-6 space-y-10">
+        <main class="main-content max-w-6xl mx-auto mt-4 px-6 space-y-10">
             <div class="pet-info-card p-8">
-                <h2 class="text-3xl font-bold text-center mb-8" style="color: #6FD5DD; font-family: 'Baloo 2', cursive;">
-                    🐾 Thông Tin Thú Cưng Của Bạn 🐾
-                </h2>
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-bold" style="color: #6FD5DD; font-family: 'Baloo 2', cursive;">
+                        🐾 Thông Tin Thú Cưng Của Bạn 🐾
+                    </h2>
+                    <button onclick="openAddPetModal()" class="btn-primary">
+                        <i class="fas fa-plus"></i> Thêm thú cưng
+                    </button>
+                </div>
 
                 <% String message = (String) request.getAttribute("message"); %>
                 <% if (message != null) {%>
@@ -459,206 +542,220 @@
                 </div>
                 <% }%>
 
-                 <form name="petInfoForm" onsubmit="return validateForm()" action="<%= request.getContextPath()%>/updatepetservlet" method="post" enctype="multipart/form-data" class="space-y-6">
-                     
-                     <!-- Hiển thị thông tin pet hiện có nếu có -->
-                     <% 
-                         model.Pet pet = (model.Pet) request.getAttribute("pet");
-                         boolean hasPet = pet != null;
-                     %>
-                     
-                     <% if (hasPet) { %>
-                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                         <h4 class="text-blue-800 font-semibold mb-2">
-                             <i class="fas fa-info-circle mr-2"></i>Thông tin thú cưng hiện tại
-                         </h4>
-                        <%
-                            String rawPath = pet.getImagePath();
-                            boolean hasImg = rawPath != null && !rawPath.trim().isEmpty();
-                            String imageUrl = null;
-                            if (hasImg) {
-                                String trimmed = rawPath.trim();
-                                if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-                                    imageUrl = trimmed;
-                                } else {
-                                    while (trimmed.startsWith("/")) trimmed = trimmed.substring(1);
-                                    imageUrl = request.getContextPath() + "/" + trimmed;
+                <!-- Danh sách pets -->
+                <% 
+                    java.util.List<model.Pet> pets = (java.util.List<model.Pet>) request.getAttribute("pets");
+                    int petsCount = pets != null ? pets.size() : 0;
+                %>
+                
+                <% if (petsCount == 0) { %>
+                <div class="text-center py-12 bg-gray-50 rounded-lg">
+                    <div class="text-6xl mb-4">🐾</div>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">Bạn chưa có thú cưng nào</h3>
+                    <p class="text-gray-500 mb-6">Hãy thêm thông tin thú cưng đầu tiên của bạn!</p>
+                    <button onclick="openAddPetModal()" class="btn-primary">
+                        <i class="fas fa-plus"></i> Thêm thú cưng đầu tiên
+                    </button>
+                </div>
+                <% } else { %>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <% for (model.Pet pet : pets) { %>
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden border-2 border-gray-100 hover:border-blue-300 transition-all">
+                        <div class="p-4">
+                            <%
+                                String rawPath = pet.getImagePath();
+                                boolean hasImg = rawPath != null && !rawPath.trim().isEmpty();
+                                String imageUrl = null;
+                                if (hasImg) {
+                                    String trimmed = rawPath.trim();
+                                    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+                                        imageUrl = trimmed;
+                                    } else {
+                                        while (trimmed.startsWith("/")) trimmed = trimmed.substring(1);
+                                        imageUrl = request.getContextPath() + "/" + trimmed;
+                                    }
                                 }
-                            }
+                            %>
+                            <div class="text-center mb-4">
+                                <img src="<%= hasImg ? imageUrl : (request.getContextPath()+"/images/pets/placeholder.svg") %>" 
+                                     alt="<%= pet.getPetName() %>" 
+                                     class="w-24 h-24 rounded-full object-cover border-4 border-blue-200 mx-auto"
+                                     onerror="this.src='<%= request.getContextPath() %>/images/pets/placeholder.svg'"/>
+                            </div>
                             
-                            // Debug: Log image path
-                            System.out.println("=== DEBUG PET IMAGE ===");
-                            System.out.println("Raw path: " + rawPath);
-                            System.out.println("Has image: " + hasImg);
-                            System.out.println("Image URL: " + imageUrl);
-                        %>
-                        <div class="mb-4 flex justify-center">
-                            <img src="<%= hasImg ? imageUrl : (request.getContextPath()+"/images/pets/placeholder.svg") %>" 
-                                 alt="Ảnh thú cưng hiện tại" 
-                                 class="w-32 h-32 rounded-full object-cover border-4 border-blue-200"
-                                 onerror="this.src='<%= request.getContextPath() %>/images/pets/placeholder.svg'"/>
+                            <h3 class="text-xl font-bold text-center mb-3" style="color: #6FD5DD;"><%= pet.getPetName() %></h3>
+                            
+                            <div class="space-y-2 text-sm mb-4">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Loài:</span>
+                                    <span class="font-semibold"><%= pet.getSpeciesDisplayName() %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Giống:</span>
+                                    <span class="font-semibold"><%= pet.getBreed() %></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Tuổi:</span>
+                                    <span class="font-semibold"><%= pet.getAge() %> tuổi</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Giới tính:</span>
+                                    <span class="font-semibold"><%= pet.getGender().equals("male") ? "♂️ Đực" : "♀️ Cái" %></span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <button onclick="editPet(<%= pet.getId() %>)" class="flex-1 btn-secondary text-sm py-2">
+                                    <i class="fas fa-edit"></i> Sửa
+                                </button>
+                                <button onclick="deletePet(<%= pet.getId() %>)" class="flex-1 bg-red-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-red-600 transition">
+                                    <i class="fas fa-trash"></i> Xóa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+                <% } %>
+
+            </div>
+            
+            <!-- Modal thêm/sửa pet -->
+            <div id="petModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-2xl font-bold text-gray-800" id="modalTitle">Thêm thú cưng mới</h3>
+                            <button onclick="closePetModal()" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
                         </div>
                         
-                        <div class="grid grid-cols-2 gap-4 text-sm">
-                             <div><strong>Tên:</strong> <%= pet.getPetName() %></div>
-                             <div><strong>Loài:</strong> <%= pet.getSpecies() %></div>
-                             <div><strong>Giống:</strong> <%= pet.getBreed() %></div>
-                             <div><strong>Tuổi:</strong> <%= pet.getAge() %> tuổi</div>
-                             <div><strong>Giới tính:</strong> <%= pet.getGender().equals("male") ? "Đực" : "Cái" %></div>
-                             <div><strong>Cập nhật lần cuối:</strong> <%= pet.getUpdatedAt() %></div>
-                         </div>
+                        <form id="petForm" name="petInfoForm" onsubmit="return validateForm()" action="<%= request.getContextPath()%>/updatepetservlet" method="post" enctype="multipart/form-data" class="space-y-6">
+                            <!-- Hidden field cho pet ID -->
+                            <input type="hidden" name="petId" id="petId" value="">
+                            
+                            <!-- Thông tin cơ bản -->
+                            <div id="basic" class="form-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-paw"></i> Thông tin cơ bản
+                                </h3>
 
-                         <!-- Medical Records Button -->
-                         <div class="mt-4 pt-4 border-t border-blue-200">
-                             <a href="<%= request.getContextPath()%>/customer/pet-medical-records?petId=<%= pet.getId() %>"
-                                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg">
-                                 <i class="fas fa-notes-medical mr-2"></i>
-                                 <span>Xem hồ sơ y tế</span>
-                             </a>
-                         </div>
-                     </div>
-                     <% } %>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="fas fa-heart"></i> Tên thú cưng
+                                        </label>
+                                        <input type="text" name="petName" id="petName" class="form-input" placeholder="Nhập tên thú cưng" required>
+                                    </div>
 
-                    <!-- Thông tin cơ bản -->
-                    <div id="basic" class="form-section">
-                        <h3 class="section-title">
-                            <i class="fas fa-paw"></i> Thông tin cơ bản
-                        </h3>
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="fas fa-dog"></i> Loài
+                                        </label>
+                                        <select name="species" id="species" class="form-select" required>
+                                            <option value="">Chọn loài thú cưng</option>
+                                            <option value="dog">🐶 Chó</option>
+                                            <option value="cat">🐱 Mèo</option>
+                                            <option value="bird">🐦 Chim</option>
+                                            <option value="rabbit">🐰 Thỏ</option>
+                                            <option value="hamster">🐹 Hamster</option>
+                                            <option value="fish">🐠 Cá</option>
+                                            <option value="other">🐾 Khác</option>
+                                        </select>
+                                    </div>
+                                </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-heart"></i> Tên thú cưng
-                                </label>
-                                <input type="text" name="petName" class="form-input" placeholder="Nhập tên thú cưng" 
-                                       value="<%= hasPet ? pet.getPetName() : "" %>" required>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="fas fa-dna"></i> Giống
+                                        </label>
+                                        <input type="text" name="breed" id="breed" class="form-input" placeholder="Ví dụ: Golden Retriever, Persian..." required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            <i class="fas fa-birthday-cake"></i> Tuổi
+                                        </label>
+                                        <input type="number" name="age" id="age" class="form-input" placeholder="Tuổi (năm)" min="0" max="30" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-venus-mars"></i> Giới tính
+                                    </label>
+                                    <div class="flex gap-4">
+                                        <label class="flex items-center">
+                                            <input type="radio" name="gender" id="gender_male" value="male" class="mr-2" required>
+                                            <span>♂️ Đực</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" name="gender" id="gender_female" value="female" class="mr-2">
+                                            <span>♀️ Cái</span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-dog"></i> Loài
-                                </label>
-                                <select name="species" class="form-select" required>
-                                    <option value="">Chọn loài thú cưng</option>
-                                    <option value="dog" <%= hasPet && "dog".equals(pet.getSpecies()) ? "selected" : "" %>>🐶 Chó</option>
-                                    <option value="cat" <%= hasPet && "cat".equals(pet.getSpecies()) ? "selected" : "" %>>🐱 Mèo</option>
-                                    <option value="bird" <%= hasPet && "bird".equals(pet.getSpecies()) ? "selected" : "" %>>🐦 Chim</option>
-                                    <option value="rabbit" <%= hasPet && "rabbit".equals(pet.getSpecies()) ? "selected" : "" %>>🐰 Thỏ</option>
-                                    <option value="hamster" <%= hasPet && "hamster".equals(pet.getSpecies()) ? "selected" : "" %>>🐹 Hamster</option>
-                                    <option value="fish" <%= hasPet && "fish".equals(pet.getSpecies()) ? "selected" : "" %>>🐠 Cá</option>
-                                    <option value="other" <%= hasPet && "other".equals(pet.getSpecies()) ? "selected" : "" %>>🐾 Khác</option>
-                                </select>
-                            </div>
-                        </div>
+                            <!-- Upload ảnh -->
+                            <div id="photo" class="form-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-camera"></i> Ảnh thú cưng
+                                </h3>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-dna"></i> Giống
-                                </label>
-                                <input type="text" name="breed" class="form-input" placeholder="Ví dụ: Golden Retriever, Persian..." 
-                                       value="<%= hasPet ? pet.getBreed() : "" %>" required>
+                                <div class="upload-area" 
+                                     onclick="document.getElementById('petImage').click()"
+                                     ondragover="handleDragOver(event)"
+                                     ondragleave="handleDragLeave(event)"
+                                     ondrop="handleDrop(event)">
+                                    <i class="fas fa-cloud-upload-alt text-4xl mb-4" style="color: #6FD5DD;"></i>
+                                    <p class="text-lg font-semibold mb-2" style="color: #34495E;">Kéo thả ảnh vào đây hoặc click để chọn</p>
+                                    <p class="text-sm" style="color: #A9A9A9;">Hỗ trợ: JPG, PNG, GIF (tối đa 5MB)</p>
+                                    <input type="file" id="petImage" name="petImage" accept="image/*" style="display: none;" onchange="previewImage(this)">
+                                </div>
+
+                                <div id="imagePreview" style="display: none;"></div>
                             </div>
 
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-birthday-cake"></i> Tuổi
-                                </label>
-                                <input type="number" name="age" class="form-input" placeholder="Tuổi (năm)" min="0" max="30" 
-                                       value="<%= hasPet ? pet.getAge() : "" %>" required>
-                            </div>
-                        </div>
+                            <!-- Mô tả thêm -->
+                            <div id="desc" class="form-section">
+                                <h3 class="section-title">
+                                    <i class="fas fa-edit"></i> Mô tả thêm
+                                </h3>
 
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-venus-mars"></i> Giới tính
-                            </label>
-                            <div class="flex gap-4">
-                                <label class="flex items-center">
-                                    <input type="radio" name="gender" value="male" class="mr-2" 
-                                           <%= hasPet && "male".equals(pet.getGender()) ? "checked" : "" %>>
-                                    <span>♂️ Đực</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="gender" value="female" class="mr-2"
-                                           <%= hasPet && "female".equals(pet.getGender()) ? "checked" : "" %>>
-                                    <span>♀️ Cái</span>
-                                </label>
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-info-circle"></i> Mô tả về thú cưng
+                                    </label>
+                                    <textarea name="description" id="description" class="form-textarea" placeholder="Kể về tính cách, sở thích, đặc điểm đặc biệt của thú cưng..."></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-heartbeat"></i> Tình trạng sức khỏe
+                                    </label>
+                                    <textarea name="healthStatus" id="healthStatus" class="form-textarea" placeholder="Tình trạng sức khỏe hiện tại, bệnh tật, dị ứng..."></textarea>
+                                </div>
                             </div>
-                        </div>
+
+                            <!-- Nút submit -->
+                            <div class="text-center space-y-4">
+                                <div class="flex flex-col md:flex-row gap-3 justify-center">
+                                    <button type="submit" class="btn-primary w-full md:w-auto">
+                                        <i class="fas fa-save"></i> Lưu thông tin
+                                    </button>
+                                    <button type="button" onclick="closePetModal()" class="btn-secondary">
+                                        <i class="fas fa-times"></i> Hủy
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
-
-                    <!-- Upload ảnh -->
-                    <div id="photo" class="form-section">
-                        <h3 class="section-title">
-                            <i class="fas fa-camera"></i> Ảnh thú cưng
-                        </h3>
-
-                        <div class="upload-area" 
-                             onclick="document.getElementById('petImage').click()"
-                             ondragover="handleDragOver(event)"
-                             ondragleave="handleDragLeave(event)"
-                             ondrop="handleDrop(event)">
-                            <i class="fas fa-cloud-upload-alt text-4xl mb-4" style="color: #6FD5DD;"></i>
-                            <p class="text-lg font-semibold mb-2" style="color: #34495E;">Kéo thả ảnh vào đây hoặc click để chọn</p>
-                            <p class="text-sm" style="color: #A9A9A9;">Hỗ trợ: JPG, PNG, GIF (tối đa 5MB)</p>
-                            <input type="file" id="petImage" name="petImage" accept="image/*" style="display: none;" onchange="previewImage(this)">
-                        </div>
-
-                        <div id="imagePreview" style="display: none;"></div>
-                    </div>
-
-                    <!-- Mô tả thêm -->
-                    <div id="desc" class="form-section">
-                        <h3 class="section-title">
-                            <i class="fas fa-edit"></i> Mô tả thêm
-                        </h3>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-info-circle"></i> Mô tả về thú cưng
-                            </label>
-                            <textarea name="description" class="form-textarea" placeholder="Kể về tính cách, sở thích, đặc điểm đặc biệt của thú cưng..."><%= hasPet && pet.getDescription() != null ? pet.getDescription() : "" %></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">
-                                <i class="fas fa-heartbeat"></i> Tình trạng sức khỏe
-                            </label>
-                            <textarea name="healthStatus" class="form-textarea" placeholder="Tình trạng sức khỏe hiện tại, bệnh tật, dị ứng..."><%= hasPet && pet.getHealthStatus() != null ? pet.getHealthStatus() : "" %></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Nút submit -->
-                    <div class="text-center space-y-4">
-                        <div class="flex flex-col md:flex-row gap-3 justify-center">
-                            <button type="submit" class="btn-primary w-full md:w-auto">
-                                <i class="fas fa-save"></i> Lưu thông tin thú cưng
-                            </button>
-                            <button type="reset" class="btn-secondary">
-                                <i class="fas fa-undo"></i> Đặt lại
-                            </button>
-                        </div>
-                        <div class="flex justify-center gap-4">
-                            <a href="<%= request.getContextPath()%>/home" class="btn-secondary">
-                                <i class="fas fa-home"></i> Về trang chủ
-                            </a>
-                            <a href="user-info.jsp" class="btn-secondary">
-                                <i class="fas fa-user"></i> Thông tin tài khoản
-                            </a>
-                            <a href="<%= request.getContextPath()%>/health-check-booking" class="btn-secondary">
-                                <i class="fas fa-calendar-check"></i> Đặt lịch khám
-                            </a>
-                        </div>
-                    </div>
-                    <!-- Hidden field cho pet ID -->
-                    <% if (hasPet) { %>
-                    <input type="hidden" name="petId" value="<%= pet.getId() %>">
-                    <% } %>
-                </form>
+                </div>
             </div>
         </main>
-
 
         <footer class="mt-10 text-sm text-gray-500 py-4">
             <p><strong>Petcity - Siêu thị thú cưng online</strong></p>

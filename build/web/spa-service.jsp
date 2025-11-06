@@ -1,6 +1,7 @@
 <%@page import="model.Customer"%>
 <%@page import="model.CartItem"%>
 <%@page import="model.PetServiceModel"%>
+<%@page import="dao.BoardingRoomDAO"%>
 <%@page import="java.util.Map"%>
 <%@page import="java.util.List"%>
 <%@page import="java.util.ArrayList"%>
@@ -32,6 +33,26 @@
             spaServices = new ArrayList<>();
         }
     }
+    
+    // Lấy roomId từ database theo roomType
+    BoardingRoomDAO roomDAO = new BoardingRoomDAO();
+    Integer roomIdDogLarge = roomDAO.getRoomIdByType("dog_large");
+    Integer roomIdDogSmall = roomDAO.getRoomIdByType("dog_small");
+    Integer roomIdCatStandard = roomDAO.getRoomIdByType("cat_standard");
+    Integer roomIdCatVip = roomDAO.getRoomIdByType("cat_vip");
+    
+    // Debug: Log roomIds
+    System.out.println("DEBUG - Room IDs from database:");
+    System.out.println("  dog_large: " + roomIdDogLarge);
+    System.out.println("  dog_small: " + roomIdDogSmall);
+    System.out.println("  cat_standard: " + roomIdCatStandard);
+    System.out.println("  cat_vip: " + roomIdCatVip);
+    
+    // Fallback nếu không tìm thấy trong database
+    if (roomIdDogLarge == null) roomIdDogLarge = 1;
+    if (roomIdDogSmall == null) roomIdDogSmall = 3;
+    if (roomIdCatStandard == null) roomIdCatStandard = 5;
+    if (roomIdCatVip == null) roomIdCatVip = 7;
 %>
 
 <!DOCTYPE html>
@@ -92,6 +113,13 @@
         .booking-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+        .line-clamp-1 {
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     </style>
 </head>
@@ -235,21 +263,63 @@
                             <%= icon %>
                         </div>
                         <h3 class="text-xl font-bold text-gray-800 mb-3"><%= service.getName() %></h3>
-                        <p class="text-gray-600 mb-4 leading-relaxed"><%= service.getDescription() != null ? service.getDescription() : "Dịch vụ spa chuyên nghiệp cho thú cưng" %></p>
+                        <p class="text-gray-700 text-sm mb-4">
+                            <% 
+                            String description = service.getDescription();
+                            if (description == null || description.trim().isEmpty()) {
+                                description = "Dịch vụ spa chuyên nghiệp cho thú cưng";
+                            } else {
+                                // Split by newlines
+                                String[] lines = description.split("\r?\n");
+                                String firstContent = "";
+                                
+                                // Find first line with actual content (bullet point or regular text, skip headers)
+                                for (String line : lines) {
+                                    line = line.trim();
+                                    if (line.isEmpty()) continue;
+                                    
+                                    // Skip headers (lines with emoji + all caps or very short)
+                                    boolean isHeader = line.matches("^[\\p{So}\\p{Sc}].*") && 
+                                                      (line.length() < 30 || 
+                                                       line.matches(".*[A-ZÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴ]{5,}.*"));
+                                    
+                                    if (!isHeader) {
+                                        // Remove bullet point if present
+                                        firstContent = line.replaceFirst("^[•*\\-]\\s*", "");
+                                        break;
+                                    }
+                                }
+                                
+                                // If no content found, use first non-empty line
+                                if (firstContent.isEmpty()) {
+                                    for (String line : lines) {
+                                        line = line.trim();
+                                        if (!line.isEmpty()) {
+                                            firstContent = line.replaceFirst("^[•*\\-]\\s*", "");
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                // Limit to 60 characters
+                                if (firstContent.length() > 60) {
+                                    description = firstContent.substring(0, 60) + "...";
+                                } else {
+                                    description = firstContent;
+                                }
+                            }
+                            %>
+                            <%= description %>
+                        </p>
                         <div class="flex justify-between items-center mb-4">
                             <span class="price-tag">
                                 <fmt:formatNumber value="<%= service.getPrice() %>" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
                             </span>
                             <span class="duration-badge"><%= service.getDuration() %> phút</span>
                         </div>
-                        <form method="POST" action="${pageContext.request.contextPath}/spa-booking" style="display: inline;">
-                            <input type="hidden" name="action" value="add-to-cart">
-                            <input type="hidden" name="serviceId" value="<%= service.getServiceId() %>">
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="booking-btn">
-                                🛒 Thêm vào giỏ Spa
-                            </button>
-                        </form>
+                        <a href="<%= request.getContextPath() %>/spa-booking?action=service-detail&serviceId=<%= service.getServiceId() %>" class="booking-btn">
+                            Xem chi tiết
+                        </a>
                     </div>
                 </div>
                 <% } %>
@@ -285,9 +355,11 @@
                             </span>
                             <span class="duration-badge">1 ngày</span>
                         </div>
-                        <button type="button" onclick="openBoardingModal(1, 'dog_large', 400000)" class="booking-btn">
+                        <a href="<%= request.getContextPath()%>/boarding-room?action=detail&roomId=<%= roomIdDogLarge %>" 
+                           class="booking-btn inline-block text-center"
+                           onclick="console.log('Clicking roomId: <%= roomIdDogLarge %>'); return true;">
                             🏠 Đặt phòng lưu trú
-                        </button>
+                        </a>
                     </div>
                 </div>
 
@@ -305,9 +377,9 @@
                             </span>
                             <span class="duration-badge">1 ngày</span>
                         </div>
-                        <button type="button" onclick="openBoardingModal(3, 'dog_small', 300000)" class="booking-btn">
+                        <a href="<%= request.getContextPath()%>/boarding-room?action=detail&roomId=<%= roomIdDogSmall %>" class="booking-btn inline-block text-center">
                             🏠 Đặt phòng lưu trú
-                        </button>
+                        </a>
                     </div>
                 </div>
 
@@ -325,9 +397,9 @@
                             </span>
                             <span class="duration-badge">1 ngày</span>
                         </div>
-                        <button type="button" onclick="openBoardingModal(5, 'cat_standard', 250000)" class="booking-btn">
+                        <a href="<%= request.getContextPath()%>/boarding-room?action=detail&roomId=<%= roomIdCatStandard %>" class="booking-btn inline-block text-center">
                             🏠 Đặt phòng lưu trú
-                        </button>
+                        </a>
                     </div>
                 </div>
 
@@ -345,9 +417,9 @@
                             </span>
                             <span class="duration-badge">1 ngày</span>
                         </div>
-                        <button type="button" onclick="openBoardingModal(7, 'cat_vip', 350000)" class="booking-btn">
+                        <a href="<%= request.getContextPath()%>/boarding-room?action=detail&roomId=<%= roomIdCatVip %>" class="booking-btn inline-block text-center">
                             🏠 Đặt phòng lưu trú
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -869,24 +941,12 @@
                         <!-- Payment Method -->
                         <div class="mb-6">
                             <label class="block text-sm font-semibold text-gray-700 mb-3">💰 Phương thức thanh toán</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="border-2 rounded-lg p-3 cursor-pointer" id="payment-cash" onclick="selectPaymentMethod('cash')">
-                                    <input type="radio" name="paymentMethod" value="cash" checked id="radio-cash" class="sr-only">
+                            <div class="grid grid-cols-1 gap-3">
+                                <div class="border-2 border-green-500 rounded-lg p-3 cursor-pointer" id="payment-payos" onclick="selectPaymentMethod('payos')">
+                                    <input type="radio" name="paymentMethod" value="payos" checked id="radio-payos" class="sr-only">
                                     <div class="flex items-center space-x-2">
                                         <div class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center">
-                                            <div class="w-3 h-3 rounded-full bg-green-500" id="check-cash"></div>
-                                        </div>
-                                        <div>
-                                            <div class="font-semibold text-gray-800">💵 Tiền mặt</div>
-                                            <div class="text-xs text-gray-500">Thanh toán khi nhận</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="border-2 rounded-lg p-3 cursor-pointer" id="payment-payos" onclick="selectPaymentMethod('payos')">
-                                    <input type="radio" name="paymentMethod" value="payos" id="radio-payos" class="sr-only">
-                                    <div class="flex items-center space-x-2">
-                                        <div class="w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
-                                            <div class="w-3 h-3 rounded-full bg-green-500 hidden" id="check-payos"></div>
+                                            <div class="w-3 h-3 rounded-full bg-green-500" id="check-payos"></div>
                                         </div>
                                         <div>
                                             <div class="font-semibold text-gray-800">💳 PayOS Online</div>
@@ -1084,9 +1144,7 @@
         
         function selectPaymentMethod(method) {
             // Unselect all payment options
-            document.getElementById('payment-cash').classList.remove('border-green-500');
             document.getElementById('payment-payos').classList.remove('border-green-500');
-            document.getElementById('check-cash').classList.add('hidden');
             document.getElementById('check-payos').classList.add('hidden');
             
             // Select the clicked option

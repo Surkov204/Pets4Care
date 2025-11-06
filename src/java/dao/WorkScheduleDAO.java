@@ -283,21 +283,38 @@ public class WorkScheduleDAO {
         }
     }
 
-    public Map<String, List<String>> getCommonSchedule() {
-        Map<String, List<String>> scheduleMap = new LinkedHashMap<>();
+    public boolean deleteScheduleByStaffShift(int staffId, int shiftId, LocalDate date) {
+        String sql = "DELETE FROM WorkSchedule WHERE staff_id=? AND shift_id=? AND work_date=?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
+            ps.setInt(1, staffId);
+            ps.setInt(2, shiftId);
+            ps.setDate(3, java.sql.Date.valueOf(date));
+
+            int rows = ps.executeUpdate();
+            System.out.println("🗑️ [DAO] Xóa ca: staff=" + staffId + ", shift=" + shiftId + ", date=" + date + " | rows=" + rows);
+            return rows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public Map<String, List<String>> getCommonSchedule(LocalDate startOfWeek, LocalDate endOfWeek) {
+        Map<String, List<String>> scheduleMap = new LinkedHashMap<>();
         String sql = """
         SELECT ws.work_date, s.name AS staff_name, sh.ShiftName
         FROM WorkSchedule ws
         JOIN Staff s ON ws.staff_id = s.staff_id
         LEFT JOIN Shifts sh ON ws.shift_id = sh.ShiftID
-        WHERE ws.status = ? OR ws.status IS NULL
+        WHERE ws.work_date BETWEEN ? AND ?
         ORDER BY ws.work_date, sh.StartTime
     """;
 
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, "Registered");  // ✅ đặt tiếng Việt đúng encoding
+            ps.setDate(1, Date.valueOf(startOfWeek));
+            ps.setDate(2, Date.valueOf(endOfWeek));
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -308,6 +325,7 @@ public class WorkScheduleDAO {
                     scheduleMap.computeIfAbsent(key, k -> new ArrayList<>()).add(staffName);
                 }
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -496,13 +514,12 @@ public class WorkScheduleDAO {
     public WorkSchedule getCurrentShiftForToday(int staffId) {
         String sql = """
         SELECT TOP 1 * FROM WorkSchedule
-        WHERE staff_id = ? 
+        WHERE staff_id = ?
           AND work_date = CAST(GETDATE() AS date)
           AND CAST(GETDATE() AS time) BETWEEN start_time AND end_time
-          AND status = 'Registered'
+          AND status IN ('Registered', 'Assigned')
         ORDER BY start_time
     """;
-
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, staffId);
             ResultSet rs = ps.executeQuery();
@@ -521,6 +538,7 @@ public class WorkScheduleDAO {
         }
         return null;
     }
+
     public void assignShift(int staffId, String date, int shiftId) {
         String sqlCheck = "SELECT COUNT(*) FROM WorkSchedule WHERE staff_id=? AND work_date=? AND shift_id=?";
         String sqlInsert = """

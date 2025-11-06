@@ -393,6 +393,30 @@
                 color: #00bfa6;
                 font-size: 1.2rem;
             }
+            /* Scroll chỉ phần bảng */
+            .scroll-table {
+                max-height: 55vh;
+                overflow-y: auto;
+                margin-top: 10px;
+                border: 1px solid #e5e7eb;
+                border-radius: 10px;
+            }
+
+            /* Cố định phần thead */
+            .scroll-table table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .scroll-table thead th {
+                position: sticky;
+                top: 0;
+                background: linear-gradient(90deg, #A6E3E9 0%, #F9E4D4 100%);
+                z-index: 10;
+            }
+            .scroll-table td, .scroll-table th {
+                padding: 10px;
+                border-bottom: 1px solid #e5e7eb;
+            }
         </style>
     </head>
     <body>
@@ -469,7 +493,7 @@
                 <c:choose>
                     <c:when test="${canRegister}">
                         <button class="btn" id="openModalBtn">
-                            <i class="fa-solid fa-plus"></i> Đăng ký ca (tuần sau)
+                            <i class="fa-solid fa-plus"></i> Đăng ký ca
                         </button>
                     </c:when>
                     <c:otherwise>
@@ -478,7 +502,7 @@
                         </button>
                     </c:otherwise>
                 </c:choose>
-                   
+
                 <button class="btn btn-danger" id="openCancelModalBtn"><i class="fa-solid fa-trash"></i> Hủy ca</button>
                 <button class="btn" id="openSwapModalBtn">
                     <i class="fa-solid fa-repeat"></i> Yêu cầu đổi ca
@@ -631,40 +655,46 @@
             <div class="modal-content" style="max-width:600px;">
                 <span class="close-btn" id="closeCancelModalBtn">&times;</span>
                 <h3 class="centered">Danh sách ca đã đăng ký</h3>
-                <form method="post" action="${pageContext.request.contextPath}/staff/mySchedule">
-                    <input type="hidden" name="action" value="cancelMultiple">
-                    <table>
-                        <thead><tr><th></th><th>Ngày</th><th>Ca</th><th>Giờ</th></tr></thead>
-                        <tbody>
-                            <c:forEach var="day" items="${weekDays}">
-                                <c:forEach var="shiftId" items="${day.registeredShifts}">
-                                    <tr>
-                                        <td><input type="checkbox" name="cancelItems" value="${day.date}|${shiftId}"></td>
-                                        <td>${fn:substring(day.date,8,10)}/${fn:substring(day.date,5,7)}</td>
-                                        <td>
-                                            <c:choose>
-                                                <c:when test="${shiftId eq '1'}">Ca sáng</c:when>
-                                                <c:when test="${shiftId eq '2'}">Ca chiều</c:when>
-                                                <c:when test="${shiftId eq '3'}">Ca tối</c:when>
-                                            </c:choose>
-                                        </td>
-                                        <td>
-                                            <c:choose>
-                                                <c:when test="${shiftId eq '1'}">8:00–12:00</c:when>
-                                                <c:when test="${shiftId eq '2'}">13:00–17:00</c:when>
-                                                <c:when test="${shiftId eq '3'}">18:00–22:00</c:when>
-                                            </c:choose>
-                                        </td>
-                                    </tr>
+
+                <form method="post" action="${pageContext.request.contextPath}/staff/cancelShift">
+
+                    <!-- ✅ vùng bảng có cuộn riêng -->
+                    <div class="scroll-table">
+                        <table>
+                            <thead>
+                                <tr><th></th><th>Ngày</th><th>Ca</th><th>Giờ</th></tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach var="day" items="${weekDays}">
+                                    <c:forEach var="shiftId" items="${day.registeredShifts}">
+                                        <tr>
+                                            <td><input type="checkbox" name="cancelItems" value="${day.date}|${shiftId}"></td>
+                                            <td>${fn:substring(day.date,8,10)}/${fn:substring(day.date,5,7)}</td>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${shiftId eq '1'}">Ca sáng</c:when>
+                                                    <c:when test="${shiftId eq '2'}">Ca chiều</c:when>
+                                                    <c:when test="${shiftId eq '3'}">Ca tối</c:when>
+                                                </c:choose>
+                                            </td>
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${shiftId eq '1'}">8:00–12:00</c:when>
+                                                    <c:when test="${shiftId eq '2'}">13:00–17:00</c:when>
+                                                    <c:when test="${shiftId eq '3'}">18:00–22:00</c:when>
+                                                </c:choose>
+                                            </td>
+                                        </tr>
+                                    </c:forEach>
                                 </c:forEach>
-                            </c:forEach>
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
+
                     <button type="submit" class="submit-btn">Hủy các ca đã chọn</button>
                 </form>
             </div>
         </div>
-
         <!-- 🔹 Modal đổi ca -->
         <div id="swapModal" class="modal">
             <div class="modal-content" style="max-width: 600px;">
@@ -797,44 +827,60 @@
         </div>
 
         <script>
-            const regModal = document.getElementById("registerModal");
-            const cancelModal = document.getElementById("cancelModal");
-            const swapModal = document.getElementById("swapModal");
-            const passModal = document.getElementById("passShiftModal");
-
-            // Mở modal
-            document.getElementById("openModalBtn").onclick = () => regModal.style.display = "block";
-            document.getElementById("openCancelModalBtn").onclick = () => cancelModal.style.display = "block";
-            document.getElementById("openSwapModalBtn").onclick = () => swapModal.style.display = "block";
-            window.openPassModal = () => passModal.style.display = "block";
-
-            // Đóng modal
-            document.getElementById("closeModalBtn").onclick = () => regModal.style.display = "none";
-            document.getElementById("closeCancelModalBtn").onclick = () => cancelModal.style.display = "none";
-            document.getElementById("closeSwapModalBtn").onclick = () => swapModal.style.display = "none";
-            document.querySelector("#passShiftModal .close").onclick = () => passModal.style.display = "none";
-
-            // Đóng khi click ngoài modal
-            window.onclick = (e) => {
-                if (e.target === regModal)
-                    regModal.style.display = "none";
-                if (e.target === cancelModal)
-                    cancelModal.style.display = "none";
-                if (e.target === swapModal)
-                    swapModal.style.display = "none";
-                if (e.target === passModal)
-                    passModal.style.display = "none";
-            };
-
-            // Toast hiển thị mượt
             window.addEventListener("DOMContentLoaded", () => {
+                const regModal = document.getElementById("registerModal");
+                const cancelModal = document.getElementById("cancelModal");
+                const swapModal = document.getElementById("swapModal");
+                const passModal = document.getElementById("passShiftModal");
+
+                // Các nút mở modal
+                const openModalBtn = document.getElementById("openModalBtn");
+                const openCancelBtn = document.getElementById("openCancelModalBtn");
+                const openSwapBtn = document.getElementById("openSwapModalBtn");
+                const passClose = document.querySelector("#passShiftModal .close");
+
+                // Các nút đóng modal
+                const closeModalBtn = document.getElementById("closeModalBtn");
+                const closeCancelModalBtn = document.getElementById("closeCancelModalBtn");
+                const closeSwapModalBtn = document.getElementById("closeSwapModalBtn");
+
+                // ✅ Gán event an toàn, có kiểm tra phần tử
+                if (openModalBtn)
+                    openModalBtn.onclick = () => regModal.style.display = "block";
+                if (openCancelBtn)
+                    openCancelBtn.onclick = () => cancelModal.style.display = "block";
+                if (openSwapBtn)
+                    openSwapBtn.onclick = () => swapModal.style.display = "block";
+                window.openPassModal = () => passModal && (passModal.style.display = "block");
+
+                if (closeModalBtn)
+                    closeModalBtn.onclick = () => regModal.style.display = "none";
+                if (closeCancelModalBtn)
+                    closeCancelModalBtn.onclick = () => cancelModal.style.display = "none";
+                if (closeSwapModalBtn)
+                    closeSwapModalBtn.onclick = () => swapModal.style.display = "none";
+                if (passClose)
+                    passClose.onclick = () => passModal.style.display = "none";
+
+                // Đóng khi click ngoài modal
+                window.onclick = (e) => {
+                    if (e.target === regModal)
+                        regModal.style.display = "none";
+                    if (e.target === cancelModal)
+                        cancelModal.style.display = "none";
+                    if (e.target === swapModal)
+                        swapModal.style.display = "none";
+                    if (e.target === passModal)
+                        passModal.style.display = "none";
+                };
+
+                // Toast hiển thị mượt
                 const toast = document.getElementById("toast");
                 if (toast) {
                     setTimeout(() => toast.classList.add("show"), 100);
                     setTimeout(() => toast.classList.remove("show"), 3100);
                 }
             });
-
         </script>
     </body>
 </html>

@@ -267,7 +267,7 @@
 
                 <!-- Tabs -->
                 <div class="tab-buttons">
-                    <button class="active" onclick="showTab('info', this)">👔 Thông tin nhân viên</button>
+                    <button onclick="showTab('info', this)">👔 Thông tin nhân viên</button>
                     <button onclick="showTab('shift', this)">⏰ Ca làm việc</button>
                     <button onclick="showTab('schedule', this)">🗓️ Danh sách các ca làm</button>
                     <button onclick="showTab('request', this)">🔄 Yêu cầu đổi / làm thay</button>
@@ -441,6 +441,9 @@
                                             <c:when test="${r.type eq 'Leave'}">
                                                 <span style="color:#9C27B0;font-weight:bold;">Nhờ làm thay</span>
                                             </c:when>
+                                            <c:when test="${r.type eq 'Cancel'}">
+                                                <span style="color:#FF5722;font-weight:bold;">Hủy ca</span>
+                                            </c:when>
                                             <c:otherwise>
                                                 <span style="color:#2196F3;font-weight:bold;">Đổi ca</span>
                                             </c:otherwise>
@@ -455,7 +458,7 @@
                                     <td>${r.fromShiftID}</td>
                                     <td>
                                         <c:choose>
-                                            <c:when test="${r.type eq 'Leave'}">
+                                            <c:when test="${r.type eq 'Leave' || r.type eq 'Cancel'}">
                                                 <span style="color:#999;">—</span>
                                             </c:when>
                                             <c:otherwise>${r.toShiftID}</c:otherwise>
@@ -671,13 +674,39 @@
                         dao.StaffDAO staffDAO = new dao.StaffDAO();
                         List<model.Shift> shifts = shiftDAO.getAllShifts();
 
+                        int weekOffset = 0;
+                        String offsetStr = request.getParameter("weekOffset");
+                        if (offsetStr != null) {
+                            try {
+                                weekOffset = Integer.parseInt(offsetStr);
+                            } catch (NumberFormatException e) {
+                                weekOffset = 0;
+                            }
+                        }
+
                         java.time.LocalDate today = java.time.LocalDate.now();
-                        java.time.LocalDate monday = today.with(java.time.DayOfWeek.MONDAY);
+                        java.time.LocalDate monday = today.with(java.time.DayOfWeek.MONDAY).plusWeeks(weekOffset);
                         java.util.List<java.time.LocalDate> days = new java.util.ArrayList<>();
                         for (int i = 0; i < 7; i++)
                             days.add(monday.plusDays(i));
                     %>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <form method="get" style="margin:0;">
+                            <input type="hidden" name="weekOffset" value="<%= weekOffset - 1%>">
+                            <input type="hidden" name="tab" value="worktable"> <!-- thêm dòng này -->
+                            <button type="submit" style="padding:6px 10px; border:none; background:#4EA8DE; color:white; border-radius:6px;">
+                                ⬅️ Tuần trước
+                            </button>
+                        </form>
 
+                        <form method="get" style="margin:0;">
+                            <input type="hidden" name="weekOffset" value="<%= weekOffset + 1%>">
+                            <input type="hidden" name="tab" value="worktable"> <!-- thêm dòng này -->
+                            <button type="submit" style="padding:6px 10px; border:none; background:#4EA8DE; color:white; border-radius:6px;">
+                                Tuần sau ➡️
+                            </button>
+                        </form>
+                    </div>
                     <table class="shift-grid">
                         <thead>
                             <tr>
@@ -716,6 +745,7 @@
                                         <form method="post" action="${pageContext.request.contextPath}/admin/manageSchedule" style="display:inline;">
                                             <input type="hidden" name="action" value="unassign">
                                             <input type="hidden" name="scheduleId" value="<%= ws.getScheduleId()%>">
+                                            <input type="hidden" name="weekOffset" value="<%= weekOffset%>">
                                             <button type="submit">✖</button>
                                         </form>
                                     </div>
@@ -728,7 +758,7 @@
                                 </td>
                                 <% } %>
                             </tr>
-                            <% } %>
+                            <% }%>
                         </tbody>
                     </table>
 
@@ -741,7 +771,8 @@
                                 <input type="hidden" name="action" value="assign">
                                 <input type="hidden" id="assignDate" name="date">
                                 <input type="hidden" id="assignShiftId" name="shiftType">
-
+                                <input type="hidden" name="weekOffset" value="<%= weekOffset%>">
+                                
                                 <label>Chọn nhân viên:</label>
                                 <select name="staffId" required>
                                     <c:forEach var="s" items="${staffList}">
@@ -842,7 +873,28 @@
                 document.querySelectorAll('.tab-buttons button').forEach(b => b.classList.remove('active'));
                 document.getElementById('tab-' + name).classList.add('active');
                 el.classList.add('active');
+
+                // Cập nhật URL để nhớ tab hiện tại
+                const url = new URL(window.location);
+                url.searchParams.set('tab', name);
+                window.history.replaceState({}, '', url);
             }
+
+// Khi load trang, tự mở đúng tab theo URL
+            window.addEventListener('DOMContentLoaded', () => {
+                const params = new URLSearchParams(window.location.search);
+                const tab = params.get('tab') || 'info'; // nếu không có thì mặc định 'info'
+                const tabContent = document.getElementById('tab-' + tab);
+                const tabButton = document.querySelector(`.tab-buttons button[onclick*="${tab}"]`);
+
+                // Reset lại tất cả rồi mở đúng tab
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-buttons button').forEach(b => b.classList.remove('active'));
+                if (tabContent)
+                    tabContent.classList.add('active');
+                if (tabButton)
+                    tabButton.classList.add('active');
+            });
         </script>
     </body>
 </html>

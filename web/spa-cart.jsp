@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" isELIgnored="true" %>
 <%@ page import="java.util.*, model.Customer, model.PetServiceModel" %>
 <%@ page import="java.math.BigDecimal" %>
 <%@ page session="true" %>
@@ -55,6 +55,7 @@
             /* Buttons */
             .btn { transition: background-color .3s ease, box-shadow .3s ease, transform .2s ease; }
             .btn:hover { box-shadow: 0 4px 10px rgba(0,0,0,.08); transform: translateY(-1px); }
+
         </style>
     </head>
     <body>
@@ -159,8 +160,8 @@
             <% } else { %>
             <div class="space-y-6">
                 <% for (PetServiceModel service : spaServices) {
-                        int quantity = spaCart.get(service.getServiceId());
-                        BigDecimal subtotal = service.getPrice().multiply(BigDecimal.valueOf(quantity));
+                        int quantity = spaCart.get(service.getServiceId()); // Giữ để tương thích, nhưng không dùng nữa
+                        BigDecimal subtotal = service.getPrice(); // Giá sẽ tính theo số pet được chọn
                         int serviceId = service.getServiceId();
                         
                         // Check if this is a boarding service
@@ -182,16 +183,9 @@
                         </div>
                     </div>
                     <div class="spa-actions">
-                        <div class="spa-price font-semibold text-blue-600 whitespace-nowrap"><%= String.format("%.0f", service.getPrice())%>₫</div>
-                        <% if (isBoardingService) { %>
-                            <!-- Boarding services không cho phép thay đổi số lượng -->
-                            <div class="spa-qty text-sm text-gray-500 whitespace-nowrap">x1</div>
-                        <% } else { %>
-                            <!-- Spa services cho phép thay đổi số lượng -->
-                            <input type="number" min="1" value="<%= quantity%>" 
-                                   data-service-id="<%= serviceId%>" class="quantity-input spa-qty border rounded py-1 px-2">
-                        <% } %>
-                        <div class="spa-total font-bold text-green-600 whitespace-nowrap" id="item-total-<%= serviceId%>"><%= String.format("%.0f", subtotal)%>₫</div>
+                        <div class="spa-price font-semibold text-blue-600 whitespace-nowrap">Giá mỗi pet: <%= String.format("%.0f", service.getPrice())%>₫</div>
+                        <div class="spa-qty text-sm text-gray-500 whitespace-nowrap" id="pet-count-<%= serviceId%>">Chọn thú cưng</div>
+                        <div class="spa-total font-bold text-green-600 whitespace-nowrap" id="item-total-<%= serviceId%>">0₫</div>
                         <div class="flex space-x-2">
                             <% if (isBoardingService) { %>
                                 <button onclick="viewBoardingDetails(<%= serviceId%>)" class="text-blue-500 hover:text-blue-700" title="Xem chi tiết">
@@ -210,8 +204,8 @@
                     <!-- Per-service form (đặt dưới icon, canh lề theo icon) -->
                     <div class="spa-form mt-4">
                         <form class="w-full rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden"
-                              data-service-id="<%= serviceId%>" data-quantity="<%= quantity%>"
-                              onsubmit="return submitSingleService(event,<%= serviceId%>, <%= quantity%>)">
+                              data-service-id="<%= serviceId%>"
+                              onsubmit="return submitSingleService(event,<%= serviceId%>)">
                             <!-- Header bar removed per request; service name already shown near icon -->
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-5">
                                 <div>
@@ -219,20 +213,42 @@
                                     <input type="date" name="date-<%= serviceId%>" class="w-full border border-slate-300 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" min="<%= java.time.LocalDate.now().toString() %>">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Giờ (08:00-18:00)</label>
-                                    <input type="time" name="time-<%= serviceId%>" class="w-full border border-slate-300 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" min="08:00" max="18:00" step="300" placeholder="08:00">
-                                    <p class="text-xs text-slate-500 mt-1">Khung giờ mở cửa 08:00 - 18:00</p>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Giờ hẹn</label>
+                                    <div class="flex space-x-2">
+                                        <select name="hour-<%= serviceId%>" id="hour-<%= serviceId%>" class="w-full border border-slate-300 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                                            <option value="">Giờ</option>
+                                            <% 
+                                            // Chỉ hiển thị 8-11h và 13-17h
+                                            for (int h = 8; h <= 11; h++) { 
+                                            %>
+                                            <option value="<%= String.format("%02d", h) %>"><%= String.format("%02d", h) %></option>
+                                            <% } %>
+                                            <% 
+                                            for (int h = 13; h <= 17; h++) { 
+                                            %>
+                                            <option value="<%= String.format("%02d", h) %>"><%= String.format("%02d", h) %></option>
+                                            <% } %>
+                                        </select>
+                                        <select name="minute-<%= serviceId%>" id="minute-<%= serviceId%>" class="w-full border border-slate-300 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                                            <option value="">Phút</option>
+                                            <% for (int m = 0; m < 60; m++) { %>
+                                            <option value="<%= String.format("%02d", m) %>"><%= String.format("%02d", m) %></option>
+                                            <% } %>
+                                        </select>
+                                    </div>
+                                    <input type="hidden" name="time-<%= serviceId%>" id="selected-time-<%= serviceId%>" value="">
+                                    <p class="text-xs text-slate-500 mt-1">Giờ làm việc: 08:00-12:00 và 13:00-17:00</p>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">Thú cưng</label>
-                                    <select name="pet-<%= serviceId%>" class="w-full border border-slate-300 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="">-- Chọn thú cưng --</option>
-                                    </select>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Chọn thú cưng</label>
+                                    <div id="pet-checkboxes-<%= serviceId%>" class="border border-slate-300 rounded-lg px-3 py-2 max-h-40 overflow-y-auto bg-white">
+                                        <p class="text-sm text-gray-500">Đang tải danh sách thú cưng...</p>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mt-1">Giá sẽ tính theo số lượng thú cưng đã chọn</p>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1">Phương thức thanh toán</label>
                                     <select name="payment-<%= serviceId%>" class="w-full border border-slate-300 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="cash">Tiền mặt</option>
                                         <option value="payos">PayOS</option>
                                     </select>
                                 </div>
@@ -246,7 +262,7 @@
                                     <span id="avail-<%= serviceId%>" class="text-sm text-gray-600" aria-live="polite"></span>
                                     <div class="space-x-2">
                                         <button type="button" class="btn h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm"
-                                                onclick="checkSingleAvailability(<%= serviceId%>, <%= quantity%>)" title="Kiểm tra trống lịch">Kiểm tra</button>
+                                                onclick="checkSingleAvailability(<%= serviceId%>)" title="Kiểm tra trống lịch">Kiểm tra</button>
                                         <button id="btn-book-<%= serviceId%>" type="submit" class="btn h-10 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-sm opacity-50 cursor-not-allowed"
                                                 disabled title="Chọn ngày/giờ hợp lệ và khả dụng để đặt">Đặt dịch vụ</button>
                                     </div>
@@ -280,6 +296,50 @@
                 </div>
             </div>
             <% }%>
+        </div>
+
+        <!-- Review Section - Giống Lazada/Shopee -->
+        <div class="mx-auto max-w-6xl mt-8 px-4 py-6 rounded-md shadow-md" style="background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow-light);">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-star text-yellow-400 mr-2"></i>
+                    Đánh giá dịch vụ Spa
+                </h2>
+                <p class="text-gray-600 mt-1">Chia sẻ trải nghiệm của bạn về dịch vụ Spa</p>
+            </div>
+
+
+            <!-- Reviews List by Service -->
+            <% if (spaServices != null && !spaServices.isEmpty()) { %>
+            <div class="space-y-6">
+                <% for (PetServiceModel service : spaServices) { %>
+                <div class="service-reviews bg-white rounded-lg border border-gray-200 p-6" data-service-id="<%= service.getServiceId() %>">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-semibold text-gray-800">
+                            <i class="fas fa-spa text-blue-500 mr-2"></i>
+                            <%= service.getName() %>
+                        </h4>
+                        <div class="flex items-center">
+                            <span id="avg-rating-<%= service.getServiceId() %>" class="text-sm text-gray-600"></span>
+                        </div>
+                    </div>
+                    
+                    <div id="reviews-list-<%= service.getServiceId() %>" class="space-y-4">
+                        <!-- Reviews will be loaded via AJAX -->
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p>Đang tải đánh giá...</p>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+            <% } else { %>
+            <div class="text-center py-12 text-gray-500">
+                <i class="fas fa-comment-slash text-4xl mb-4"></i>
+                <p>Chưa có dịch vụ nào trong giỏ hàng để xem đánh giá</p>
+            </div>
+            <% } %>
         </div>
 
         <!-- Modal for viewing boarding details -->
@@ -501,32 +561,7 @@
                 });
             }
             
-            function updateQuantity(serviceId, change) {
-                const quantitySpan = document.getElementById('quantity-' + serviceId);
-                let currentQuantity = parseInt(quantitySpan.textContent) || 0;
-                let newQuantity = currentQuantity + change;
-                
-                if (newQuantity < 0) newQuantity = 0;
-                
-                // Update display
-                quantitySpan.textContent = newQuantity;
-                
-                // Send AJAX request to update cart
-                $.post('<%= request.getContextPath()%>/spa-booking', {
-                    action: 'update-service',
-                    serviceId: serviceId,
-                    quantity: newQuantity
-                }, function(response) {
-                    if (response.success) {
-                        // Reload page to update totals
-                        location.reload();
-                    } else {
-                        // Revert display
-                        quantitySpan.textContent = currentQuantity;
-                        alert('❌ Lỗi: ' + response.message);
-                    }
-                });
-            }
+            // Đã xóa hàm updateQuantity - không còn cho phép thay đổi số lượng
             
             function removeFromCart(serviceId) {
                 if (confirm('🗑️ Bạn có chắc chắn muốn xóa dịch vụ này khỏi giỏ hàng?')) {
@@ -544,34 +579,8 @@
             }
 
             $(document).ready(function () {
-                const debounceTimers = {};
-                $('.quantity-input').on('input', function () {
-                    const $input = $(this);
-                    const serviceId = $input.data('service-id');
-                    const quantity = $input.val();
-                    clearTimeout(debounceTimers[serviceId]);
-                    debounceTimers[serviceId] = setTimeout(() => {
-                        $.ajax({
-                            url: '<%= request.getContextPath()%>/spa-booking',
-                            type: 'POST',
-                            data: {
-                                action: 'update-quantity',
-                                serviceId: serviceId,
-                                quantity: quantity
-                            },
-                            dataType: 'json',
-                            success: function (res) {
-                                if (res.error) {
-                                    alert(res.error);
-                                    location.reload();
-                                } else {
-                                    $('#item-total-' + serviceId).text(res['item_' + serviceId] + '₫');
-                                    $('#cart-total').text(res.total + '₫');
-                                }
-                            }
-                        });
-                    }, 500);
-                });
+                // Đã xóa event listener cho quantity-input - không còn cho phép thay đổi số lượng
+                // Giá sẽ tự động cập nhật khi chọn/bỏ chọn pet checkbox
                 
                 // Set minimum date to today
                 const dateInput = document.querySelector('input[name="appointmentDate"]');
@@ -604,7 +613,7 @@
                             hint.textContent = '✅ Khung giờ khả dụng';
                             hint.className = 'text-sm text-green-600';
                         } else {
-                            hint.textContent = '❌ Khung giờ không khả dụng hoặc ngoài giờ 08:00-18:00';
+                            hint.textContent = '❌ Khung giờ không khả dụng hoặc ngoài giờ làm việc 08:00-12:00 và 13:00-17:00';
                             hint.className = 'text-sm text-red-600';
                         }
                     }, 'json');
@@ -623,8 +632,9 @@
                         alert('Vui lòng chọn đầy đủ ngày và giờ hẹn!');
                         return false;
                     }
-                    if (h < 8 || h > 18 || m < 0 || m > 59) {
-                        alert('Giờ hẹn phải từ 08-18h và phút 00-59');
+                    // Kiểm tra giờ hẹn trong khoảng hợp lệ (8h-12h hoặc 13h-17h)
+                    if (!((h >= 8 && h < 12) || (h >= 13 && h < 17)) || m < 0 || m > 59) {
+                        alert('Giờ hẹn phải trong khoảng 08:00-12:00 hoặc 13:00-17:00 và phút 00-59');
                         return false;
                     }
                     
@@ -652,100 +662,340 @@
                     return true;
                 };
 
-                // Load pets cho per-service selects + auto chọn pet đầu tiên
+                // Load pets cho per-service checkboxes
                 $.post('<%= request.getContextPath()%>/spa-booking', { action: 'get-customer-pets' }, function(pets){
-                    if (!Array.isArray(pets)) return;
-                    var options = '<option value="">-- Chọn thú cưng --</option>';
-                    for (var i=0;i<pets.length;i++) {
-                        var p = pets[i];
-                        options += '<option value="' + p.id + '">' + p.petName + ' (' + p.species + ')</option>';
+                    if (!Array.isArray(pets) || pets.length === 0) {
+                        $('[id^="pet-checkboxes-"]').html('<p class="text-sm text-gray-500">Bạn chưa có thú cưng nào. Vui lòng thêm thú cưng trước khi đặt dịch vụ.</p>');
+                        return;
                     }
-                    $('select[name^="pet-"]').each(function(){
-                        this.innerHTML = options;
-                        if (pets.length > 0) this.value = String(pets[0].id);
+                    
+                    // Tạo checkbox cho mỗi service
+                    $('[id^="pet-checkboxes-"]').each(function(){
+                        var checkboxContainer = this;
+                        var match = checkboxContainer.id.match(/pet-checkboxes-(\d+)/);
+                        if (!match) return;
+                        
+                        var serviceId = match[1];
+                        // Lấy giá từ text "Giá mỗi pet: XXX₫"
+                        var priceText = $('#pet-count-' + serviceId).closest('.spa-actions').find('.spa-price').text();
+                        var servicePrice = parseFloat(priceText.replace(/[^\d.]/g, '')) || 0;
+                        
+                        var html = '';
+                        for (var i=0; i<pets.length; i++) {
+                            var p = pets[i];
+                            html += '<label class="flex items-center space-x-2 py-1 cursor-pointer hover:bg-gray-50 px-2 rounded">';
+                            html += '<input type="checkbox" name="pet-' + serviceId + '" value="' + p.id + '" ';
+                            html += 'data-pet-name="' + p.petName + '" data-pet-species="' + p.species + '" ';
+                            html += 'onchange="updatePetPrice(' + serviceId + ', ' + servicePrice + ')" ';
+                            html += 'class="pet-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">';
+                            html += '<span class="text-sm text-gray-700">' + p.petName + ' (' + p.species + ')</span>';
+                            html += '</label>';
+                        }
+                        checkboxContainer.innerHTML = html;
+                        
+                        // Kiểm tra enable button sau khi load
+                        setTimeout(function() {
+                            if (typeof checkAndEnableBookButton === 'function') {
+                                checkAndEnableBookButton(serviceId);
+                            }
+                        }, 100);
                     });
                 }, 'json');
+                
+                // Hàm cập nhật giá khi chọn/bỏ chọn pet
+                window.updatePetPrice = function(serviceId, pricePerPet) {
+                    var checkboxes = document.querySelectorAll('input[name="pet-' + serviceId + '"]:checked');
+                    var selectedCount = checkboxes.length;
+                    var totalPrice = pricePerPet * selectedCount;
+                    
+                    // Cập nhật hiển thị
+                    var petCountEl = document.getElementById('pet-count-' + serviceId);
+                    var totalPriceEl = document.getElementById('item-total-' + serviceId);
+                    
+                    if (selectedCount > 0) {
+                        petCountEl.textContent = selectedCount + ' thú cưng';
+                        petCountEl.className = 'spa-qty text-sm text-green-600 whitespace-nowrap font-semibold';
+                    } else {
+                        petCountEl.textContent = 'Chọn thú cưng';
+                        petCountEl.className = 'spa-qty text-sm text-gray-500 whitespace-nowrap';
+                    }
+                    
+                    totalPriceEl.textContent = totalPrice.toLocaleString('vi-VN') + '₫';
+                    
+                    // Cập nhật tổng tiền cart
+                    updateCartTotal();
+                    
+                    // Kiểm tra enable button
+                    if (typeof checkAndEnableBookButton === 'function') {
+                        checkAndEnableBookButton(serviceId);
+                    }
+                };
+                
+                // Hàm cập nhật tổng tiền cart
+                function updateCartTotal() {
+                    var total = 0;
+                    $('[id^="item-total-"]').each(function() {
+                        var priceText = $(this).text().replace(/[^\d.]/g, '');
+                        total += parseFloat(priceText) || 0;
+                    });
+                    $('#cart-total').text(total.toLocaleString('vi-VN') + '₫');
+                }
+
+                // Hàm kiểm tra điều kiện và enable/disable nút đặt dịch vụ + cập nhật validation message
+                function checkAndEnableBookButton(serviceId) {
+                    var dateInput = document.querySelector('input[name="date-' + serviceId + '"]');
+                    var hourSelect = document.getElementById('hour-' + serviceId);
+                    var minuteSelect = document.getElementById('minute-' + serviceId);
+                    var petCheckboxes = document.querySelectorAll('input[name="pet-' + serviceId + '"]:checked');
+                    var btn = document.getElementById('btn-book-' + serviceId);
+                    var availSpan = document.getElementById('avail-' + serviceId);
+                    var selectedTimeInput = document.getElementById('selected-time-' + serviceId);
+                    
+                    if (!btn) return;
+                    
+                    var hasDate = dateInput && dateInput.value;
+                    var hasHour = hourSelect && hourSelect.value;
+                    var hasMinute = minuteSelect && minuteSelect.value;
+                    var hasTime = hasHour && hasMinute;
+                    var hasPet = petCheckboxes.length > 0;
+                    var missing = [];
+                    
+                    // Cập nhật hidden time input từ hour và minute
+                    if (hasHour && hasMinute && selectedTimeInput) {
+                        selectedTimeInput.value = hourSelect.value + ':' + minuteSelect.value + ':00';
+                    } else if (selectedTimeInput) {
+                        selectedTimeInput.value = '';
+                    }
+                    
+                    // Cập nhật validation message
+                    if (availSpan) {
+                        if (hasDate && hasTime && hasPet) {
+                            availSpan.textContent = '✅ Đã sẵn sàng để đặt dịch vụ (' + petCheckboxes.length + ' thú cưng)';
+                            availSpan.className = 'text-xs text-green-600';
+                        } else {
+                            if (!hasDate) missing.push('ngày');
+                            if (!hasHour) missing.push('giờ');
+                            if (!hasMinute) missing.push('phút');
+                            if (!hasPet) missing.push('thú cưng');
+                            
+                            if (missing.length > 0) {
+                                availSpan.textContent = 'Vui lòng chọn: ' + missing.join(', ');
+                                availSpan.className = 'text-xs text-red-600';
+                            } else {
+                                availSpan.textContent = '';
+                                availSpan.className = 'text-sm text-gray-600';
+                            }
+                        }
+                    }
+                    
+                    // Enable/disable button
+                    if (hasDate && hasTime && hasPet) {
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        btn.title = 'Đặt dịch vụ';
+                    } else {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-50', 'cursor-not-allowed');
+                        btn.title = 'Vui lòng chọn: ' + missing.join(', ');
+                    }
+                }
+                
+                // Gắn sự kiện change cho date, hour, minute và pet selects
+                function initTimePickers() {
+                    var dateInputs = document.querySelectorAll('input[type="date"][name^="date-"]');
+                    dateInputs.forEach(function(dateInput) {
+                        var name = dateInput.name;
+                        var match = name.match(/date-(\d+)/);
+                        if (!match) return;
+                        
+                        var serviceId = match[1];
+                        var hourSelect = document.getElementById('hour-' + serviceId);
+                        var minuteSelect = document.getElementById('minute-' + serviceId);
+                        var petSelect = document.querySelector('select[name="pet-' + serviceId + '"]');
+                        
+                        if (dateInput) {
+                            dateInput.addEventListener('change', function() {
+                                checkAndEnableBookButton(serviceId);
+                            });
+                        }
+                        
+                        if (hourSelect) {
+                            hourSelect.addEventListener('change', function() {
+                                checkAndEnableBookButton(serviceId);
+                            });
+                        }
+                        
+                        if (minuteSelect) {
+                            minuteSelect.addEventListener('change', function() {
+                                checkAndEnableBookButton(serviceId);
+                            });
+                        }
+                        
+                        if (petSelect) {
+                            petSelect.addEventListener('change', function() {
+                                checkAndEnableBookButton(serviceId);
+                            });
+                        }
+                    });
+                }
+                
+                // Khởi tạo ngay khi script chạy và sau khi DOM ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initTimePickers);
+                } else {
+                    initTimePickers();
+                }
 
                 // Check single availability
-                window.checkSingleAvailability = function(serviceId, quantity){
-                    const d = document.querySelector('input[name="date-' + serviceId + '"]').value;
-                    const t = document.querySelector('input[name="time-' + serviceId + '"]').value;
-                    const el = document.getElementById('avail-' + serviceId);
-                    if (!d || !t) { el.textContent = 'Vui lòng nhập đủ ngày/giờ'; el.className='text-xs text-red-600'; return; }
-                    const parts = t.split(':');
-                    const hh = parts[0];
-                    const mm = parts[1];
-                    el.textContent = 'Đang kiểm tra...'; el.className='text-xs text-gray-500';
-                    $.post('<%= request.getContextPath()%>/spa-booking', {
-                        action: 'check-single-availability',
-                        serviceId: serviceId,
-                        quantity: quantity,
-                        appointmentDate: d,
-                        appointmentTime: hh + ':' + mm
-                    }, function(res){
-                        var btn = document.getElementById('btn-book-' + serviceId);
-                        if (res && res.success) {
-                            el.textContent = '✅ Khả dụng';
-                            el.className='text-xs text-green-600';
-                            if (btn) { btn.disabled = false; btn.classList.remove('opacity-50','cursor-not-allowed'); }
-                        } else {
-                            el.textContent = '❌ Không khả dụng hoặc ngoài giờ';
-                            el.className='text-xs text-red-600';
-                            if (btn) { btn.disabled = true; btn.classList.add('opacity-50','cursor-not-allowed'); }
-                        }
-                    }, 'json');
+                window.checkSingleAvailability = function(serviceId){
+                    // Kiểm tra lại validation
+                    if (typeof checkAndEnableBookButton === 'function') {
+                        checkAndEnableBookButton(serviceId);
+                    }
                 };
 
                 // Submit single service
-                window.submitSingleService = function(e, serviceId, quantity){
+                window.submitSingleService = function(e, serviceId){
                     e.preventDefault();
                     const d = document.querySelector('input[name="date-' + serviceId + '"]').value;
-                    const t = document.querySelector('input[name="time-' + serviceId + '"]').value;
-                    const pet = document.querySelector('select[name="pet-' + serviceId + '"]').value;
+                    const hourSelect = document.getElementById('hour-' + serviceId);
+                    const minuteSelect = document.getElementById('minute-' + serviceId);
+                    const petCheckboxes = document.querySelectorAll('input[name="pet-' + serviceId + '"]:checked');
                     const note = document.querySelector('input[name="note-' + serviceId + '"]').value || '';
-                    if (!d || !t || !pet) { alert('Vui lòng nhập đủ ngày/giờ và chọn thú cưng'); return false; }
-                    var parts = t.split(':');
-                    var h = parseInt(parts[0], 10);
-                    var m = parseInt(parts[1], 10);
-                    if (h < 8 || h > 18 || m < 0 || m > 59) { alert('Giờ này Spa đã đóng cửa 🕕. Khung 08:00 – 18:00'); return false; }
-                    var hh = parts[0];
-                    var mm = parts[1];
-                    var payMethod = document.querySelector('select[name="payment-' + serviceId + '"]').value || 'cash';
-                    $.post('<%= request.getContextPath()%>/spa-booking', {
+                    
+                    if (!d || !hourSelect || !minuteSelect || !hourSelect.value || !minuteSelect.value || petCheckboxes.length === 0) { 
+                        alert('Vui lòng nhập đủ ngày, giờ, phút và chọn ít nhất 1 thú cưng'); 
+                        return false; 
+                    }
+                    
+                    var h = parseInt(hourSelect.value, 10);
+                    var m = parseInt(minuteSelect.value, 10);
+                    
+                    // Đã xóa tất cả validation thời gian - cho phép đặt bất kỳ giờ nào
+                    if (m < 0 || m > 59) { 
+                        alert('Phút phải từ 00 đến 59'); 
+                        return false; 
+                    }
+                    
+                    var hh = hourSelect.value.padStart(2, '0');
+                    var mm = minuteSelect.value.padStart(2, '0');
+                    var payMethod = document.querySelector('select[name="payment-' + serviceId + '"]').value || 'payos';
+                    
+                    // Lấy danh sách pet IDs đã chọn
+                    var petIds = [];
+                    var petNames = [];
+                    petCheckboxes.forEach(function(checkbox) {
+                        petIds.push(checkbox.value);
+                        petNames.push(checkbox.dataset.petName + ' (' + checkbox.dataset.petSpecies + ')');
+                    });
+                    
+                    console.log('Submitting booking request:', {
                         action: 'create-single-booking',
                         serviceId: serviceId,
-                        quantity: quantity,
-                        petId: pet,
-                        note: note,
-                        paymentMethod: payMethod,
-                        appointmentDate: d,
-                        appointmentTime: hh + ':' + mm
-                    }, function(res){
-                        if (res && res.success) {
-                            if (res.payment === 'payos' && res.url) {
-                                window.location.href = res.url;
-                                return;
+                        quantity: petIds.length,
+                        petIds: petIds.join(','),
+                        paymentMethod: payMethod
+                    });
+                    
+                    $.ajax({
+                        url: '<%= request.getContextPath()%>/spa-booking',
+                        type: 'POST',
+                        data: {
+                            action: 'create-single-booking',
+                            serviceId: serviceId,
+                            quantity: petIds.length, // Số lượng = số pet được chọn
+                            petIds: petIds.join(','), // Danh sách pet IDs
+                            note: note,
+                            paymentMethod: payMethod,
+                            appointmentDate: d,
+                            appointmentTime: hh + ':' + mm
+                        },
+                        dataType: 'json',
+                        success: function(res){
+                            console.log('Booking response received:', res);
+                            
+                            if (res && res.success) {
+                                if (res.payment === 'payos' && res.url) {
+                                    console.log('Redirecting to PayOS URL:', res.url);
+                                    if (res.url && res.url !== 'null' && res.url !== 'undefined') {
+                                        window.location.href = res.url;
+                                    } else {
+                                        alert('❌ Link thanh toán PayOS không hợp lệ. Vui lòng thử lại.');
+                                        console.error('Invalid PayOS URL:', res.url);
+                                    }
+                                    return;
+                                }
+                                alert('✅ Đặt dịch vụ thành công!');
+                                window.location.href = '<%= request.getContextPath()%>/spa-booking?action=history';
+                            } else {
+                                var errorMsg = res && res.message ? res.message : 'Không thể đặt dịch vụ. Vui lòng thử lại hoặc liên hệ hỗ trợ.';
+                                alert('❌ ' + errorMsg);
+                                console.error('Booking error:', res);
                             }
-                            alert('✅ Đặt dịch vụ thành công!');
-                            window.location.href = '<%= request.getContextPath()%>/spa-booking?action=history';
-                        } else {
-                            alert('❌ Không thể đặt dịch vụ. Vui lòng chọn thời gian khác.');
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('AJAX error:', {
+                                status: status,
+                                error: error,
+                                responseText: xhr.responseText,
+                                statusCode: xhr.status
+                            });
+                            
+                            var errorMsg = 'Lỗi kết nối: ' + error;
+                            try {
+                                var jsonResponse = JSON.parse(xhr.responseText);
+                                if (jsonResponse && jsonResponse.message) {
+                                    errorMsg = jsonResponse.message;
+                                }
+                            } catch (e) {
+                                // Không phải JSON, giữ nguyên errorMsg
+                            }
+                            
+                            alert('❌ ' + errorMsg + '. Vui lòng thử lại.');
                         }
-                    }, 'json');
+                    });
                     return false;
                 };
 
-                // Tự kiểm tra + cập nhật tóm tắt khi đổi date/time/pet
-                $(document).on('change input', 'input[name^="date-"], input[name^="time-"], select[name^="pet-"]', function(){
+                // Tự kiểm tra + cập nhật tóm tắt khi đổi date/hour/minute/pet checkbox
+                $(document).on('change input', 'input[name^="date-"], select[id^="hour-"], select[id^="minute-"]', function(){
                     var form = this.closest('form');
                     if (!form) return;
                     var sid = form.getAttribute('data-service-id');
-                    var qty = form.getAttribute('data-quantity');
-                    // Update summary preview
+                    if (!sid) return;
+                    updateSummary(sid, form);
+                });
+                
+                // Event listener riêng cho pet checkbox
+                $(document).on('change', 'input[type="checkbox"][name^="pet-"]', function(){
+                    var checkbox = this;
+                    var match = checkbox.name.match(/pet-(\d+)/);
+                    if (!match) return;
+                    var sid = match[1];
+                    var form = checkbox.closest('form');
+                    if (!form) return;
+                    updateSummary(sid, form);
+                });
+                
+                // Hàm cập nhật summary
+                function updateSummary(sid, form) {
                     var d = form.querySelector('input[name="date-' + sid + '"]').value || 'Chưa chọn ngày';
-                    var t = form.querySelector('input[name="time-' + sid + '"]').value || 'Chưa chọn giờ';
-                    var pSel = form.querySelector('select[name="pet-' + sid + '"]');
-                    var p = pSel && pSel.value ? (pSel.options[pSel.selectedIndex].text) : 'Chưa chọn thú cưng';
+                    var hourSelect = document.getElementById('hour-' + sid);
+                    var minuteSelect = document.getElementById('minute-' + sid);
+                    var t = (hourSelect && hourSelect.value && minuteSelect && minuteSelect.value) 
+                            ? (hourSelect.value + ':' + minuteSelect.value) 
+                            : 'Chưa chọn giờ';
+                    // Lấy danh sách pet đã chọn từ checkbox
+                    var petCheckboxes = form.querySelectorAll('input[name="pet-' + sid + '"]:checked');
+                    var petNames = [];
+                    petCheckboxes.forEach(function(cb) {
+                        var petName = cb.dataset.petName || '';
+                        var petSpecies = cb.dataset.petSpecies || '';
+                        if (petName) {
+                            petNames.push(petName + (petSpecies ? ' (' + petSpecies + ')' : ''));
+                        }
+                    });
+                    var p = petNames.length > 0 ? petNames.join(', ') : 'Chưa chọn thú cưng';
                     var elDate = form.querySelector('.summary-date-' + sid);
                     var elTime = form.querySelector('.summary-time-' + sid);
                     var elPet  = form.querySelector('.summary-pet-' + sid);
@@ -753,11 +1003,83 @@
                     if (elTime) elTime.textContent = t;
                     if (elPet)  elPet.textContent  = p;
                     // Auto check availability when all fields present
-                    if (sid && qty) checkSingleAvailability(parseInt(sid,10), parseInt(qty,10));
+                    if (sid) checkSingleAvailability(parseInt(sid,10));
+                }
+            });
+
+            // ====== REVIEW FUNCTIONALITY ======
+            // (Form comment đã được xóa, chỉ giữ lại phần load reviews)
+
+            // Load reviews for a service
+            function loadServiceReviews(serviceId) {
+                const $container = $(`#reviews-list-${serviceId}`);
+                $container.html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-xl"></i></div>');
+
+                $.get('<%= request.getContextPath()%>/spa-booking', {
+                    action: 'get-service-reviews',
+                    serviceId: serviceId,
+                    limit: 10
+                }, function(data) {
+                    if (data && data.reviews && data.reviews.length > 0) {
+                        let html = '';
+                        let totalRating = 0;
+                        
+                        data.reviews.forEach(function(review) {
+                            totalRating += review.rating;
+                            const date = new Date(review.createdAt).toLocaleDateString('vi-VN');
+                            const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+                            
+                            html += `
+                                <div class="review-item border-b border-gray-200 pb-4 last:border-0">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                                ${(review.customerName || 'Khách').charAt(0).toUpperCase()}
+                                            </div>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div>
+                                                    <div class="font-semibold text-gray-800">${review.customerName || 'Khách hàng'}</div>
+                                                    <div class="text-yellow-400 text-lg">${stars}</div>
+                                                </div>
+                                                <div class="text-sm text-gray-500">${date}</div>
+                                            </div>
+                                            ${review.comment ? `<p class="text-gray-700 mt-2">${review.comment}</p>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        const avgRating = (totalRating / data.reviews.length).toFixed(1);
+                        $(`#avg-rating-${serviceId}`).html(
+                            `<span class="text-yellow-400 text-xl">★</span> ` +
+                            `<span class="font-semibold">${avgRating}</span> ` +
+                            `<span class="text-gray-500">(${data.reviews.length} đánh giá)</span>`
+                        );
+                        
+                        $container.html(html);
+                    } else {
+                        $container.html('<div class="text-center py-8 text-gray-500"><i class="fas fa-comment-slash text-3xl mb-2"></i><p>Chưa có đánh giá nào</p></div>');
+                        $(`#avg-rating-${serviceId}`).html('<span class="text-gray-500">Chưa có đánh giá</span>');
+                    }
+                }, 'json').fail(function() {
+                    $container.html('<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-triangle text-xl mb-2"></i><p>Lỗi khi tải đánh giá</p></div>');
+                });
+            }
+
+            // Load reviews for all services in cart on page load
+            $(document).ready(function() {
+                $('.service-reviews').each(function() {
+                    const serviceId = $(this).data('service-id');
+                    if (serviceId) {
+                        loadServiceReviews(serviceId);
+                    }
                 });
             });
         </script>
 
-        <!-- Chatbox removed as requested -->
+       
     </body>
 </html>

@@ -205,7 +205,7 @@
                 <li><a href="toys?action=list" class="active">🧸 Sản phẩm</a></li>
                 <li><a href="categories?action=list">📂 Danh mục</a></li>
                 <li><a href="suppliers?action=list">🏢 Nhà cung cấp</a></li>
-                <li><a href="${pageContext.request.contextPath}/admin/manage-customer" class="active">👤 Khách hàng</a></li>
+                <li><a href="${pageContext.request.contextPath}/admin/customer" class="active">👤 Khách hàng</a></li>
                 <li><a href="manage-staff">👔 Nhân viên</a></li>
                 <li><a href="statistics?type=day">📈 Thống kê</a></li>
             </ul>

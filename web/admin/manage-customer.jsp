@@ -329,7 +329,29 @@
                     transform: translateY(0);
                 }
             }
+            .flash-message-fixed {
+                position: fixed;
+                top: 0;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 1000;
+                width: auto;
+                max-width: 90%;
+                margin-top: 15px; /* Khoảng cách từ trên xuống */
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: slideDown 0.5s ease-out; /* Hiệu ứng cuộn xuống */
+            }
 
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translate(-50%, -100%);
+                }
+                to {
+                    opacity: 1;
+                    transform: translate(-50%, 0);
+                }
+            }
         </style>
     </head>
     <body>
@@ -341,7 +363,7 @@
                 <li><a href="toys?action=list">🧸 Sản phẩm</a></li>
                 <li><a href="categories?action=list">📂 Danh mục</a></li>
                 <li><a href="suppliers?action=list">🏢 Nhà cung cấp</a></li>
-                <li><a href="${pageContext.request.contextPath}/admin/manage-customer" class="active">👤 Khách hàng</a></li>
+                <li><a href="${pageContext.request.contextPath}/admin/customer">👤 Khách hàng</a></li>
                 <li><a href="manage-staff">👔 Nhân viên</a></li>
                 <li><a href="statistics?type=day">📈 Thống kê</a></li>
             </ul>
@@ -354,38 +376,7 @@
             <!-- Header -->
             <div class="admin-header">
                 <h1>👤 Quản lý khách hàng</h1>
-                <%
-                    String flash = (String) session.getAttribute("flashMessage");
-                    if (flash != null) {
-                %>
-                <div id="flashBox"
-                     style="background:#E0F7F7;
-                     color:#007B83;
-                     padding:10px 15px;
-                     border-radius:8px;
-                     font-weight:600;
-                     margin-bottom:1rem;
-                     text-align:center;
-                     animation: fadeIn 0.5s;">
-                    <%= flash%>
-                </div>
-                <script>
-                    setTimeout(() => {
-                        const box = document.getElementById("flashBox");
-                        if (box)
-                            box.style.transition = "opacity 0.5s";
-                        if (box)
-                            box.style.opacity = "0";
-                        setTimeout(() => {
-                            if (box)
-                                box.remove();
-                        }, 500);
-                    }, 2000);
-                </script>
-                <%
-                        session.removeAttribute("flashMessage");
-                    }
-                %>
+
                 <a href="../home" class="btn" style="background: #10b981;">🏠 Về trang chủ</a>
             </div>
 
@@ -402,7 +393,7 @@
             </div>
 
             <!-- Form tìm kiếm và lọc -->
-            <form method="get" action="manage-customer" class="search-form">
+            <form method="get" action="customer" class="search-form">
                 <input type="text" name="keyword" placeholder="Tìm theo tên hoặc email..." value="<%= keyword%>">
                 <select name="status">
                     <option value="all" <%= "all".equals(statusFilter) ? "selected" : ""%>>-- Tất cả trạng thái --</option>
@@ -451,21 +442,17 @@
                                 <% } else { %>
                                 <span style="font-size: 0.85rem; color: var(--text-light);">-</span>
                                 <% }%>
-                            </td>                            <td class="text-center">
+                            <td class="text-center">
                                 <form action="${pageContext.request.contextPath}/admin/updateRole" method="post" style="margin:0;">
                                     <input type="hidden" name="customerId" value="<%= c.getCustomerId()%>" />
-                                    <select name="role" style="padding:5px 8px; border-radius:6px; border:1px solid #ccc;">
-                                        <option value="user" <%= "user".equalsIgnoreCase(c.getRole()) ? "selected" : ""%>>User</option>
+                                    <select name="role" style="padding:5px 8px; border-radius:6px; border:1px solid #ccc;"
+                                            onchange="this.form.submit()"> <option value="user" <%= "user".equalsIgnoreCase(c.getRole()) ? "selected" : ""%>>User</option>
                                         <option value="staff" <%= "staff".equalsIgnoreCase(c.getRole()) ? "selected" : ""%>>Staff</option>
                                         <option value="doctor" <%= "doctor".equalsIgnoreCase(c.getRole()) ? "selected" : ""%>>Doctor</option>
                                         <option value="admin" <%= "admin".equalsIgnoreCase(c.getRole()) ? "selected" : ""%>>Admin</option>
                                     </select>
-                                    <button type="submit" class="btn-action" 
-                                            style="background:#10b981; color:white; margin-left:4px; border:none; padding:5px 10px; border-radius:6px;">
-                                        ✅
-                                    </button>
                                 </form>
-                            </td>   
+                            </td>
                             <td class="text-center">
                                 <a href="view-customer?id=<%= c.getCustomerId()%>" class="btn-action" style="background: #3b82f6; color: white; text-decoration: none;">
                                     👁️ Xem

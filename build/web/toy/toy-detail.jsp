@@ -46,6 +46,8 @@
             cartTotal += item.getQuantity() * item.getProduct().getPrice();
         }
     }
+
+
 %>
 
 <!DOCTYPE html>
@@ -58,6 +60,9 @@
         <link rel="stylesheet" href="<%= request.getContextPath()%>/css/homeStyle.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     </head>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <body>
 
         <!-- HEADER -->
@@ -167,11 +172,12 @@
                                    class="w-20 border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-400" <% if (product.getStockQuantity() == 0) { %>disabled<% } %>/>
                         </div>
 
-                        <div class="mt-4">
+                        <div class="mt-4 space-x-2">
                             <% if (product.getStockQuantity() == 0) { %>
                             <span class="text-red-500 font-semibold">Hết hàng</span>
                             <% } else {%>
                             <button class="btn-add-cart" onclick="addToCart(<%= product.getProductId()%>, <%= product.getPrice()%>, true)">🛒 Thêm vào giỏ</button>
+                            <button class="btn-add-cart" style="background: var(--primary);" onclick="openBuyNow()">⚡ Mua ngay</button>
                             <% }%>
                         </div>
                     </div>
@@ -252,6 +258,69 @@
             </main>
         </div>
 
+        <!-- Buy Now Modal -->
+        <div id="buy-now-modal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-lg w-96 p-5" style="border-radius: var(--border-radius);">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-semibold">Mua ngay</h3>
+                    <button onclick="closeBuyNow()" class="text-red-500 text-xl">✖</button>
+                </div>
+                <!-- Popup chọn vị trí trong Mua ngay -->
+                <div id="buy-map-popup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+                    <div class="bg-white rounded shadow-lg w-11/12 md:w-3/4 h-96 relative flex flex-col">
+                        <button onclick="closeBuyMap()" class="absolute top-2 right-2 text-red-500 text-lg">✖</button>
+                        <div id="buy-map" class="w-full flex-1 rounded"></div>
+                        <div class="p-3 border-t text-right">
+                            <button onclick="confirmBuyLocation()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+                                ✅ Xác nhận vị trí
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" action="<%= request.getContextPath()%>/buynowservlet" class="space-y-4">
+                    <input type="hidden" name="productId" value="<%= product.getProductId()%>"/>
+                    <div class="flex items-center gap-3">
+                        <label for="buy-now-qty" class="text-sm font-medium">Số lượng:</label>
+                        <input id="buy-now-qty" name="quantity" type="number" value="1" min="1" max="<%= product.getStockQuantity()%>" class="w-24 border rounded px-2 py-1 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">Phương thức thanh toán:</label>
+                        <select name="payment_method" required class="w-full border rounded px-3 py-2">
+                            <option value="">-- Chọn phương thức --</option>
+                            <option value="Tiền mặt">💵 Tiền mặt khi nhận hàng</option>
+                            <option value="PayOS">💳 Thanh toán online (PayOS)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">Địa chỉ nhận hàng:</label>
+                        <input type="text" id="buy_address" name="shipping_address" required 
+                               class="w-full border rounded px-3 py-2 mb-2"
+                               placeholder="Số nhà, đường, phường/xã..."
+                               value="<%= currentUser != null ? currentUser.getAddressCustomer() : ""%>"/>
+
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="openBuyMap()" 
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
+                                🗺️ Chọn vị trí trên bản đồ
+                            </button>
+                            <span id="buy-map-status" class="text-sm text-green-600 hidden">📍 Đã chọn vị trí</span>
+                        </div>
+
+                        <!-- ẩn tọa độ -->
+                        <input type="hidden" name="latitude" id="buy_latitude" />
+                        <input type="hidden" name="longitude" id="buy_longitude" />
+                    </div>
+
+                    <div class="flex gap-2 pt-1">
+                        <button type="button" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded w-1/2" onclick="closeBuyNow()">Hủy</button>
+                        <button type="submit" class="btn-add-cart w-1/2">🛍️ Đặt hàng</button>
+                    </div>
+                    <p class="text-xs text-gray-500">Đơn hàng sẽ chỉ bao gồm sản phẩm này.</p>
+                </form>
+            </div>
+        </div>
+
         <!-- Toast -->
         <div id="toast" class="fixed bottom-5 right-5 bg-black text-white px-4 py-2 rounded hidden z-50"></div>
 
@@ -327,6 +396,118 @@
                     }
                 });
             });
+
+            function openBuyNow() {
+                const modal = document.getElementById('buy-now-modal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+            }
+
+            function closeBuyNow() {
+                const modal = document.getElementById('buy-now-modal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            }
+
+            function confirmBuyNow(productId) {
+                const qtyInput = document.getElementById('buy-now-qty');
+                let qty = parseInt(qtyInput && qtyInput.value ? qtyInput.value : '1');
+                if (isNaN(qty) || qty <= 0)
+                    qty = 1;
+
+                fetch("<%=request.getContextPath()%>/cartservlet", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                    body: new URLSearchParams({action: 'add', id: productId, quantity: qty})
+                }).then(res => {
+                    if (!res.ok)
+                        throw new Error('Không thể thêm vào giỏ');
+                    // Chuyển tới giỏ để chọn phương thức thanh toán (Tiền mặt hoặc PayOS)
+                    window.location.href = '<%= request.getContextPath()%>/cart/cart.jsp#checkout';
+                }).catch(err => {
+                    showToast('⚠️ ' + err.message);
+                });
+            }
+
+            let buyMap, buyMarker, buyLat, buyLng;
+
+            function openBuyMap() {
+                const popup = document.getElementById('buy-map-popup');
+                popup.classList.remove('hidden');
+
+                setTimeout(() => {
+                    if (!buyMap) {
+                        buyMap = L.map('buy-map');
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; OpenStreetMap contributors'
+                        }).addTo(buyMap);
+
+                        // Khi click chọn vị trí
+                        buyMap.on('click', function (e) {
+                            buyLat = e.latlng.lat;
+                            buyLng = e.latlng.lng;
+                            if (buyMarker)
+                                buyMap.removeLayer(buyMarker);
+                            buyMarker = L.marker([buyLat, buyLng]).addTo(buyMap);
+
+                            fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + buyLat + '&lon=' + buyLng)
+                                    .then(r => r.json())
+                                    .then(d => {
+                                        if (d && d.display_name) {
+                                            document.getElementById('buy_address').value = d.display_name;
+                                            document.getElementById('buy-map-status').classList.remove('hidden');
+                                        }
+                                    })
+                                    .catch(() => alert('Không truy vấn được địa chỉ.'));
+                        });
+                    }
+
+                    // Nếu có địa chỉ sẵn thì tìm tọa độ
+                    const addr = document.getElementById('buy_address').value;
+                    if (addr && addr.trim().length > 5) {
+                        fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(addr))
+                                .then(r => r.json())
+                                .then(results => {
+                                    if (results && results.length > 0) {
+                                        const {lat, lon} = results[0];
+                                        buyLat = parseFloat(lat);
+                                        buyLng = parseFloat(lon);
+                                        buyMap.setView([buyLat, buyLng], 16);
+                                        if (buyMarker)
+                                            buyMap.removeLayer(buyMarker);
+                                        buyMarker = L.marker([buyLat, buyLng]).addTo(buyMap);
+                                    } else {
+                                        buyMap.setView([21.0285, 105.8542], 13);
+                                    }
+                                });
+                    } else {
+                        buyMap.setView([21.0285, 105.8542], 13);
+                    }
+
+                    // Refresh map size sau khi popup hiển thị
+                    setTimeout(() => buyMap.invalidateSize(), 300);
+                }, 400);
+            }
+
+            function closeBuyMap() {
+                document.getElementById('buy-map-popup').classList.add('hidden');
+            }
+
+            function confirmBuyLocation() {
+                if (buyLat && buyLng) {
+                    document.getElementById('buy_latitude').value = buyLat;
+                    document.getElementById('buy_longitude').value = buyLng;
+                    document.getElementById('buy-map-status').classList.remove('hidden');
+                    closeBuyMap();
+                } else {
+                    alert('📍 Vui lòng chọn vị trí trên bản đồ trước khi xác nhận.');
+                }
+            }
+
         </script>
         <jsp:include page="../chatbox.jsp"/>
     </body>

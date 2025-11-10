@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
-<%@ page import="java.util.*, model.CartItem, model.Product, model.Order, model.Customer, dao.UserDao" %>
+<%@ page import="java.util.*, model.CartItem, model.Product, model.Order, model.Customer, dao.UserDAO" %>
 <%@ page session="true" %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -39,7 +39,7 @@
     }
 
     int orderId = Integer.parseInt(orderIdRaw);
-    UserDao userDao = new UserDao();
+    UserDAO userDao = new UserDAO();
     List<CartItem> items = userDao.getOrderDetails(orderId);
     Order order = userDao.getOrderById(orderId); // cần hàm getOrderById
     Customer currentUser = (Customer) session.getAttribute("currentUser");

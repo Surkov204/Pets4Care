@@ -637,30 +637,8 @@
             Bạn chưa có tài khoản? <a href="register.jsp">🎉 Đăng ký ngay</a>
         </div>
 
-        <!-- Account Types Information -->
-        <div class="account-types-info">
-            <h4>
-                <i class="fas fa-info-circle"></i> 
-                Hỗ trợ đăng nhập cho nhiều loại tài khoản
-            </h4>
-            <p>
-                Trang đăng nhập này hỗ trợ các loại tài khoản sau. Vui lòng sử dụng email và mật khẩu đã đăng ký để đăng nhập:
-            </p>
-            <div class="account-types-list">
-                <span class="account-type-badge customer">
-                    <i class="fas fa-user"></i> Khách hàng
-                </span>
-                <span class="account-type-badge doctor">
-                    <i class="fas fa-user-md"></i> Bác sĩ
-                </span>
-                <span class="account-type-badge staff">
-                    <i class="fas fa-user-tie"></i> Nhân viên
-                </span>
-                <span class="account-type-badge admin">
-                    <i class="fas fa-user-shield"></i> Quản trị viên
-                </span>
-            </div>
-        </div>
+
+       
 
         <c:if test="${not empty error}">
             <div class="error-message">

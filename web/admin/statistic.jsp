@@ -59,7 +59,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="manage-customer"
+                    <a href="${pageContext.request.contextPath}/admin/customer"
                        class="block px-3 py-2 rounded-md text-blue-600 hover:bg-orange-50 hover:text-orange-700 transition font-medium">
                         👤 Khách hàng
                     </a>

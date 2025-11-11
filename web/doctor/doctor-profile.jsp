@@ -1,20 +1,17 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ page import="dao.DoctorDAO" %>
 <%@ page import="model.Doctor" %>
 <%
-    // Kiểm tra đăng nhập
     Doctor doctor = (Doctor) session.getAttribute("doctor");
     if (doctor == null) {
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
     }
     
-    // Lấy thông tin doctor đầy đủ
-    DoctorDAO doctorDAO = new DoctorDAO();
-    Doctor fullDoctorInfo = doctorDAO.findById(doctor.getDoctorId());
-    
-    request.setAttribute("fullDoctorInfo", fullDoctorInfo);
+    if (request.getAttribute("fullDoctorInfo") == null) {
+        response.sendRedirect(request.getContextPath() + "/doctor/profile");
+        return;
+    }
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -258,7 +255,7 @@
                 <a href="${pageContext.request.contextPath}/home.jsp">
                     <i class="fas fa-home"></i> Trang chủ
                 </a>
-                <a href="doctor-profile.jsp">
+                <a href="${pageContext.request.contextPath}/doctor/profile">
                     <i class="fas fa-user-edit"></i> Chỉnh sửa thông tin
                 </a>
                 <a href="${pageContext.request.contextPath}/logout">
@@ -273,11 +270,11 @@
     <!-- Sidebar -->
     <aside class="staff-sidebar">
         <ul>
-            <li><a href="doctor-dashboard.jsp"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="medical-record.jsp"><i class="fas fa-notes-medical"></i> Medical Records</a></li>
-            <li><a href="work-schedule.jsp"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
-            <li><a href="appointments.jsp"><i class="fas fa-stethoscope"></i> Appointments</a></li>
-            <li><a href="doctor-profile.jsp" class="active"><i class="fas fa-user-md"></i> Doctor Profile</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/medical-records"><i class="fas fa-notes-medical"></i> Medical Records</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/appointments"><i class="fas fa-stethoscope"></i> Appointments</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/work-schedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/profile" class="active"><i class="fas fa-user-md"></i> Doctor Profile</a></li>
         </ul>
     </aside>
 
@@ -353,9 +350,14 @@
                 </div>
             </c:if>
 
-            <button class="edit-button" onclick="editProfile()">
-                <i class="fas fa-edit"></i> Chỉnh sửa thông tin
-            </button>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <button class="edit-button" onclick="editProfile()">
+                    <i class="fas fa-edit"></i> Chỉnh sửa thông tin
+                </button>
+                <div style="font-size: 14px; color: #666;">
+                    <i class="fas fa-info-circle"></i> Chỉnh sửa thông tin cá nhân và chuyên môn
+                </div>
+            </div>
         </div>
 
         <!-- Statistics -->
@@ -382,10 +384,11 @@
             </div>
         </div>
 
-        <!-- Recent Reviews -->
+        <!-- Customer Comments and Reviews -->
         <div class="profile-container">
-            <h3><i class="fas fa-comments"></i> Đánh giá gần đây</h3>
+            <h3><i class="fas fa-comments"></i> Đánh giá và phản hồi từ khách hàng</h3>
             <div style="margin-top: 20px;">
+                <!-- Sample customer comments - in real implementation, this would come from database -->
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <strong>Nguyễn Thị Lan</strong>
@@ -397,9 +400,18 @@
                             <i class="fas fa-star"></i>
                         </div>
                     </div>
-                    <p style="margin: 0; color: #666;">"Bác sĩ rất tận tâm và chuyên nghiệp. Mèo nhà tôi đã khỏi bệnh hoàn toàn nhờ sự chăm sóc của bác sĩ."</p>
+                    <p style="margin: 0 0 10px 0; color: #666;">"Bác sĩ rất tận tâm và chuyên nghiệp. Mèo nhà tôi đã khỏi bệnh hoàn toàn nhờ sự chăm sóc của bác sĩ."</p>
+                    <div style="border-top: 1px solid #e0e0e0; padding-top: 10px; margin-top: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <img src="${pageContext.request.contextPath}/images/doctor-avatar.png" alt="Doctor" style="width: 30px; height: 30px; border-radius: 50%;">
+                            <div style="flex: 1;">
+                                <strong style="font-size: 14px; color: #333;">BS. ${fullDoctorInfo.name}</strong>
+                                <p style="margin: 0; font-size: 13px; color: #666;">Cảm ơn chị Lan đã tin tưởng và lựa chọn dịch vụ của chúng tôi. Rất vui khi nghe được phản hồi tích cực từ chị. Chúc mèo nhà chị luôn khỏe mạnh!</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                
+
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <strong>Trần Văn Minh</strong>
@@ -411,8 +423,53 @@
                             <i class="fas fa-star"></i>
                         </div>
                     </div>
-                    <p style="margin: 0; color: #666;">"Dịch vụ tuyệt vời! Bác sĩ giải thích rất rõ ràng và cún nhà tôi rất thích."</p>
+                    <p style="margin: 0 0 10px 0; color: #666;">"Dịch vụ tuyệt vời! Bác sĩ giải thích rất rõ ràng và cún nhà tôi rất thích."</p>
+                    <div style="border-top: 1px solid #e0e0e0; padding-top: 10px; margin-top: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <img src="${pageContext.request.contextPath}/images/doctor-avatar.png" alt="Doctor" style="width: 30px; height: 30px; border-radius: 50%;">
+                            <div style="flex: 1;">
+                                <strong style="font-size: 14px; color: #333;">BS. ${fullDoctorInfo.name}</strong>
+                                <p style="margin: 0; font-size: 13px; color: #666;">Cảm ơn anh Minh! Rất vui khi anh và cún nhà hài lòng với dịch vụ. Hẹn gặp anh và cún trong những lần khám tới nhé!</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong>Lê Thị Hoa</strong>
+                        <div style="color: #FF9800;">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                    </div>
+                    <p style="margin: 0 0 10px 0; color: #666;">"Bác sĩ khám rất kỹ và tư vấn nhiệt tình. Giá cả hợp lý, phòng khám sạch sẽ."</p>
+                    <div style="border-top: 1px solid #e0e0e0; padding-top: 10px; margin-top: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <img src="${pageContext.request.contextPath}/images/doctor-avatar.png" alt="Doctor" style="width: 30px; height: 30px; border-radius: 50%;">
+                            <div style="flex: 1;">
+                                <strong style="font-size: 14px; color: #333;">BS. ${fullDoctorInfo.name}</strong>
+                                <p style="margin: 0; font-size: 13px; color: #666;">Cảm ơn chị Hoa đã đánh giá cao dịch vụ. Chúng tôi luôn cố gắng mang đến trải nghiệm tốt nhất cho khách hàng và thú cưng.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reply to Comments Section -->
+            <div style="margin-top: 30px; padding: 20px; background: #f0f8ff; border-radius: 8px; border: 1px solid #b3d9ff;">
+                <h4 style="margin: 0 0 15px 0; color: #1976d2;">
+                    <i class="fas fa-reply"></i> Phản hồi đánh giá
+                </h4>
+                <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">
+                    Bạn có thể trả lời các đánh giá từ khách hàng để tăng cường mối quan hệ và cải thiện dịch vụ.
+                </p>
+                <button onclick="showReplyForm()" style="background: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                    <i class="fas fa-plus"></i> Viết phản hồi
+                </button>
             </div>
         </div>
     </main>
@@ -424,8 +481,12 @@
 
 <script>
 function editProfile() {
-    // TODO: Implement edit profile functionality
-    alert('Chức năng chỉnh sửa thông tin sẽ được phát triển trong phiên bản tiếp theo!');
+    // Redirect to user profile page for editing (similar structure)
+    window.location.href = '${pageContext.request.contextPath}/doctor/profile-edit';
+}
+
+function showReplyForm() {
+    alert('Chức năng trả lời đánh giá sẽ được phát triển trong phiên bản tiếp theo!\n\nHiện tại, bác sĩ có thể tương tác với khách hàng qua các kênh khác.');
 }
 
 function toggleDropdown() {

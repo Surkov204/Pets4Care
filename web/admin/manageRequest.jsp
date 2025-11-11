@@ -90,6 +90,21 @@
                                 <c:when test="${r.type eq 'Leave'}">
                                     <span class="pass">Nhờ làm thay</span>
                                 </c:when>
+                                <c:when test="${r.type eq 'DoctorPass'}">
+                                    <span class="pass">Bác sĩ nhờ làm thay</span>
+                                </c:when>
+                                <c:when test="${r.type eq 'DoctorCancel'}">
+                                    <span class="pass">Bác sĩ hủy ca</span>
+                                </c:when>
+                                <c:when test="${r.type eq 'DoctorRegister'}">
+                                    <span class="swap">Bác sĩ đăng ký ca</span>
+                                </c:when>
+                                <c:when test="${r.type eq 'Cancel'}">
+                                    <span class="pass">Hủy ca</span>
+                                </c:when>
+                                <c:when test="${r.type eq 'DoctorSwap'}">
+                                    <span class="swap">Bác sĩ đổi ca</span>
+                                </c:when>
                                 <c:otherwise>
                                     <span class="swap">Đổi ca</span>
                                 </c:otherwise>
@@ -99,7 +114,7 @@
                         <!-- Ngày -->
                         <td>
                             <c:choose>
-                                <c:when test="${r.type eq 'Leave'}">
+                                <c:when test="${r.type eq 'Leave' || r.type eq 'DoctorPass' || r.type eq 'DoctorCancel' || r.type eq 'DoctorRegister'}">
                                     ${r.fromDate}
                                 </c:when>
                                 <c:otherwise>
@@ -112,7 +127,7 @@
                         <td>${r.fromShiftID}</td>
                         <td>
                             <c:choose>
-                                <c:when test="${r.type eq 'Leave'}">
+                                <c:when test="${r.type eq 'Leave' || r.type eq 'DoctorPass' || r.type eq 'DoctorCancel' || r.type eq 'DoctorRegister'}">
                                     <span style="color:#999;">—</span>
                                 </c:when>
                                 <c:otherwise>

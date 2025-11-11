@@ -34,7 +34,7 @@ public class UpdateMedicalInfoServlet extends HttpServlet {
         String medicalNote = request.getParameter("medicalNote");
         
         if (bookingIdStr == null || bookingIdStr.trim().isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/doctor/appointments.jsp?error=missing_booking_id");
+            response.sendRedirect(request.getContextPath() + "/doctor/appointments?error=missing_booking_id");
             return;
         }
         
@@ -44,12 +44,12 @@ public class UpdateMedicalInfoServlet extends HttpServlet {
             // Kiểm tra booking có thuộc về doctor này không
             var booking = bookingDAO.getBookingById(bookingId);
             if (booking == null) {
-                response.sendRedirect(request.getContextPath() + "/doctor/appointments.jsp?error=booking_not_found");
+                response.sendRedirect(request.getContextPath() + "/doctor/appointments?error=booking_not_found");
                 return;
             }
             
             if (booking.getDoctorId() != doctor.getDoctorId()) {
-                response.sendRedirect(request.getContextPath() + "/doctor/appointments.jsp?error=unauthorized");
+                response.sendRedirect(request.getContextPath() + "/doctor/appointments?error=unauthorized");
                 return;
             }
             
@@ -63,18 +63,18 @@ public class UpdateMedicalInfoServlet extends HttpServlet {
             
             if (success) {
                 logger.info("Doctor " + doctor.getName() + " updated medical info for booking " + bookingId);
-                response.sendRedirect(request.getContextPath() + "/doctor/appointment-detail.jsp?id=" + bookingId + "&success=updated");
+                response.sendRedirect(request.getContextPath() + "/doctor/appointment-detail?id=" + bookingId + "&success=updated");
             } else {
-                response.sendRedirect(request.getContextPath() + "/doctor/appointment-detail.jsp?id=" + bookingId + "&error=update_failed");
+                response.sendRedirect(request.getContextPath() + "/doctor/appointment-detail?id=" + bookingId + "&error=update_failed");
             }
             
         } catch (NumberFormatException e) {
             logger.warning("Invalid booking ID: " + bookingIdStr);
-            response.sendRedirect(request.getContextPath() + "/doctor/appointments.jsp?error=invalid_booking_id");
+            response.sendRedirect(request.getContextPath() + "/doctor/appointments?error=invalid_booking_id");
         } catch (Exception e) {
             logger.severe("Error updating medical info: " + e.getMessage());
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/doctor/appointments.jsp?error=system_error");
+            response.sendRedirect(request.getContextPath() + "/doctor/appointments?error=system_error");
         }
     }
 }

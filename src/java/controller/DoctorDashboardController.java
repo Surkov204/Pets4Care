@@ -10,20 +10,18 @@ import dao.BookingDAO;
 import dao.DoctorDAO;
 import dao.DoctorAttendanceDAO;
 import dao.DoctorPayrollDAO;
+import dao.WorkScheduleDAO;
 import model.Doctor;
 import model.Booking;
 import model.AttendanceRecord;
 import model.PayrollRecord;
+import model.WorkSchedule;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.logging.Logger;
 
-/**
- * Controller cho Doctor Dashboard
- * Hiển thị thống kê và appointments cho bác sĩ
- */
 @WebServlet("/doctor/dashboard")
 public class DoctorDashboardController extends HttpServlet {
     private static final Logger logger = Logger.getLogger(DoctorDashboardController.class.getName());
@@ -31,6 +29,7 @@ public class DoctorDashboardController extends HttpServlet {
     private DoctorDAO doctorDAO = new DoctorDAO();
     private DoctorAttendanceDAO attendanceDAO = new DoctorAttendanceDAO();
     private DoctorPayrollDAO payrollDAO = new DoctorPayrollDAO();
+    private WorkScheduleDAO workScheduleDAO = new WorkScheduleDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -39,7 +38,6 @@ public class DoctorDashboardController extends HttpServlet {
         HttpSession session = request.getSession();
         Doctor doctor = (Doctor) session.getAttribute("doctor");
 
-        // Kiểm tra đăng nhập
         if (doctor == null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
@@ -48,17 +46,14 @@ public class DoctorDashboardController extends HttpServlet {
         try {
             int doctorId = doctor.getDoctorId();
             
-            // Lấy thông tin doctor đầy đủ
             Doctor fullDoctorInfo = doctorDAO.findById(doctorId);
             if (fullDoctorInfo != null) {
                 session.setAttribute("doctor", fullDoctorInfo);
             }
             
-            // Lấy lịch hẹn hôm nay
             LocalDate today = LocalDate.now();
             List<Booking> todayAppointments = bookingDAO.getBookingsByDoctorAndDate(doctorId, today);
             
-            // Lấy lịch hẹn sắp tới (7 ngày tới)
             LocalDate nextWeek = today.plusDays(7);
             List<Booking> upcomingAppointments = bookingDAO.getBookingsByDoctorAndDateRange(
                 doctorId, 
@@ -66,7 +61,6 @@ public class DoctorDashboardController extends HttpServlet {
                 nextWeek
             );
             
-            // Lấy lịch hẹn trong tháng này
             LocalDate startOfMonth = today.withDayOfMonth(1);
             LocalDate endOfMonth = today.withDayOfMonth(today.lengthOfMonth());
             List<Booking> monthlyAppointments = bookingDAO.getBookingsByDoctorAndDateRange(
@@ -75,12 +69,10 @@ public class DoctorDashboardController extends HttpServlet {
                 endOfMonth
             );
             
-            // Thống kê
             int todayCount = todayAppointments.size();
             int upcomingCount = upcomingAppointments.size();
             int monthlyCount = monthlyAppointments.size();
             
-            // Đếm theo trạng thái
             long completedCount = monthlyAppointments.stream()
                 .filter(b -> "completed".equalsIgnoreCase(b.getStatus()))
                 .count();
@@ -94,7 +86,6 @@ public class DoctorDashboardController extends HttpServlet {
                 .filter(b -> "in_progress".equalsIgnoreCase(b.getStatus()))
                 .count();
 
-            // Kiểm tra trạng thái check-in
             boolean isCheckedIn = false;
             var latestAttendance = attendanceDAO.getLatestRecord(doctorId);
             if (latestAttendance != null && latestAttendance.getCheckOut() == null) {
@@ -102,13 +93,14 @@ public class DoctorDashboardController extends HttpServlet {
             }
             session.setAttribute("isCheckedIn", isCheckedIn);
 
-            // Lấy phiếu lương mới nhất
             var latestPayroll = payrollDAO.getLatestPayroll(doctorId);
             if (latestPayroll != null) {
                 session.setAttribute("latestPayroll", latestPayroll);
             }
 
-            // Set attributes
+            WorkSchedule todaySchedule = workScheduleDAO.getTodayScheduleForDoctor(doctorId);
+            List<WorkSchedule> upcomingSchedules = workScheduleDAO.getUpcomingScheduleForDoctor(doctorId, 7);
+
             request.setAttribute("fullDoctorInfo", fullDoctorInfo);
             request.setAttribute("todayAppointments", todayAppointments);
             request.setAttribute("upcomingAppointments", upcomingAppointments);
@@ -119,11 +111,12 @@ public class DoctorDashboardController extends HttpServlet {
             request.setAttribute("pendingCount", pendingCount);
             request.setAttribute("inProgressCount", inProgressCount);
             request.setAttribute("isCheckedIn", isCheckedIn);
+            request.setAttribute("todaySchedule", todaySchedule);
+            request.setAttribute("upcomingSchedules", upcomingSchedules);
 
             logger.info("Doctor " + doctor.getName() + " accessed dashboard. Today: " + todayCount +
                        ", Upcoming: " + upcomingCount + ", Monthly: " + monthlyCount);
             
-            // Forward to dashboard JSP
             request.getRequestDispatcher("/doctor/doctor-dashboard.jsp").forward(request, response);
             
         } catch (Exception e) {
@@ -134,4 +127,3 @@ public class DoctorDashboardController extends HttpServlet {
         }
     }
 }
-

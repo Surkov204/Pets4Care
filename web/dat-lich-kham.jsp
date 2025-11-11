@@ -5,6 +5,7 @@
 <%@ page import="model.PetServiceModel" %>
 <%@ page import="model.Booking" %>
 <%@ page import="model.BookingServiceItem" %>
+<%@ page import="model.MedicalRecord" %>
 <%@ page import="java.util.*" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
@@ -28,10 +29,14 @@
     List<PetServiceModel> healthCheckServices = (List<PetServiceModel>) request.getAttribute("healthCheckServices");
     List<Booking> healthCheckBookings = (List<Booking>) request.getAttribute("healthCheckBookings");
     Pet pet = (Pet) request.getAttribute("pet");
-    
+    List<Pet> customerPets = (List<Pet>) request.getAttribute("customerPets");
+    Map<Integer, List<MedicalRecord>> petsMedicalRecords = (Map<Integer, List<MedicalRecord>>) request.getAttribute("petsMedicalRecords");
+
     // Default values if no data
     if (healthCheckServices == null) healthCheckServices = new ArrayList<>();
     if (healthCheckBookings == null) healthCheckBookings = new ArrayList<>();
+    if (customerPets == null) customerPets = new ArrayList<>();
+    if (petsMedicalRecords == null) petsMedicalRecords = new HashMap<>();
     
     // Pet information
     String petName = "Chưa có thông tin";
@@ -356,9 +361,53 @@
                 <i class="fas fa-paw"></i>
                 A. Thông tin chung về thú cưng
             </h2>
-            
+
+            <!-- Pet Selection -->
+            <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 class="text-lg font-semibold text-blue-800 mb-3">
+                    <i class="fas fa-hand-pointer mr-2"></i>Chọn thú cưng để đặt lịch khám
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <% if (!customerPets.isEmpty()) { %>
+                        <% for (Pet customerPet : customerPets) { %>
+                        <div class="pet-option bg-white border-2 <%= (pet != null && pet.getId() == customerPet.getId()) ? "border-orange-500 bg-orange-50" : "border-gray-200" %> rounded-lg p-4 cursor-pointer hover:border-orange-300 transition-colors"
+                             onclick="selectPet(<%= customerPet.getId() %>)">
+                            <div class="flex items-center space-x-3">
+                                <img src="<%= request.getContextPath()%>/images/<%= customerPet.getImagePath() != null ? customerPet.getImagePath() : "pets/placeholder.svg" %>"
+                                     alt="<%= customerPet.getPetName() %>"
+                                     class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-800"><%= customerPet.getPetName() %></h4>
+                                    <p class="text-sm text-gray-600">
+                                        <%= customerPet.getSpeciesDisplayName() %> •
+                                        <%= customerPet.getAge() %> tuổi •
+                                        <%= customerPet.getGender() != null ? (customerPet.getGender().equals("male") ? "Đực" : "Cái") : "N/A" %>
+                                    </p>
+                                </div>
+                                <% if (pet != null && pet.getId() == customerPet.getId()) { %>
+                                <div class="text-orange-500">
+                                    <i class="fas fa-check-circle text-xl"></i>
+                                </div>
+                                <% } %>
+                            </div>
+                        </div>
+                        <% } %>
+                    <% } else { %>
+                    <div class="col-span-full text-center py-8">
+                        <i class="fas fa-paw text-4xl text-gray-400 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-600 mb-2">Chưa có thông tin thú cưng</h3>
+                        <p class="text-gray-500 mb-4">Bạn cần cập nhật thông tin thú cưng trước khi đặt lịch khám</p>
+                        <a href="<%= request.getContextPath()%>/petinfoservlet" class="btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Cập nhật thông tin thú cưng
+                        </a>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <% if (pet != null) { %>
             <div class="pet-info-grid">
-                <img src="<%= request.getContextPath()%>/images/<%= petImage %>" 
+                <img src="<%= request.getContextPath()%>/images/<%= petImage %>"
                      alt="<%= petName %>" class="pet-image">
                 <div>
                     <h3 class="text-2xl font-bold text-orange-600 mb-2">🐕 <%= petName %></h3>
@@ -376,6 +425,7 @@
                     </div>
                 </div>
             </div>
+            <% } %>
         </div>
 
         <!-- B. Thông tin sức khỏe hiện tại -->
@@ -549,14 +599,6 @@
                             </div>
                             <span class="status-badge <%= statusClass %>"><%= statusText %></span>
                         </div>
-                        <% if ("pending".equals(booking.getStatus())) { %>
-                        <div class="mt-3">
-                            <button class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600" 
-                                    onclick="cancelBooking(<%= booking.getBookingId() %>)">
-                                <i class="fas fa-times mr-1"></i>Hủy lịch
-                            </button>
-                        </div>
-                        <% } %>
                     </div>
                     <% } %>
                 </div>
@@ -570,27 +612,101 @@
             </div>
         </div>
 
-        <!-- E. Đặt lịch khám mới -->
+        <!-- E. Lịch sử bệnh án các thú cưng khác -->
+        <div class="card">
+            <h2 class="section-title">
+                <i class="fas fa-notes-medical"></i>
+                E. Lịch sử bệnh án các thú cưng khác
+            </h2>
+
+            <% if (!petsMedicalRecords.isEmpty()) { %>
+            <div class="space-y-6">
+                <% for (Pet otherPet : customerPets) {
+                    List<MedicalRecord> petRecords = petsMedicalRecords.get(otherPet.getId());
+                    if (petRecords != null && !petRecords.isEmpty()) { %>
+                <div class="pet-medical-history">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                        <i class="fas fa-paw mr-2 text-blue-500"></i>
+                        <%= otherPet.getPetName() %> (<%= otherPet.getSpeciesDisplayName() %>)
+                    </h3>
+
+                    <div class="space-y-3">
+                        <% for (MedicalRecord record : petRecords) {
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+                        %>
+                        <div class="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-400">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="font-medium text-gray-800">
+                                    Khám ngày: <%= dateFormat.format(record.getExaminationDate()) %>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    Bác sĩ: <%= record.getDoctorName() != null ? record.getDoctorName() : "N/A" %>
+                                </div>
+                            </div>
+
+                            <% if (record.getDiagnosis() != null && !record.getDiagnosis().trim().isEmpty()) { %>
+                            <div class="mb-2">
+                                <strong class="text-gray-700">Chẩn đoán:</strong>
+                                <span class="text-gray-600"><%= record.getDiagnosis() %></span>
+                            </div>
+                            <% } %>
+
+                            <% if (record.getTreatment() != null && !record.getTreatment().trim().isEmpty()) { %>
+                            <div class="mb-2">
+                                <strong class="text-gray-700">Phương pháp điều trị:</strong>
+                                <span class="text-gray-600"><%= record.getTreatment() %></span>
+                            </div>
+                            <% } %>
+
+                            <% if (record.getPrescription() != null && !record.getPrescription().trim().isEmpty()) { %>
+                            <div class="mb-2">
+                                <strong class="text-gray-700">Đơn thuốc:</strong>
+                                <span class="text-gray-600"><%= record.getPrescription() %></span>
+                            </div>
+                            <% } %>
+
+                            <% if (record.getNotes() != null && !record.getNotes().trim().isEmpty()) { %>
+                            <div class="text-sm text-gray-600 italic">
+                                "<%= record.getNotes() %>"
+                            </div>
+                            <% } %>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+                <% } } %>
+            </div>
+            <% } else { %>
+            <div class="text-center py-8">
+                <i class="fas fa-notes-medical text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">Chưa có lịch sử bệnh án</h3>
+                <p class="text-gray-500">Các thú cưng khác của bạn chưa có bệnh án nào được ghi nhận</p>
+            </div>
+            <% } %>
+        </div>
+
+        <!-- F. Đặt lịch khám mới -->
         <div class="card">
             <h2 class="section-title">
                 <i class="fas fa-calendar-plus"></i>
-                E. Đặt lịch khám mới
+                F. Đặt lịch khám mới
             </h2>
-            
+
             <% if (currentUser == null) { %>
             <div class="bg-yellow-50 border border-yellow-400 rounded p-4 mb-4">
                 <p class="text-yellow-700 mb-2">⚠️ Bạn cần đăng nhập để đặt lịch khám</p>
                 <a href="login.jsp" class="btn-primary">🔐 Đăng nhập ngay</a>
             </div>
-            <% } else if (pet == null) { %>
+            <% } else if (customerPets.isEmpty()) { %>
             <div class="bg-blue-50 border border-blue-400 rounded p-4 mb-4">
                 <p class="text-blue-700 mb-2">ℹ️ Bạn cần cập nhật thông tin thú cưng trước khi đặt lịch khám</p>
-                <a href="user/pet-info.jsp" class="btn-primary">🐾 Cập nhật thông tin thú cưng</a>
+                <a href="<%= request.getContextPath()%>/petinfoservlet" class="btn-primary">🐾 Cập nhật thông tin thú cưng</a>
             </div>
             <% } else { %>
-            
+
             <form action="${pageContext.request.contextPath}/health-check-booking" method="post" class="max-w-2xl">
                 <input type="hidden" name="action" value="create-booking">
+                <input type="hidden" name="petId" id="selectedPetId" value="<%= pet != null ? pet.getId() : "" %>">
                 
                 <div class="form-group">
                     <label class="form-label">Chọn dịch vụ khám sức khỏe</label>
@@ -686,31 +802,37 @@
             document.getElementById('hideAppointments').style.display = 'none';
         });
 
-        // Cancel booking functionality
-        function cancelBooking(bookingId) {
-            if (confirm('Bạn có chắc chắn muốn hủy lịch khám này?')) {
-                fetch('${pageContext.request.contextPath}/health-check-booking', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `action=cancel-booking&bookingId=${bookingId}`
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Lịch khám đã được hủy thành công!');
-                        location.reload();
-                    } else {
-                        alert('Có lỗi xảy ra: ' + data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Có lỗi xảy ra khi hủy lịch khám');
-                });
+        // Pet selection functionality
+        function selectPet(petId) {
+            // Update hidden input
+            document.getElementById('selectedPetId').value = petId;
+
+            // Update UI - remove previous selection
+            document.querySelectorAll('.pet-option').forEach(option => {
+                option.classList.remove('border-orange-500', 'bg-orange-50');
+                const checkIcon = option.querySelector('.fa-check-circle');
+                if (checkIcon) {
+                    checkIcon.parentElement.remove();
+                }
+            });
+
+            // Add selection to clicked pet
+            const selectedOption = document.querySelector(`[onclick="selectPet(${petId})"]`);
+            if (selectedOption) {
+                selectedOption.classList.add('border-orange-500', 'bg-orange-50');
+                const petInfo = selectedOption.querySelector('.flex-1');
+                if (petInfo) {
+                    const checkDiv = document.createElement('div');
+                    checkDiv.className = 'text-orange-500';
+                    checkDiv.innerHTML = '<i class="fas fa-check-circle text-xl"></i>';
+                    petInfo.parentElement.appendChild(checkDiv);
+                }
             }
+
+            // Reload page with selected pet
+            window.location.href = '${pageContext.request.contextPath}/health-check-booking?petId=' + petId;
         }
+
 
         // Edit appointment functionality
         document.addEventListener('click', function(e) {

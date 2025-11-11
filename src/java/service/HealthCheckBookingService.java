@@ -29,12 +29,14 @@ public class HealthCheckBookingService {
     private BookingServiceDAO bookingServiceDAO;
     private PetServiceDAO petServiceDAO;
     private PetService petService;
-    
+    private dao.PetDAO petDAO;
+
     public HealthCheckBookingService() {
         this.bookingDAO = new BookingDAO();
         this.bookingServiceDAO = new BookingServiceDAO();
         this.petServiceDAO = new PetServiceDAO();
         this.petService = new PetService();
+        this.petDAO = new dao.PetDAO();
     }
     
     /**
@@ -66,62 +68,76 @@ public class HealthCheckBookingService {
     /**
      * Tạo booking khám sức khỏe
      */
-    public boolean createHealthCheckBooking(Customer customer, int serviceId, 
+    public boolean createHealthCheckBooking(Customer customer, int petId, int serviceId,
                                           Timestamp appointmentStart, String note, int doctorId) {
         logger.info("=== BẮT ĐẦU TẠO BOOKING ===");
         logger.info("Customer ID: " + customer.getCustomerId());
+        logger.info("Pet ID: " + petId);
         logger.info("Service ID: " + serviceId);
         logger.info("Doctor ID: " + doctorId);
         logger.info("Appointment Start: " + appointmentStart);
-        
+
         try {
             // 1. Validate customer và pet
             logger.info("Bước 1: Kiểm tra thông tin pet...");
-            Pet pet = petService.getPetByCustomerId(customer.getCustomerId());
+            Pet pet = petDAO.getPetById(petId);
             if (pet == null) {
-                logger.severe("❌ FAILED: Customer " + customer.getCustomerId() + " chưa có thông tin pet");
+                logger.severe("❌ FAILED: Pet ID " + petId + " không tồn tại");
+                return false;
+            }
+            // Verify pet belongs to customer
+            if (pet.getCustomerId() != customer.getCustomerId()) {
+                logger.severe("❌ FAILED: Pet ID " + petId + " không thuộc về customer " + customer.getCustomerId());
                 return false;
             }
             logger.info("✓ Pet found: ID=" + pet.getId() + ", Name=" + pet.getPetName());
+
+            // 2. Kiểm tra trùng lịch với bác sĩ
+            logger.info("Bước 2: Kiểm tra trùng lịch bác sĩ...");
+            if (hasConflictingAppointment(doctorId, appointmentStart)) {
+                logger.severe("❌ FAILED: Bác sĩ " + doctorId + " đã có lịch hẹn vào thời gian này");
+                return false;
+            }
+            logger.info("✓ No conflicting appointments found");
             
-            // 2. Validate dịch vụ khám sức khỏe
-            logger.info("Bước 2: Kiểm tra dịch vụ...");
+            // 3. Validate dịch vụ khám sức khỏe
+            logger.info("Bước 3: Kiểm tra dịch vụ...");
             if (!validateHealthCheckService(serviceId)) {
                 logger.severe("❌ FAILED: Dịch vụ khám sức khỏe ID " + serviceId + " không hợp lệ");
                 return false;
             }
             logger.info("✓ Service validated");
-            
-            // 3. Lấy thông tin dịch vụ
-            logger.info("Bước 3: Lấy thông tin dịch vụ...");
+
+            // 4. Lấy thông tin dịch vụ
+            logger.info("Bước 4: Lấy thông tin dịch vụ...");
             model.PetServiceModel service = petServiceDAO.getServiceById(serviceId);
             if (service == null) {
                 logger.severe("❌ FAILED: Không tìm thấy dịch vụ ID: " + serviceId);
                 return false;
             }
             logger.info("✓ Service: " + service.getName() + ", Price: " + service.getPrice() + ", Duration: " + service.getDuration());
-            
-            // 4. Tính thời gian kết thúc
-            logger.info("Bước 4: Tính thời gian kết thúc...");
+
+            // 5. Tính thời gian kết thúc
+            logger.info("Bước 5: Tính thời gian kết thúc...");
             int duration = service.getDuration();
             Timestamp appointmentEnd = new Timestamp(appointmentStart.getTime() + (duration * 60 * 1000L));
             logger.info("✓ Appointment End: " + appointmentEnd);
-            
-            // 5. Tạo booking
-            logger.info("Bước 5: Tạo booking object...");
+
+            // 6. Tạo booking
+            logger.info("Bước 6: Tạo booking object...");
             Booking booking = new Booking();
             booking.setCustomerId(customer.getCustomerId());
             booking.setPetId(pet.getId());
             booking.setAppointmentStart(appointmentStart);
             booking.setAppointmentEnd(appointmentEnd);
-            booking.setStatus("Chưa thanh toán");
+            booking.setStatus("pending"); // Changed to pending status
             booking.setNote(note != null ? note.trim() : "");
             booking.setCreatedAt(new Timestamp(System.currentTimeMillis()));
             booking.setDoctorId(doctorId);
-            logger.info("✓ Booking object created");
-            
-            // 6. Lưu booking và chi tiết
-            logger.info("Bước 6: Lưu booking vào database...");
+            logger.info("✓ Booking object created with status: pending");
+
+            // 7. Lưu booking và chi tiết
+            logger.info("Bước 7: Lưu booking vào database...");
             boolean success = createBookingWithService(booking, serviceId);
             
             if (success) {
@@ -326,5 +342,46 @@ public class HealthCheckBookingService {
         }
         
         return availableSlots;
+    }
+
+    /**
+     * Kiểm tra xem bác sĩ có lịch hẹn trùng vào thời gian này không
+     */
+    public boolean hasConflictingAppointment(int doctorId, Timestamp appointmentStart) {
+        try {
+            // Lấy danh sách booking của bác sĩ trong ngày
+            java.sql.Date appointmentDate = new java.sql.Date(appointmentStart.getTime());
+            List<Booking> doctorBookings = bookingDAO.getBookingsByDoctorAndDate(doctorId, appointmentDate.toLocalDate());
+
+            // Kiểm tra trùng thời gian
+            for (Booking booking : doctorBookings) {
+                // Chỉ kiểm tra các booking chưa bị hủy
+                if (!"cancelled".equals(booking.getStatus())) {
+                    // Kiểm tra thời gian bắt đầu có trùng không
+                    if (booking.getAppointmentStart().equals(appointmentStart)) {
+                        logger.warning("Conflicting appointment found: Doctor " + doctorId +
+                                     " already has booking at " + appointmentStart);
+                        return true;
+                    }
+
+                    // Kiểm tra khoảng thời gian có chồng lấn không
+                    if (booking.getAppointmentStart().before(appointmentStart) &&
+                        booking.getAppointmentEnd().after(appointmentStart)) {
+                        logger.warning("Time overlap detected: Doctor " + doctorId +
+                                     " has overlapping booking from " + booking.getAppointmentStart() +
+                                     " to " + booking.getAppointmentEnd());
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+
+        } catch (Exception e) {
+            logger.severe("Error checking for conflicting appointments: " + e.getMessage());
+            e.printStackTrace();
+            // Trong trường hợp lỗi, cho phép tạo booking để tránh block user
+            return false;
+        }
     }
 }

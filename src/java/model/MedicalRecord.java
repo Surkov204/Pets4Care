@@ -42,6 +42,18 @@ public class MedicalRecord {
     private String petSpecies;
     private String doctorName;
     private String customerName;
+
+    // Thông tin booking từ JOIN
+    private Timestamp appointmentStart;
+    private Timestamp appointmentEnd;
+    private String bookingStatus;
+    private String bookingNote;
+    private String bookingCustomerName;
+    private String bookingCustomerPhone;
+    private String bookingCustomerEmail;
+    private String bookingPetName;
+    private String bookingPetType;
+    private String serviceNames;
     
     // Constructors
     public MedicalRecord() {}
@@ -234,9 +246,90 @@ public class MedicalRecord {
     public String getCustomerName() {
         return customerName;
     }
-    
+
     public void setCustomerName(String customerName) {
         this.customerName = customerName;
+    }
+
+    // Getters and Setters for booking information
+    public Timestamp getAppointmentStart() {
+        return appointmentStart;
+    }
+
+    public void setAppointmentStart(Timestamp appointmentStart) {
+        this.appointmentStart = appointmentStart;
+    }
+
+    public Timestamp getAppointmentEnd() {
+        return appointmentEnd;
+    }
+
+    public void setAppointmentEnd(Timestamp appointmentEnd) {
+        this.appointmentEnd = appointmentEnd;
+    }
+
+    public String getBookingStatus() {
+        return bookingStatus;
+    }
+
+    public void setBookingStatus(String bookingStatus) {
+        this.bookingStatus = bookingStatus;
+    }
+
+    public String getBookingNote() {
+        return bookingNote;
+    }
+
+    public void setBookingNote(String bookingNote) {
+        this.bookingNote = bookingNote;
+    }
+
+    public String getBookingCustomerName() {
+        return bookingCustomerName;
+    }
+
+    public void setBookingCustomerName(String bookingCustomerName) {
+        this.bookingCustomerName = bookingCustomerName;
+    }
+
+    public String getBookingCustomerPhone() {
+        return bookingCustomerPhone;
+    }
+
+    public void setBookingCustomerPhone(String bookingCustomerPhone) {
+        this.bookingCustomerPhone = bookingCustomerPhone;
+    }
+
+    public String getBookingCustomerEmail() {
+        return bookingCustomerEmail;
+    }
+
+    public void setBookingCustomerEmail(String bookingCustomerEmail) {
+        this.bookingCustomerEmail = bookingCustomerEmail;
+    }
+
+    public String getBookingPetName() {
+        return bookingPetName;
+    }
+
+    public void setBookingPetName(String bookingPetName) {
+        this.bookingPetName = bookingPetName;
+    }
+
+    public String getBookingPetType() {
+        return bookingPetType;
+    }
+
+    public void setBookingPetType(String bookingPetType) {
+        this.bookingPetType = bookingPetType;
+    }
+
+    public String getServiceNames() {
+        return serviceNames;
+    }
+
+    public void setServiceNames(String serviceNames) {
+        this.serviceNames = serviceNames;
     }
     
     @Override

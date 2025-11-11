@@ -1,10 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ page import="dao.DoctorDAO" %>
-<%@ page import="dao.BookingDAO" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ page import="model.Doctor" %>
-<%@ page import="model.Booking" %>
-<%@ page import="java.util.List" %>
 <%
     // Kiểm tra đăng nhập
     Doctor doctor = (Doctor) session.getAttribute("doctor");
@@ -13,15 +10,11 @@
         return;
     }
     
-    // Lấy dữ liệu hồ sơ y tế (sử dụng booking data)
-    BookingDAO bookingDAO = new BookingDAO();
-    List<Booking> medicalRecords = bookingDAO.getBookingsByDoctorAndDateRange(
-        doctor.getDoctorId(), 
-        java.time.LocalDate.now().minusMonths(3), 
-        java.time.LocalDate.now()
-    );
-    
-    request.setAttribute("medicalRecords", medicalRecords);
+    // Dữ liệu được load từ DoctorMedicalRecordController
+    if (request.getAttribute("medicalRecords") == null) {
+        response.sendRedirect(request.getContextPath() + "/doctor/medical-records");
+        return;
+    }
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -190,7 +183,7 @@
                 <a href="${pageContext.request.contextPath}/home.jsp">
                     <i class="fas fa-home"></i> Trang chủ
                 </a>
-                <a href="doctor-profile.jsp">
+                <a href="${pageContext.request.contextPath}/doctor/profile">
                     <i class="fas fa-user-edit"></i> Chỉnh sửa thông tin
                 </a>
                 <a href="${pageContext.request.contextPath}/logout">
@@ -205,20 +198,159 @@
     <!-- Sidebar -->
     <aside class="staff-sidebar">
         <ul>
-            <li><a href="doctor-dashboard.jsp"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="medical-record.jsp" class="active"><i class="fas fa-notes-medical"></i> Medical Records</a></li>
-            <li><a href="work-schedule.jsp"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
-            <li><a href="appointments.jsp"><i class="fas fa-stethoscope"></i> Appointments</a></li>
-            <li><a href="doctor-profile.jsp"><i class="fas fa-user-md"></i> Doctor Profile</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/medical-records" class="active"><i class="fas fa-notes-medical"></i> Medical Records</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/appointments"><i class="fas fa-stethoscope"></i> Appointments</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/work-schedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/profile"><i class="fas fa-user-md"></i> Doctor Profile</a></li>
         </ul>
     </aside>
 
     <!-- Main Content -->
     <main class="staff-content">
         <section class="welcome-card">
-            <h2><i class="fas fa-notes-medical"></i> Hồ sơ y tế thú cưng</h2>
-            <p>Quản lý và theo dõi lịch sử khám bệnh của các thú cưng</p>
+            <h2><i class="fas fa-notes-medical"></i> Hồ sơ y tế & Lịch hẹn</h2>
+            <p>Quản lý hồ sơ y tế và theo dõi tất cả lịch hẹn khám bệnh của các thú cưng</p>
     </section>
+
+        <!-- Pending Appointments - Waiting for Doctor Confirmation -->
+        <c:if test="${not empty pendingAppointments}">
+            <div class="search-filter" style="background: #fff3e0; border-left: 4px solid #ff9800;">
+                <h3 style="color: #e65100; margin-bottom: 15px;">
+                    <i class="fas fa-clock"></i> Lịch hẹn đang chờ xác nhận
+                </h3>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Có <strong>${pendingAppointments.size()}</strong> lịch hẹn đang chờ bác sĩ xác nhận.
+                    Vui lòng xem chi tiết và cập nhật trạng thái:
+                </p>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <c:forEach var="appt" items="${pendingAppointments}" varStatus="status">
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ffe0b2; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                    <span style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-right: 10px;">
+                                        ${status.index + 1}
+                                    </span>
+                                    <strong style="color: #e65100; font-size: 16px;">${appt.petName}</strong>
+                                    <span style="color: #666; margin-left: 8px;">(${appt.petType})</span>
+                                </div>
+                                <div style="color: #666; font-size: 14px;">
+                                    <i class="fas fa-user"></i> Chủ: <strong>${appt.customerName}</strong> |
+                                    <i class="fas fa-calendar"></i> <fmt:formatDate value="${appt.appointmentStart}" pattern="dd/MM/yyyy HH:mm"/> |
+                                    <i class="fas fa-stethoscope"></i> ${appt.serviceNames}
+                                </div>
+                                <c:if test="${not empty appt.note}">
+                                    <div style="color: #666; font-size: 13px; margin-top: 5px; font-style: italic;">
+                                        <i class="fas fa-sticky-note"></i> "${appt.note}"
+                                    </div>
+                                </c:if>
+                            </div>
+                            <div style="margin-left: 15px;">
+                                <a href="${pageContext.request.contextPath}/doctor/appointment-detail?id=${appt.bookingId}"
+                                   class="btn-primary" style="padding: 10px 20px; font-size: 14px; text-decoration: none;">
+                                    <i class="fas fa-eye"></i> Xem chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </c:forEach>
+                </div>
+            </div>
+        </c:if>
+
+        <!-- Upcoming Confirmed Appointments -->
+        <c:if test="${not empty upcomingAppointments}">
+            <div class="search-filter" style="background: #e8f5e8; border-left: 4px solid #4CAF50;">
+                <h3 style="color: #2e7d32; margin-bottom: 15px;">
+                    <i class="fas fa-calendar-check"></i> Lịch hẹn đã xác nhận sắp tới
+                </h3>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Có <strong>${upcomingAppointments.size()}</strong> lịch hẹn đã được xác nhận.
+                    Chuẩn bị cho các buổi khám sắp tới:
+                </p>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <c:forEach var="appt" items="${upcomingAppointments}" varStatus="status">
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #c8e6c9; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                    <span style="background: #4CAF50; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-right: 10px;">
+                                        ${status.index + 1}
+                                    </span>
+                                    <strong style="color: #2e7d32; font-size: 16px;">${appt.petName}</strong>
+                                    <span style="color: #666; margin-left: 8px;">(${appt.petType})</span>
+                                </div>
+                                <div style="color: #666; font-size: 14px;">
+                                    <i class="fas fa-user"></i> Chủ: <strong>${appt.customerName}</strong> |
+                                    <i class="fas fa-calendar"></i> <fmt:formatDate value="${appt.appointmentStart}" pattern="dd/MM/yyyy HH:mm"/> |
+                                    <i class="fas fa-stethoscope"></i> ${appt.serviceNames}
+                                </div>
+                                <c:if test="${not empty appt.note}">
+                                    <div style="color: #666; font-size: 13px; margin-top: 5px; font-style: italic;">
+                                        <i class="fas fa-sticky-note"></i> "${appt.note}"
+                                    </div>
+                                </c:if>
+                            </div>
+                            <div style="margin-left: 15px;">
+                                <a href="${pageContext.request.contextPath}/doctor/appointment-detail?id=${appt.bookingId}"
+                                   class="btn-primary" style="padding: 10px 20px; font-size: 14px; text-decoration: none; background: #4CAF50;">
+                                    <i class="fas fa-eye"></i> Xem chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </c:forEach>
+                </div>
+            </div>
+        </c:if>
+
+        <!-- Completed Appointments - Create Medical Records -->
+        <c:if test="${not empty completedAppointments}">
+            <div class="search-filter" style="background: #fff3e0; border-left: 4px solid #ff9800;">
+                <h3 style="color: #e65100; margin-bottom: 15px;">
+                    <i class="fas fa-clipboard-check"></i> Lịch hẹn hoàn thành - Tạo hồ sơ y tế
+                </h3>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Có <strong>${completedAppointments.size()}</strong> lịch hẹn đã hoàn thành nhưng chưa có hồ sơ y tế.
+                    Vui lòng tạo hồ sơ y tế để hoàn tất quá trình khám bệnh:
+                </p>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <c:forEach var="appt" items="${completedAppointments}" varStatus="status">
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ffe0b2; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                    <span style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-right: 10px;">
+                                        ${status.index + 1}
+                                    </span>
+                                    <strong style="color: #e65100; font-size: 16px;">${appt.petName}</strong>
+                                    <span style="color: #666; margin-left: 8px;">(${appt.petType})</span>
+                                </div>
+                                <div style="color: #666; font-size: 14px;">
+                                    <i class="fas fa-user"></i> Chủ: <strong>${appt.customerName}</strong> |
+                                    <i class="fas fa-calendar"></i> <fmt:formatDate value="${appt.appointmentStart}" pattern="dd/MM/yyyy HH:mm"/> |
+                                    <i class="fas fa-stethoscope"></i> ${appt.serviceNames}
+                                </div>
+                                <c:if test="${not empty appt.note}">
+                                    <div style="color: #666; font-size: 13px; margin-top: 5px; font-style: italic;">
+                                        <i class="fas fa-sticky-note"></i> "${appt.note}"
+                                    </div>
+                                </c:if>
+                            </div>
+                            <div style="margin-left: 15px;">
+                                <form action="${pageContext.request.contextPath}/doctor/medical-records" method="post" style="margin: 0;" onsubmit="return confirmCreateRecord('${appt.petName}')">
+                                    <input type="hidden" name="action" value="create">
+                                    <input type="hidden" name="bookingId" value="${appt.bookingId}">
+                                    <button type="submit" class="btn-primary" style="padding: 10px 20px; font-size: 14px;">
+                                        <i class="fas fa-plus"></i> Tạo hồ sơ y tế
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </c:forEach>
+                </div>
+                <div style="margin-top: 15px; padding: 10px; background: #fff8e1; border-radius: 5px; border: 1px solid #ffe082;">
+                    <i class="fas fa-info-circle" style="color: #f57c00;"></i>
+                    <strong style="color: #e65100;">Lưu ý:</strong> Việc tạo hồ sơ y tế sẽ giúp theo dõi sức khỏe thú cưng và hỗ trợ các lần khám sau này.
+                </div>
+            </div>
+        </c:if>
 
         <!-- Search and Filter -->
         <div class="search-filter">
@@ -228,10 +360,39 @@
                 <button type="submit" class="btn-primary">
                     <i class="fas fa-search"></i> Tìm kiếm
                 </button>
-                <a href="medical-record.jsp" class="btn-primary" style="text-decoration: none; display: inline-block;">
+                <a href="${pageContext.request.contextPath}/doctor/medical-records" class="btn-primary" style="text-decoration: none; display: inline-block;">
                     <i class="fas fa-refresh"></i> Làm mới
                 </a>
             </form>
+        </div>
+
+        <!-- Appointments and Medical Records Summary -->
+        <div class="search-filter" style="background: #f8f9fa; border-left: 4px solid #6c757d;">
+            <h3 style="color: #495057; margin-bottom: 15px;">
+                <i class="fas fa-chart-line"></i> Tổng quan lịch hẹn và hồ sơ y tế
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                <div style="background: #fff3e0; padding: 15px; border-radius: 8px; text-align: center;">
+                    <i class="fas fa-clock" style="font-size: 24px; color: #ff9800;"></i>
+                    <div style="font-size: 20px; font-weight: bold; color: #e65100;">${pendingAppointments.size()}</div>
+                    <div style="font-size: 12px; color: #666;">Chờ xác nhận</div>
+                </div>
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; text-align: center;">
+                    <i class="fas fa-calendar-check" style="font-size: 24px; color: #4CAF50;"></i>
+                    <div style="font-size: 20px; font-weight: bold; color: #2e7d32;">${upcomingAppointments.size()}</div>
+                    <div style="font-size: 12px; color: #666;">Đã xác nhận</div>
+                </div>
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; text-align: center;">
+                    <i class="fas fa-check-circle" style="font-size: 24px; color: #2196F3;"></i>
+                    <div style="font-size: 20px; font-weight: bold; color: #1565c0;">${completedAppointments.size()}</div>
+                    <div style="font-size: 12px; color: #666;">Hoàn thành</div>
+                </div>
+                <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; text-align: center;">
+                    <i class="fas fa-notes-medical" style="font-size: 24px; color: #9C27B0;"></i>
+                    <div style="font-size: 20px; font-weight: bold; color: #7b1fa2;">${medicalRecords.size()}</div>
+                    <div style="font-size: 12px; color: #666;">Hồ sơ y tế</div>
+                </div>
+            </div>
         </div>
 
         <!-- Medical Records Table -->
@@ -240,67 +401,77 @@
                 <c:when test="${not empty medicalRecords}">
                     <table>
             <thead>
-                            <tr>
-                                <th>Ngày khám</th>
-                                <th>Tên thú cưng</th>
-                                <th>Chủ sở hữu</th>
-                                <th>Loại thú cưng</th>
-                                <th>Dịch vụ</th>
-                                <th>Trạng thái</th>
-                                <th>Ghi chú</th>
-                                <th>Hành động</th>
-                </tr>
-            </thead>
-            <tbody>
-                <c:forEach var="record" items="${medicalRecords}">
-                                <tr>
-                                    <td>
-                                        <c:if test="${not empty record.appointmentStart}">
-                                            ${record.appointmentStart}
-                                        </c:if>
-                                    </td>
-                                    <td>
-                                        <strong>${record.petName}</strong>
-                                    </td>
-                                    <td>
-                                        ${record.customerName}<br>
-                                        <small>${record.customerPhone}</small>
-                                    </td>
-                                    <td>${record.petType}</td>
-                                    <td>${record.serviceNames}</td>
-                                    <td>
-                                        <span class="status status-${record.status}">${record.status}</span>
-                                    </td>
-                                    <td>
-                                        <c:if test="${not empty record.note}">
-                                            ${record.note}
-                                        </c:if>
-                                        <c:if test="${empty record.note}">
-                                            <em>Không có ghi chú</em>
-                                        </c:if>
-                                    </td>
-                                    <td>
-                                        <button onclick="openUpdateModal(${record.bookingId}, '${record.petName}', '${record.customerName}', '${record.status}')"
-                                                class="btn-small" style="background: #2196F3; margin-right: 5px;">
-                                            <i class="fas fa-edit"></i> Cập nhật
-                                        </button>
-                                        <a href="appointment-detail.jsp?id=${record.bookingId}" class="btn-small">
-                                            <i class="fas fa-eye"></i> Chi tiết
-                                        </a>
-                                    </td>
-                    </tr>
-                </c:forEach>
-            </tbody>
-        </table>
-                </c:when>
-                <c:otherwise>
-                    <div class="no-records">
-                        <i class="fas fa-notes-medical"></i>
-                        <h3>Chưa có hồ sơ y tế</h3>
-                        <p>Chưa có hồ sơ khám bệnh nào trong 3 tháng gần đây</p>
-                    </div>
-                </c:otherwise>
-            </c:choose>
+                             <tr>
+                                 <th>Ngày khám</th>
+                                 <th>Tên thú cưng</th>
+                                 <th>Chủ sở hữu</th>
+                                 <th>Loại thú cưng</th>
+                                 <th>Chẩn đoán</th>
+                                 <th>Điều trị</th>
+                                 <th>Tái khám</th>
+                                 <th>Hành động</th>
+                 </tr>
+             </thead>
+             <tbody>
+                 <c:forEach var="record" items="${medicalRecords}">
+                                 <tr>
+                                     <td>
+                                         <fmt:formatDate value="${record.examinationDate}" pattern="dd/MM/yyyy HH:mm" />
+                                     </td>
+                                     <td>
+                                         <strong>${record.petName}</strong>
+                                     </td>
+                                     <td>
+                                         ${record.customerName}
+                                     </td>
+                                     <td>${record.petSpecies}</td>
+                                     <td>
+                                         <c:choose>
+                                             <c:when test="${not empty record.diagnosis}">
+                                                 ${record.diagnosis.length() > 50 ? record.diagnosis.substring(0, 50).concat('...') : record.diagnosis}
+                                             </c:when>
+                                             <c:otherwise><em>Chưa có</em></c:otherwise>
+                                         </c:choose>
+                                     </td>
+                                     <td>
+                                         <c:choose>
+                                             <c:when test="${not empty record.treatment}">
+                                                 ${record.treatment.length() > 50 ? record.treatment.substring(0, 50).concat('...') : record.treatment}
+                                             </c:when>
+                                             <c:otherwise><em>Chưa có</em></c:otherwise>
+                                         </c:choose>
+                                     </td>
+                                     <td>
+                                         <c:choose>
+                                             <c:when test="${not empty record.followUpDate}">
+                                                 <fmt:formatDate value="${record.followUpDate}" pattern="dd/MM/yyyy" />
+                                             </c:when>
+                                             <c:otherwise>-</c:otherwise>
+                                         </c:choose>
+                                     </td>
+                                     <td>
+                                         <a href="${pageContext.request.contextPath}/doctor/medical-records?action=view&id=${record.recordId}"
+                                            class="btn-small" style="background: #4CAF50; color: white; text-decoration: none; padding: 8px 12px; border-radius: 5px; display: inline-block; margin-right: 5px;">
+                                             <i class="fas fa-eye"></i> Xem
+                                         </a>
+                                         <a href="${pageContext.request.contextPath}/doctor/medical-records?action=view&id=${record.recordId}"
+                                            class="btn-small" style="background: #2196F3; color: white; text-decoration: none; padding: 8px 12px; border-radius: 5px; display: inline-block;">
+                                             <i class="fas fa-edit"></i> Sửa
+                                         </a>
+                                     </td>
+                     </tr>
+                 </c:forEach>
+             </tbody>
+         </table>
+                 </c:when>
+                 <c:otherwise>
+                     <div class="no-records">
+                         <i class="fas fa-notes-medical"></i>
+                         <h3>Chưa có hồ sơ y tế</h3>
+                         <p>Chưa có hồ sơ khám bệnh nào trong 3 tháng gần đây</p>
+                     </div>
+                 </c:otherwise>
+             </c:choose>
         </div>
 
         <!-- Statistics -->
@@ -311,126 +482,25 @@
                     <strong>Tổng số hồ sơ:</strong> ${medicalRecords.size()}
                 </div>
                 <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; flex: 1;">
-                    <strong>Đã hoàn thành:</strong>
-                    <c:set var="completedCount" value="0" />
+                    <strong>Có tái khám:</strong>
+                    <c:set var="followUpCount" value="0" />
                     <c:forEach var="record" items="${medicalRecords}">
-                        <c:if test="${record.status == 'completed'}">
-                            <c:set var="completedCount" value="${completedCount + 1}" />
+                        <c:if test="${not empty record.followUpDate}">
+                            <c:set var="followUpCount" value="${followUpCount + 1}" />
                         </c:if>
                     </c:forEach>
-                    ${completedCount}
+                    ${followUpCount}
                 </div>
                 <div style="background: #fff3e0; padding: 15px; border-radius: 5px; flex: 1;">
-                    <strong>Đang điều trị:</strong>
-                    <c:set var="confirmedCount" value="0" />
+                    <strong>Có đơn thuốc:</strong>
+                    <c:set var="prescriptionCount" value="0" />
                     <c:forEach var="record" items="${medicalRecords}">
-                        <c:if test="${record.status == 'confirmed'}">
-                            <c:set var="confirmedCount" value="${confirmedCount + 1}" />
+                        <c:if test="${not empty record.prescription}">
+                            <c:set var="prescriptionCount" value="${prescriptionCount + 1}" />
                         </c:if>
                     </c:forEach>
-                    ${confirmedCount}
+                    ${prescriptionCount}
                 </div>
-            </div>
-        </div>
-
-        <!-- Update Medical Record Modal -->
-        <div id="updateModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
-            <div class="modal-content" style="background-color: #fefefe; margin: 2% auto; padding: 0; border-radius: 10px; width: 90%; max-width: 800px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px 10px 0 0;">
-                    <span class="close" onclick="closeUpdateModal()" style="float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-                    <h2 style="margin: 0;"><i class="fas fa-notes-medical"></i> Cập nhật hồ sơ y tế</h2>
-                    <p id="modalPetInfo" style="margin: 10px 0 0 0; opacity: 0.9;"></p>
-                </div>
-
-                <form action="${pageContext.request.contextPath}/doctor/update-medical-record" method="post" style="padding: 20px;">
-                    <input type="hidden" id="bookingId" name="bookingId">
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <!-- Left Column -->
-                        <div>
-                            <h3 style="color: #667eea; margin-bottom: 15px;"><i class="fas fa-clipboard-list"></i> Thông tin khám bệnh</h3>
-
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Triệu chứng:</label>
-                                <textarea name="symptoms" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Mô tả triệu chứng..."></textarea>
-                            </div>
-
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Chẩn đoán:</label>
-                                <textarea name="diagnosis" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Kết quả chẩn đoán..."></textarea>
-                            </div>
-
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Phương pháp điều trị:</label>
-                                <textarea name="treatment" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Phương pháp điều trị..."></textarea>
-                            </div>
-
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Đơn thuốc:</label>
-                                <textarea name="prescription" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Tên thuốc, liều lượng, cách dùng..."></textarea>
-                            </div>
-                        </div>
-
-                        <!-- Right Column -->
-                        <div>
-                            <h3 style="color: #667eea; margin-bottom: 15px;"><i class="fas fa-heartbeat"></i> Chỉ số sức khỏe</h3>
-
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Cân nặng (kg):</label>
-                                <input type="number" name="weight" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="VD: 5.5">
-                            </div>
-
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nhiệt độ (°C):</label>
-                                <input type="number" name="temperature" step="0.1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="VD: 38.5">
-                            </div>
-
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nhịp tim (bpm):</label>
-                                <input type="number" name="heartRate" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="VD: 120">
-                            </div>
-
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Huyết áp:</label>
-                                <input type="text" name="bloodPressure" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;" placeholder="VD: 120/80">
-                            </div>
-
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Ngày tái khám:</label>
-                                <input type="date" name="followUpDate" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                            </div>
-
-                            <div style="margin-bottom: 15px;">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Trạng thái:</label>
-                                <select name="status" id="statusSelect" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                                    <option value="confirmed">Đã xác nhận</option>
-                                    <option value="in_progress">Đang khám</option>
-                                    <option value="completed">Hoàn thành</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Full Width Fields -->
-                    <div style="margin-top: 20px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Ghi chú thêm:</label>
-                        <textarea name="notes" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Ghi chú bổ sung..."></textarea>
-                    </div>
-
-                    <div style="margin-top: 20px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Ghi chú tái khám:</label>
-                        <textarea name="followUpNotes" rows="2" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit;" placeholder="Lưu ý cho lần tái khám..."></textarea>
-                    </div>
-
-                    <div style="margin-top: 25px; text-align: right; border-top: 1px solid #ddd; padding-top: 20px;">
-                        <button type="button" onclick="closeUpdateModal()" style="background: #6c757d; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
-                            <i class="fas fa-times"></i> Hủy
-                        </button>
-                        <button type="submit" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer;">
-                            <i class="fas fa-save"></i> Lưu hồ sơ
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
     </main>
@@ -456,40 +526,23 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// Modal functions
-function openUpdateModal(bookingId, petName, customerName, status) {
-    document.getElementById('bookingId').value = bookingId;
-    document.getElementById('modalPetInfo').textContent = 'Thú cưng: ' + petName + ' | Chủ: ' + customerName;
-    document.getElementById('statusSelect').value = status;
-    document.getElementById('updateModal').style.display = 'block';
-}
-
-function closeUpdateModal() {
-    document.getElementById('updateModal').style.display = 'none';
-}
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('updateModal');
-    if (event.target == modal) {
-        closeUpdateModal();
-    }
+// Confirm medical record creation
+function confirmCreateRecord(petName) {
+    return confirm('Bạn có chắc chắn muốn tạo hồ sơ y tế cho thú cưng "' + petName + '"?\n\nHồ sơ y tế sẽ được tạo với thông tin từ lịch hẹn và bạn có thể chỉnh sửa chi tiết sau.');
 }
 
 // Show success/error messages
 window.onload = function() {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('success') === 'updated') {
+    if (urlParams.get('success') === 'created') {
+        alert('✅ Tạo hồ sơ y tế thành công!\n\nBạn có thể chỉnh sửa chi tiết hồ sơ bằng cách nhấn nút "Sửa" trong bảng bên dưới.');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('success') === 'updated') {
         alert('✅ Cập nhật hồ sơ y tế thành công!');
-        // Remove query params from URL
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('error')) {
-        const error = urlParams.get('error');
-        let message = '❌ Có lỗi xảy ra!';
-        if (error === 'unauthorized') message = '❌ Bạn không có quyền cập nhật hồ sơ này!';
-        else if (error === 'booking_not_found') message = '❌ Không tìm thấy lịch hẹn!';
-        else if (error === 'update_failed') message = '❌ Cập nhật thất bại!';
-        alert(message);
+        const error = decodeURIComponent(urlParams.get('error'));
+        alert('❌ Có lỗi xảy ra: ' + error);
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 }

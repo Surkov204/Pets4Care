@@ -274,7 +274,7 @@
                 <a href="${pageContext.request.contextPath}/home.jsp">
                     <i class="fas fa-home"></i> Trang chủ
                 </a>
-                <a href="doctor-profile.jsp">
+                <a href="${pageContext.request.contextPath}/doctor/profile">
                     <i class="fas fa-user-edit"></i> Chỉnh sửa thông tin
                 </a>
                 <a href="${pageContext.request.contextPath}/logout">
@@ -289,11 +289,11 @@
     <!-- Sidebar -->
     <aside class="staff-sidebar">
         <ul>
-            <li><a href="doctor-dashboard.jsp" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="medical-record.jsp"><i class="fas fa-notes-medical"></i> Medical Records</a></li>
-            <li><a href="work-schedule.jsp"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
-            <li><a href="appointments.jsp"><i class="fas fa-stethoscope"></i> Appointments</a></li>
-            <li><a href="doctor-profile.jsp"><i class="fas fa-user-md"></i> Doctor Profile</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/dashboard" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/medical-records"><i class="fas fa-notes-medical"></i> Medical Records</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/work-schedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/appointments"><i class="fas fa-stethoscope"></i> Appointments</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/profile"><i class="fas fa-user-md"></i> Doctor Profile</a></li>
         </ul>
     </aside>
 
@@ -303,9 +303,16 @@
             <h2>Chào mừng trở lại, Bác sĩ ${fullDoctorInfo.name} 👨‍⚕️</h2>
             <p>Chuyên khoa: <strong>${fullDoctorInfo.specialization}</strong></p>
             <p>Chúc bạn một ngày làm việc hiệu quả cùng các thú cưng đáng yêu!</p>
-            <c:if test="${not empty fullDoctorInfo.scheduleNote}">
+            <c:if test="${not empty todaySchedule}">
                 <div class="schedule-info">
-                    <i class="fas fa-calendar"></i> ${fullDoctorInfo.scheduleNote}
+                    <i class="fas fa-calendar"></i> Ca làm hôm nay: <strong>${todaySchedule.shiftName}</strong> (${todaySchedule.startTime} - ${todaySchedule.endTime})
+                    <br><i class="fas fa-map-marker-alt"></i> ${todaySchedule.location}
+                </div>
+            </c:if>
+            <c:if test="${empty todaySchedule}">
+                <div class="schedule-info" style="background: #fef3c7; border-left-color: #f59e0b;">
+                    <i class="fas fa-info-circle"></i> Bạn chưa có ca làm việc hôm nay. 
+                    <a href="${pageContext.request.contextPath}/doctor/work-schedule" style="color: #92400e; text-decoration: underline;">Xem lịch làm việc</a>
                 </div>
             </c:if>
         </section>
@@ -373,28 +380,28 @@
                 <i class="fas fa-calendar-day" style="color: white;"></i>
                 <h3 style="color: white;">Hôm nay</h3>
                 <p style="color: white;"><strong style="font-size: 2rem;">${todayCount}</strong> ca khám</p>
-                <a href="appointments.jsp" class="btn-dashboard" style="background: rgba(255,255,255,0.2); color: white;">Xem chi tiết</a>
+                <a href="${pageContext.request.contextPath}/doctor/appointments" class="btn-dashboard" style="background: rgba(255,255,255,0.2); color: white;">Xem chi tiết</a>
             </div>
 
             <div class="dashboard-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
                 <i class="fas fa-clock" style="color: white;"></i>
                 <h3 style="color: white;">Sắp tới</h3>
                 <p style="color: white;"><strong style="font-size: 2rem;">${upcomingCount}</strong> lịch hẹn</p>
-                <a href="appointments.jsp" class="btn-dashboard" style="background: rgba(255,255,255,0.2); color: white;">Xem chi tiết</a>
+                <a href="${pageContext.request.contextPath}/doctor/appointments" class="btn-dashboard" style="background: rgba(255,255,255,0.2); color: white;">Xem chi tiết</a>
             </div>
 
             <div class="dashboard-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
                 <i class="fas fa-calendar-alt" style="color: white;"></i>
                 <h3 style="color: white;">Tháng này</h3>
                 <p style="color: white;"><strong style="font-size: 2rem;">${monthlyCount}</strong> ca khám</p>
-                <a href="medical-record.jsp" class="btn-dashboard" style="background: rgba(255,255,255,0.2); color: white;">Hồ sơ</a>
+                <a href="${pageContext.request.contextPath}/doctor/medical-records" class="btn-dashboard" style="background: rgba(255,255,255,0.2); color: white;">Hồ sơ</a>
             </div>
 
             <div class="dashboard-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
                 <i class="fas fa-check-circle" style="color: white;"></i>
                 <h3 style="color: white;">Hoàn thành</h3>
                 <p style="color: white;"><strong style="font-size: 2rem;">${completedCount}</strong> ca khám</p>
-                <a href="medical-record.jsp" class="btn-dashboard" style="background: rgba(255,255,255,0.2); color: white;">Xem báo cáo</a>
+                <a href="${pageContext.request.contextPath}/doctor/medical-records" class="btn-dashboard" style="background: rgba(255,255,255,0.2); color: white;">Xem báo cáo</a>
             </div>
         </section>
 
@@ -448,7 +455,7 @@
                                         <span class="status status-${appointment.status}">${appointment.status}</span>
                                     </td>
                                     <td>
-                                        <a href="appointment-detail.jsp?id=${appointment.bookingId}" class="btn-small">Chi tiết</a>
+                                        <a href="${pageContext.request.contextPath}/doctor/appointment-detail?id=${appointment.bookingId}" class="btn-small">Chi tiết</a>
                                     </td>
                                 </tr>
                             </c:forEach>
@@ -497,7 +504,7 @@
                                     <td>${appointment.petName}</td>
                                     <td>${appointment.serviceNames}</td>
                                     <td>
-                                        <a href="appointment-detail.jsp?id=${appointment.bookingId}" class="btn-small">Chi tiết</a>
+                                        <a href="${pageContext.request.contextPath}/doctor/appointment-detail?id=${appointment.bookingId}" class="btn-small">Chi tiết</a>
                                     </td>
                                 </tr>
                             </c:forEach>

@@ -156,7 +156,7 @@ public class MedicalRecordDAO {
      */
     public MedicalRecord getByBookingId(int bookingId) {
         String sql = "SELECT mr.*, " +
-                    "p.name AS pet_name, p.species AS pet_species, " +
+                    "p.pet_name AS pet_name, p.species AS pet_species, " +
                     "d.name AS doctor_name, " +
                     "c.name AS customer_name " +
                     "FROM dbo.MedicalRecord mr " +
@@ -190,7 +190,7 @@ public class MedicalRecordDAO {
     public List<MedicalRecord> getByPetId(int petId) {
         List<MedicalRecord> records = new ArrayList<>();
         String sql = "SELECT mr.*, " +
-                    "p.name AS pet_name, p.species AS pet_species, " +
+                    "p.pet_name AS pet_name, p.species AS pet_species, " +
                     "d.name AS doctor_name, " +
                     "c.name AS customer_name " +
                     "FROM dbo.MedicalRecord mr " +
@@ -220,18 +220,56 @@ public class MedicalRecordDAO {
     }
     
     /**
-     * Lấy tất cả medical records của một doctor
+     * Lấy medical record theo record ID
      */
-    public List<MedicalRecord> getByDoctorId(int doctorId) {
-        List<MedicalRecord> records = new ArrayList<>();
+    public MedicalRecord getByRecordId(int recordId) {
         String sql = "SELECT mr.*, " +
-                    "p.name AS pet_name, p.species AS pet_species, " +
+                    "p.pet_name AS pet_name, p.species AS pet_species, " +
                     "d.name AS doctor_name, " +
                     "c.name AS customer_name " +
                     "FROM dbo.MedicalRecord mr " +
                     "LEFT JOIN dbo.Pet p ON mr.pet_id = p.id " +
                     "LEFT JOIN dbo.Doctor d ON mr.doctor_id = d.doctor_id " +
                     "LEFT JOIN dbo.Customer c ON mr.customer_id = c.customer_id " +
+                    "WHERE mr.record_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, recordId);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToMedicalRecord(rs);
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.severe("Error getting medical record by record ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Lấy tất cả medical records của một doctor
+     */
+    public List<MedicalRecord> getByDoctorId(int doctorId) {
+        List<MedicalRecord> records = new ArrayList<>();
+        String sql = "SELECT mr.*, " +
+                    "p.pet_name AS pet_name, p.species AS pet_species, " +
+                    "d.name AS doctor_name, " +
+                    "c.name AS customer_name, " +
+                    "b.appointment_start, b.appointment_end, b.status AS booking_status, b.note AS booking_note, " +
+                    "b.customer_name AS booking_customer_name, b.customer_phone AS booking_customer_phone, " +
+                    "b.customer_email AS booking_customer_email, b.pet_name AS booking_pet_name, " +
+                    "b.pet_type AS booking_pet_type, b.service_names " +
+                    "FROM dbo.MedicalRecord mr " +
+                    "LEFT JOIN dbo.Pet p ON mr.pet_id = p.id " +
+                    "LEFT JOIN dbo.Doctor d ON mr.doctor_id = d.doctor_id " +
+                    "LEFT JOIN dbo.Customer c ON mr.customer_id = c.customer_id " +
+                    "LEFT JOIN dbo.Booking b ON mr.booking_id = b.booking_id " +
                     "WHERE mr.doctor_id = ? " +
                     "ORDER BY mr.examination_date DESC";
         
@@ -295,7 +333,19 @@ public class MedicalRecordDAO {
         record.setPetSpecies(rs.getString("pet_species"));
         record.setDoctorName(rs.getString("doctor_name"));
         record.setCustomerName(rs.getString("customer_name"));
-        
+
+        // Thông tin booking từ JOIN
+        record.setAppointmentStart(rs.getTimestamp("appointment_start"));
+        record.setAppointmentEnd(rs.getTimestamp("appointment_end"));
+        record.setBookingStatus(rs.getString("booking_status"));
+        record.setBookingNote(rs.getString("booking_note"));
+        record.setBookingCustomerName(rs.getString("booking_customer_name"));
+        record.setBookingCustomerPhone(rs.getString("booking_customer_phone"));
+        record.setBookingCustomerEmail(rs.getString("booking_customer_email"));
+        record.setBookingPetName(rs.getString("booking_pet_name"));
+        record.setBookingPetType(rs.getString("booking_pet_type"));
+        record.setServiceNames(rs.getString("service_names"));
+
         return record;
     }
 }

@@ -430,11 +430,53 @@ FOREIGN KEY (doctor_id) REFERENCES Doctor(doctor_id);
 
 INSERT INTO Doctor (name, email, phone, [password], specialization, schedule_note)
 VALUES
-(N'BS. Nguyễn Minh Anh', 'minhanh.nguyen@pets4care.com', '0901234561', NULL, N'Da liễu & chăm sóc da', NULL),
-(N'BS. Trần Văn Cường', 'vancuong.tran@pets4care.com', '0901234562', NULL, N'Phẫu thuật & chỉnh hình', NULL),
-(N'BS. Lê Thị Mai', 'thimai.le@pets4care.com', '0901234563', NULL, N'Tim mạch & hô hấp', NULL),
-(N'BS. Phạm Đức Minh', 'ducminh.pham@pets4care.com', '0901234564', NULL, N'Tiêu hóa & dinh dưỡng', NULL),
-(N'BS. Võ Thị Hương', 'thihuong.vo@pets4care.com', '0901234565', NULL, N'Sản khoa & sinh sản', NULL),
-(N'BS. Đặng Văn Tùng', 'vantung.dang@pets4care.com', '0901234566', NULL, N'Thần kinh & hành vi', NULL);
+(N'BS. Nguyễn Minh Anh', 'minhanh.nguyen@pets4care.com', '0901234561', 123456, N'Da liễu & chăm sóc da', NULL),
+(N'BS. Trần Văn Cường', 'vancuong.tran@pets4care.com', '0901234562', 123456, N'Phẫu thuật & chỉnh hình', NULL),
+(N'BS. Lê Thị Mai', 'thimai.le@pets4care.com', '0901234563', 123456, N'Tim mạch & hô hấp', NULL),
+(N'BS. Phạm Đức Minh', 'ducminh.pham@pets4care.com', '0901234564', 123456, N'Tiêu hóa & dinh dưỡng', NULL),
+(N'BS. Võ Thị Hương', 'thihuong.vo@pets4care.com', '0901234565', 123456, N'Sản khoa & sinh sản', NULL),
+(N'BS. Đặng Văn Tùng', 'vantung.dang@pets4care.com', '0901234566', 123456, N'Thần kinh & hành vi', NULL);
 
 
+ USE SHOP_PET_Database
+GO
+
+-- Remove scheduleNote from Doctor table
+-- Doctor will use WorkSchedule table instead
+
+DECLARE @ConstraintName NVARCHAR(128);
+
+-- Find and drop default constraint if exists
+SELECT @ConstraintName = dc.name
+FROM sys.default_constraints dc
+JOIN sys.columns c 
+    ON c.default_object_id = dc.object_id
+WHERE dc.parent_object_id = OBJECT_ID('dbo.Doctor')
+  AND c.name = 'scheduleNote';
+
+IF @ConstraintName IS NOT NULL
+BEGIN
+    DECLARE @sql NVARCHAR(300);
+    SET @sql = 'ALTER TABLE dbo.Doctor DROP CONSTRAINT ' + @ConstraintName;
+    EXEC(@sql);
+    PRINT N'✅ Dropped constraint: ' + @ConstraintName;
+END
+
+-- Drop the scheduleNote column
+IF EXISTS (
+    SELECT 1 FROM sys.columns 
+    WHERE object_id = OBJECT_ID('dbo.Doctor') 
+    AND name = 'scheduleNote'
+)
+BEGIN
+    ALTER TABLE dbo.Doctor DROP COLUMN scheduleNote;
+    PRINT N'✅ Dropped column scheduleNote from Doctor table';
+END
+ELSE
+BEGIN
+    PRINT N'⚠️ Column scheduleNote does not exist in Doctor table';
+END
+GO
+
+PRINT N'✅ Doctor table updated - now using WorkSchedule system'
+GO

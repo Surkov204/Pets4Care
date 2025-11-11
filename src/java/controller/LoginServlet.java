@@ -134,7 +134,7 @@ public class LoginServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/staff/dashboard.jsp");
                 break;
             case "doctor":
-                response.sendRedirect(request.getContextPath() + "/doctor/doctor-dashboard.jsp");
+                response.sendRedirect(request.getContextPath() + "/doctor/dashboard");
                 break;
             case "admin":
                 response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp");
@@ -185,7 +185,7 @@ public class LoginServlet extends HttpServlet {
         handleRememberMe(response, email, password, rememberMe);
 
         // Chuyển hướng đến trang doctor dashboard
-        response.sendRedirect(request.getContextPath() + "/doctor/doctor-dashboard.jsp");
+        response.sendRedirect(request.getContextPath() + "/doctor/dashboard");
     }
 
     private String determineStaffRedirectUrl(String position) {
@@ -198,7 +198,7 @@ public class LoginServlet extends HttpServlet {
                 return "staff/dashboard.jsp";
             case "doctor":
             case "bác sĩ thú y":
-                return "doctor/doctor-dashboard";
+                return "doctor/dashboard";
             default:
                 return "staff/bookings";
         }

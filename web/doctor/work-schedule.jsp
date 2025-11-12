@@ -1,166 +1,144 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ page import="dao.DoctorDAO" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ page import="model.Doctor" %>
 <%
-    // Kiểm tra đăng nhập
     Doctor doctor = (Doctor) session.getAttribute("doctor");
     if (doctor == null) {
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
     }
-    
-    // Lấy thông tin doctor đầy đủ
-    DoctorDAO doctorDAO = new DoctorDAO();
-    Doctor fullDoctorInfo = doctorDAO.findById(doctor.getDoctorId());
-    
-    request.setAttribute("fullDoctorInfo", fullDoctorInfo);
 %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>🐾 Work Schedule | Pet4Care</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📅 Lịch làm việc | Pet4Care</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/staff.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        .schedule-container {
-            background: white;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+        body {
+            background: #f8fafc;
+            font-family: 'Poppins', sans-serif;
+            color: #333;
         }
-        
-        .schedule-header {
+
+        .section-card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 2rem;
+            margin: 2rem auto;
+            width: 90%;
+            max-width: 1100px;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2f3e46;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: #00bfa6;
+        }
+
+        .week-nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 1.5rem;
         }
-        
-        .schedule-info {
-            background: #e3f2fd;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #2196F3;
-            margin-bottom: 30px;
-        }
-        
-        .schedule-info h3 {
-            margin: 0 0 10px 0;
-            color: #1565c0;
-        }
-        
-        .schedule-info p {
-            margin: 0;
-            color: #333;
-            font-size: 16px;
-        }
-        
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 1px;
-            background: #ddd;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
-        
-        .calendar-header {
-            background: #f8f9fa;
-            padding: 15px;
-            text-align: center;
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .calendar-day {
-            background: white;
-            padding: 15px;
-            min-height: 100px;
-            border: 1px solid #f0f0f0;
-        }
-        
-        .calendar-day.today {
-            background: #e3f2fd;
-            border-color: #2196F3;
-        }
-        
-        .calendar-day.has-appointments {
-            background: #e8f5e8;
-            border-color: #4CAF50;
-        }
-        
-        .day-number {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .appointment-count {
-            background: #4CAF50;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 12px;
-            display: inline-block;
-        }
-        
-        .time-slots {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-        
-        .time-slot {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #4CAF50;
-        }
-        
-        .time-slot h4 {
-            margin: 0 0 10px 0;
-            color: #333;
-        }
-        
-        .time-slot p {
-            margin: 0;
-            color: #666;
-        }
-        
-        .edit-schedule-btn {
-            background: #4CAF50;
-            color: white;
-            padding: 10px 20px;
+
+        .btn {
+            background: linear-gradient(90deg, #a7e1df, #fde1ca);
             border: none;
-            border-radius: 5px;
+            color: #2f3e46;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
+            transition: 0.2s;
         }
-        
-        .edit-schedule-btn:hover {
-            background: #45a049;
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
         }
-        
-        .no-schedule {
+
+        .btn-danger {
+            background: linear-gradient(90deg, #ffd3c4, #f2a29b);
+            color: #fff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
             text-align: center;
-            padding: 40px;
-            color: #666;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
         }
-        
-        .no-schedule i {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
+
+        th {
+            background: linear-gradient(90deg, #a6e3e9 0%, #f9e4d4 100%);
+            color: #2f3e46;
+            font-weight: 600;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
         }
-        
-        /* Dropdown Menu Styles */
+
+        td {
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+        }
+
+        .shift-label {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #374151;
+            width: 160px;
+        }
+
+        .registered-shift {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 8px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .empty-shift {
+            background: #f3f4f6;
+            color: #9ca3af;
+            padding: 8px;
+        }
+
+        .alert {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
         .avatar-dropdown {
             position: relative;
             display: inline-block;
@@ -179,11 +157,6 @@
         
         .avatar:hover {
             background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        .avatar i {
-            font-size: 12px;
-            transition: transform 0.3s;
         }
         
         .dropdown-menu {
@@ -216,10 +189,106 @@
         .dropdown-menu a:hover {
             background-color: #f8f9fa;
         }
-        
-        .dropdown-menu a i {
-            width: 16px;
-            text-align: center;
+
+        .checkbox-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 16px;
+            padding: 2rem;
+            width: 460px;
+            max-width: 90%;
+            position: relative;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 20px;
+            cursor: pointer;
+            color: #555;
+        }
+
+        .close-btn:hover {
+            color: #000;
+        }
+
+        .modal form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .modal label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .modal select,
+        .modal textarea {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            padding: 10px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(90deg, #a6e3e9, #f9e4d4);
+            border: none;
+            color: #2f3e46;
+            border-radius: 12px;
+            padding: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+        }
+
+        textarea[name="cancelReason"] {
+            margin-top: 12px;
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            padding: 10px;
         }
     </style>
 </head>
@@ -230,14 +299,14 @@
         <div class="avatar-dropdown">
             <div class="avatar" onclick="toggleDropdown()">
                 <img src="${pageContext.request.contextPath}/images/doctor-avatar.png" alt="Doctor">
-                <span>${fullDoctorInfo.name}</span>
+                <span>${sessionScope.doctor.name}</span>
                 <i class="fas fa-chevron-down"></i>
             </div>
             <div class="dropdown-menu" id="dropdownMenu">
                 <a href="${pageContext.request.contextPath}/home.jsp">
                     <i class="fas fa-home"></i> Trang chủ
                 </a>
-                <a href="doctor-profile.jsp">
+                <a href="${pageContext.request.contextPath}/doctor/profile">
                     <i class="fas fa-user-edit"></i> Chỉnh sửa thông tin
                 </a>
                 <a href="${pageContext.request.contextPath}/logout">
@@ -245,179 +314,306 @@
                 </a>
             </div>
         </div>
-        </div>
-    </header>
+    </div>
+</header>
 
 <div class="staff-wrapper">
-    <!-- Sidebar -->
     <aside class="staff-sidebar">
         <ul>
-            <li><a href="doctor-dashboard.jsp"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="medical-record.jsp"><i class="fas fa-notes-medical"></i> Medical Records</a></li>
-            <li><a href="work-schedule.jsp" class="active"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
-            <li><a href="appointments.jsp"><i class="fas fa-stethoscope"></i> Appointments</a></li>
-            <li><a href="doctor-profile.jsp"><i class="fas fa-user-md"></i> Doctor Profile</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/medical-records"><i class="fas fa-notes-medical"></i> Medical Records</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/work-schedule" class="active"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/appointments"><i class="fas fa-stethoscope"></i> Appointments</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/profile"><i class="fas fa-user-md"></i> Doctor Profile</a></li>
         </ul>
     </aside>
 
-    <!-- Main Content -->
     <main class="staff-content">
-        <section class="welcome-card">
-            <h2><i class="fas fa-calendar-alt"></i> Lịch làm việc</h2>
-            <p>Quản lý lịch làm việc và thời gian khám bệnh của bạn</p>
-    </section>
+        <c:if test="${not empty sessionScope.successMessage}">
+            <div class="alert alert-success">${sessionScope.successMessage}</div>
+            <c:remove var="successMessage" scope="session"/>
+        </c:if>
+        
+        <c:if test="${not empty sessionScope.errorMessage}">
+            <div class="alert alert-error">${sessionScope.errorMessage}</div>
+            <c:remove var="errorMessage" scope="session"/>
+        </c:if>
 
-        <div class="schedule-container">
-            <div class="schedule-header">
-                <h3><i class="fas fa-calendar"></i> Lịch làm việc hiện tại</h3>
-                <button class="edit-schedule-btn" onclick="editSchedule()">
-                    <i class="fas fa-edit"></i> Chỉnh sửa lịch
-                </button>
+        <section class="section-card">
+            <div class="section-title">
+                <i class="fas fa-calendar-week"></i> Lịch làm việc hiện tại
             </div>
 
-            <c:choose>
-                <c:when test="${not empty fullDoctorInfo.scheduleNote}">
-                    <div class="schedule-info">
-                        <h3><i class="fas fa-info-circle"></i> Thông tin lịch làm việc</h3>
-                        <p>${fullDoctorInfo.scheduleNote}</p>
-                    </div>
-                </c:when>
-                <c:otherwise>
-                    <div class="no-schedule">
-                        <i class="fas fa-calendar-times"></i>
-                        <h3>Chưa có lịch làm việc</h3>
-                        <p>Bạn chưa thiết lập lịch làm việc. Vui lòng liên hệ quản trị viên để được hỗ trợ.</p>
-                    </div>
-                </c:otherwise>
-            </c:choose>
-
-            <!-- Calendar View -->
-            <div class="schedule-info">
-                <h3><i class="fas fa-calendar-week"></i> Lịch làm việc tuần này</h3>
-                <div class="calendar-grid">
-                    <div class="calendar-header">Thứ 2</div>
-                    <div class="calendar-header">Thứ 3</div>
-                    <div class="calendar-header">Thứ 4</div>
-                    <div class="calendar-header">Thứ 5</div>
-                    <div class="calendar-header">Thứ 6</div>
-                    <div class="calendar-header">Thứ 7</div>
-                    <div class="calendar-header">Chủ nhật</div>
-                    
-                    <div class="calendar-day">
-                        <div class="day-number">13</div>
-                        <span class="appointment-count">3 ca</span>
-                    </div>
-                    <div class="calendar-day today">
-                        <div class="day-number">14</div>
-                        <span class="appointment-count">5 ca</span>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">15</div>
-                        <span class="appointment-count">2 ca</span>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">16</div>
-                        <span class="appointment-count">4 ca</span>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">17</div>
-                        <span class="appointment-count">3 ca</span>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">18</div>
-                        <span class="appointment-count">1 ca</span>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">19</div>
-                        <span class="appointment-count">0 ca</span>
-                    </div>
-                </div>
+            <div class="week-nav">
+                <form method="get" style="display: inline;">
+                    <input type="hidden" name="weekOffset" value="${weekOffset - 1}">
+                    <button type="submit" class="btn"><i class="fas fa-chevron-left"></i> Tuần trước</button>
+                </form>
+                
+                <h3><fmt:formatDate value="${startOfWeek}" pattern="dd/MM/yyyy"/> – <fmt:formatDate value="${endOfWeek}" pattern="dd/MM/yyyy"/></h3>
+                
+                <form method="get" style="display: inline;">
+                    <input type="hidden" name="weekOffset" value="${weekOffset + 1}">
+                    <button type="submit" class="btn">Tuần sau <i class="fas fa-chevron-right"></i></button>
+                </form>
             </div>
 
-            <!-- Time Slots -->
-            <div class="time-slots">
-                <div class="time-slot">
-                    <h4><i class="fas fa-sun"></i> Ca sáng</h4>
-                    <p><strong>Thời gian:</strong> 08:00 - 12:00</p>
-                    <p><strong>Ngày làm việc:</strong> Thứ 2, 4, 6</p>
-                    <p><strong>Trạng thái:</strong> <span style="color: #4CAF50;">Đang hoạt động</span></p>
+            <form method="post" action="${pageContext.request.contextPath}/doctor/work-schedule">
+                <input type="hidden" name="action" value="cancelMultiple">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ca / Ngày</th>
+                            <c:forEach var="day" items="${weekDays}">
+                                <th>${day.dayName}<br><small>${day.date}</small></th>
+                            </c:forEach>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:forEach var="shift" items="${shifts}">
+                            <tr>
+                                <td class="shift-label">${shift.shiftName}<br><small>${fn:substring(shift.startTime,0,5)} – ${fn:substring(shift.endTime,0,5)}</small></td>
+                                <c:forEach var="day" items="${weekDays}">
+                                    <td>
+                                        <c:set var="hasShift" value="false"/>
+                                        <c:forEach var="registeredShiftId" items="${day.registeredShifts}">
+                                            <c:if test="${registeredShiftId == shift.shiftID}">
+                                                <c:set var="hasShift" value="true"/>
+                                            </c:if>
+                                        </c:forEach>
+                                        
+                                        <c:choose>
+                                            <c:when test="${hasShift}">
+                                                <div class="registered-shift">
+                                                    <i class="fas fa-check-circle"></i> Đã đăng ký
+                                                </div>
+                                                <div class="checkbox-group">
+                                                    <input type="checkbox" name="cancelItems" value="${day.date}|${shift.shiftID}">
+                                                    <label>Hủy</label>
+                                                </div>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <div class="empty-shift">—</div>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                </c:forEach>
+                            </tr>
+                        </c:forEach>
+                    </tbody>
+                </table>
+                <textarea name="cancelReason" rows="2" placeholder="Lý do hủy ca (tùy chọn)"></textarea>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> Gửi yêu cầu hủy ca</button>
                 </div>
-                
-                <div class="time-slot">
-                    <h4><i class="fas fa-cloud-sun"></i> Ca chiều</h4>
-                    <p><strong>Thời gian:</strong> 13:00 - 17:00</p>
-                    <p><strong>Ngày làm việc:</strong> Thứ 3, 5, 7</p>
-                    <p><strong>Trạng thái:</strong> <span style="color: #4CAF50;">Đang hoạt động</span></p>
-                </div>
-                
-                <div class="time-slot">
-                    <h4><i class="fas fa-moon"></i> Ca tối</h4>
-                    <p><strong>Thời gian:</strong> 18:00 - 21:00</p>
-                    <p><strong>Ngày làm việc:</strong> Thứ 2, 4, 6</p>
-                    <p><strong>Trạng thái:</strong> <span style="color: #f57c00;">Tùy chọn</span></p>
-                </div>
-                
-                <div class="time-slot">
-                    <h4><i class="fas fa-calendar-weekend"></i> Cuối tuần</h4>
-                    <p><strong>Thời gian:</strong> 09:00 - 15:00</p>
-                    <p><strong>Ngày làm việc:</strong> Thứ 7</p>
-                    <p><strong>Trạng thái:</strong> <span style="color: #4CAF50;">Đang hoạt động</span></p>
-                </div>
-            </div>
+            </form>
 
-            <!-- Quick Actions -->
-            <div class="schedule-info">
-                <h3><i class="fas fa-tools"></i> Thao tác nhanh</h3>
-                <div style="display: flex; gap: 15px; margin-top: 15px;">
-                    <button class="edit-schedule-btn" onclick="requestTimeOff()">
-                        <i class="fas fa-calendar-times"></i> Xin nghỉ phép
-                    </button>
-                    <button class="edit-schedule-btn" onclick="viewAppointments()">
-                        <i class="fas fa-eye"></i> Xem lịch hẹn
-                    </button>
-                    <button class="edit-schedule-btn" onclick="exportSchedule()">
-                        <i class="fas fa-download"></i> Xuất lịch
-                    </button>
-                </div>
+            <div class="btn-group">
+                <c:choose>
+                    <c:when test="${canRegister}">
+                        <button type="button" class="btn" id="openRegisterModal"><i class="fas fa-plus"></i> Đăng ký ca tuần sau</button>
+                    </c:when>
+                    <c:otherwise>
+                        <button type="button" class="btn" disabled style="opacity:0.6;cursor:not-allowed;"><i class="fas fa-lock"></i> Đăng ký ca (đang khóa)</button>
+                    </c:otherwise>
+                </c:choose>
+                <c:choose>
+                    <c:when test="${not empty otherDoctors}">
+                        <button type="button" class="btn" id="openSwapModal"><i class="fas fa-repeat"></i> Yêu cầu đổi ca</button>
+                    </c:when>
+                    <c:otherwise>
+                        <button type="button" class="btn" disabled style="opacity:0.6;cursor:not-allowed;"><i class="fas fa-user-slash"></i> Không có bác sĩ để đổi</button>
+                    </c:otherwise>
+                </c:choose>
+                <c:choose>
+                    <c:when test="${not empty otherDoctors}">
+                        <button type="button" class="btn" id="openPassModal"><i class="fas fa-handshake"></i> Nhờ bác sĩ khác làm</button>
+                    </c:when>
+                    <c:otherwise>
+                        <button type="button" class="btn" disabled style="opacity:0.6;cursor:not-allowed;"><i class="fas fa-user-slash"></i> Không có bác sĩ để nhờ</button>
+                    </c:otherwise>
+                </c:choose>
+            </div>
+        </section>
+
+        <div id="registerModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" data-close="registerModal">&times;</span>
+                <h3>Yêu cầu đăng ký ca</h3>
+                <form method="post" action="${pageContext.request.contextPath}/doctor/work-schedule">
+                    <input type="hidden" name="action" value="register">
+                    <label>Ngày làm (tuần sau)</label>
+                    <select name="day" required>
+                        <c:forEach var="day" items="${nextWeekDays}">
+                            <option value="${day.date}">${day.dayName} - ${day.date}</option>
+                        </c:forEach>
+                    </select>
+                    <label>Ca làm</label>
+                    <select name="shift" required>
+                        <option value="morning">Ca sáng (08:00 – 12:00)</option>
+                        <option value="afternoon">Ca chiều (13:00 – 17:00)</option>
+                        <option value="evening">Ca tối (18:00 – 22:00)</option>
+                    </select>
+                    <label>Lý do (tùy chọn)</label>
+                    <textarea name="reason" rows="2" placeholder="Ví dụ: muốn hỗ trợ thêm ca..."></textarea>
+                    <button type="submit" class="submit-btn">Gửi yêu cầu</button>
+                </form>
             </div>
         </div>
+
+        <div id="swapModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" data-close="swapModal">&times;</span>
+                <h3>Yêu cầu đổi ca</h3>
+                <form method="post" action="${pageContext.request.contextPath}/doctor/work-schedule">
+                    <input type="hidden" name="action" value="swap">
+                    <label>Ca của bạn</label>
+                    <select name="swapFromDate" required>
+                        <c:forEach var="day" items="${weekDays}">
+                            <option value="${day.date}">${day.dayName} - ${day.date}</option>
+                        </c:forEach>
+                    </select>
+                    <select name="swapFromShiftId" required>
+                        <option value="1">Ca sáng (08:00 – 12:00)</option>
+                        <option value="2">Ca chiều (13:00 – 17:00)</option>
+                        <option value="3">Ca tối (18:00 – 22:00)</option>
+                    </select>
+                    <label>Ca muốn đổi</label>
+                    <select name="swapToDate" required>
+                        <c:forEach var="day" items="${weekDays}">
+                            <option value="${day.date}">${day.dayName} - ${day.date}</option>
+                        </c:forEach>
+                    </select>
+                    <select name="swapToShiftId" required>
+                        <option value="1">Ca sáng (08:00 – 12:00)</option>
+                        <option value="2">Ca chiều (13:00 – 17:00)</option>
+                        <option value="3">Ca tối (18:00 – 22:00)</option>
+                    </select>
+                    <label>Bác sĩ muốn đổi cùng</label>
+                    <select name="swapToDoctorId" required>
+                        <c:forEach var="doc" items="${otherDoctors}">
+                            <option value="${doc.doctorId}">${doc.name}</option>
+                        </c:forEach>
+                    </select>
+                    <label>Lý do (tùy chọn)</label>
+                    <textarea name="swapReason" rows="2" placeholder="Ví dụ: trùng lịch công tác..."></textarea>
+                    <button type="submit" class="submit-btn">Gửi yêu cầu</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="passModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" data-close="passModal">&times;</span>
+                <h3>Nhờ bác sĩ khác làm thay</h3>
+                <form method="post" action="${pageContext.request.contextPath}/doctor/work-schedule">
+                    <input type="hidden" name="action" value="pass">
+                    <label>Ngày làm</label>
+                    <select name="passDate" required>
+                        <c:forEach var="day" items="${weekDays}">
+                            <option value="${day.date}">${day.dayName} - ${day.date}</option>
+                        </c:forEach>
+                    </select>
+                    <label>Ca làm</label>
+                    <select name="passShiftId" required>
+                        <option value="1">Ca sáng (08:00 – 12:00)</option>
+                        <option value="2">Ca chiều (13:00 – 17:00)</option>
+                        <option value="3">Ca tối (18:00 – 22:00)</option>
+                    </select>
+                    <label>Bác sĩ nhận ca</label>
+                    <select name="passToDoctorId" required>
+                        <c:forEach var="doc" items="${otherDoctors}">
+                            <option value="${doc.doctorId}">${doc.name}</option>
+                        </c:forEach>
+                    </select>
+                    <label>Lý do (tùy chọn)</label>
+                    <textarea name="passReason" rows="2" placeholder="Ví dụ: có lịch phẫu thuật khác..."></textarea>
+                    <button type="submit" class="submit-btn">Gửi yêu cầu</button>
+                </form>
+            </div>
+        </div>
+
+
+        <c:if test="${not empty upcomingSchedules}">
+            <section class="section-card">
+                <div class="section-title">
+                    <i class="fas fa-clock"></i> Ca làm sắp tới (7 ngày)
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Ca làm</th>
+                            <th>Giờ</th>
+                            <th>Địa điểm</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:forEach var="schedule" items="${upcomingSchedules}">
+                            <tr>
+                                <td><fmt:formatDate value="${schedule.workDate}" pattern="dd/MM/yyyy (EEEE)" /></td>
+                                <td><strong>${schedule.shiftName}</strong></td>
+                                <td><fmt:formatDate value="${schedule.startTime}" pattern="HH:mm"/> – <fmt:formatDate value="${schedule.endTime}" pattern="HH:mm"/></td>
+                                <td>${schedule.location}</td>
+                            </tr>
+                        </c:forEach>
+                    </tbody>
+                </table>
+            </section>
+        </c:if>
     </main>
 </div>
 
 <footer class="staff-footer">
     <p>© 2025 Pet4Care — Dedicated to Pet Health & Happiness 🐶🐱</p>
-    </footer>
+</footer>
 
 <script>
-function editSchedule() {
-    alert('Chức năng chỉnh sửa lịch làm việc sẽ được phát triển trong phiên bản tiếp theo!');
-}
-
-function requestTimeOff() {
-    alert('Chức năng xin nghỉ phép sẽ được phát triển trong phiên bản tiếp theo!');
-}
-
-function viewAppointments() {
-    window.location.href = 'appointments.jsp';
-}
-
-function exportSchedule() {
-    alert('Chức năng xuất lịch sẽ được phát triển trong phiên bản tiếp theo!');
-}
-
 function toggleDropdown() {
     const dropdown = document.getElementById('dropdownMenu');
     dropdown.classList.toggle('show');
 }
 
-// Close dropdown when clicking outside
 document.addEventListener('click', function(event) {
     const dropdown = document.getElementById('dropdownMenu');
     const avatar = document.querySelector('.avatar');
-    
     if (!avatar.contains(event.target)) {
         dropdown.classList.remove('show');
     }
+});
+
+const modalMap = {
+    registerModal: document.getElementById('registerModal'),
+    swapModal: document.getElementById('swapModal'),
+    passModal: document.getElementById('passModal')
+};
+
+[{ id: 'openRegisterModal', modal: 'registerModal' },
+ { id: 'openSwapModal', modal: 'swapModal' },
+ { id: 'openPassModal', modal: 'passModal' }
+].forEach(({ id, modal }) => {
+    const trigger = document.getElementById(id);
+    const target = modalMap[modal];
+    if (trigger && target) {
+        trigger.addEventListener('click', () => target.classList.add('show'));
+    }
+});
+
+document.querySelectorAll('.close-btn').forEach(btn => {
+    const target = modalMap[btn.getAttribute('data-close')];
+    btn.addEventListener('click', () => {
+        if (target) {
+            target.classList.remove('show');
+        }
+    });
+});
+
+window.addEventListener('click', event => {
+    Object.values(modalMap).forEach(modal => {
+        if (modal && event.target === modal) {
+            modal.classList.remove('show');
+        }
+    });
 });
 </script>
 

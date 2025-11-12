@@ -6,6 +6,7 @@
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/order/confirm-failed.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/login.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/cart/cart.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/DoctorAppointmentDetailController.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/service/OrderService.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ChatbotController.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ToyDetailServlet.java</file>
@@ -22,7 +23,7 @@
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/dao/IFeedbackDAO.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/service/IOrderService.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/Booking.java</file>
-            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/doctor/medical-record-detail.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/doctor/appointment-detail.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/order/order-success.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/doctor/work-schedule.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/DoctorAttendanceController.java</file>
@@ -66,6 +67,7 @@
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/order/order-detail.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/utils/PayOSUtils.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/DoctorMedicalRecordController.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/doctor/medical-record-form.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ChatHistoryServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/refund.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/Staff.java</file>
@@ -84,6 +86,7 @@
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/Feedback.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/spa-service.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/PayOSController.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/DoctorAppointmentsController.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/CancelOrderServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/user/pet-info.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/order/invoice-cancelled.jsp</file>
@@ -93,6 +96,7 @@
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/CartServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/staff/dashboard.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/spa-cart.jsp</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/CustomerBookingServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/OrderDetail.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/doctor/medical-record.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/model/Admin.java</file>

@@ -50,16 +50,49 @@ public class ShiftRequestDAO {
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, r.getEmployeeID());
-            ps.setInt(2, r.getToStaffID());
+
+            Integer toStaffId = (r.getToStaffID() <= 0) ? null : r.getToStaffID();
+            if (toStaffId == null) {
+                ps.setNull(2, Types.INTEGER);
+            } else {
+                ps.setInt(2, toStaffId);
+            }
+
             ps.setString(3, r.getType());
-            ps.setDate(4, r.getFromDate()); // target date = fromDate
-            ps.setDate(5, r.getFromDate());
-            ps.setDate(6, r.getToDate());
-            ps.setInt(7, r.getFromShiftID());
-            ps.setInt(8, r.getToShiftID());
+
+            Date fromDate = r.getFromDate();
+            ps.setDate(4, fromDate); // target date = fromDate
+            ps.setDate(5, fromDate);
+
+            Date toDate = r.getToDate();
+            if (toDate != null) {
+                ps.setDate(6, toDate);
+            } else {
+                ps.setNull(6, Types.DATE);
+            }
+
+            Integer fromShiftId = r.getFromShiftID() > 0 ? r.getFromShiftID() : null;
+            if (fromShiftId == null) {
+                ps.setNull(7, Types.INTEGER);
+            } else {
+                ps.setInt(7, fromShiftId);
+            }
+
+            Integer toShiftId = r.getToShiftID() > 0 ? r.getToShiftID() : null;
+            if (toShiftId == null) {
+                ps.setNull(8, Types.INTEGER);
+            } else {
+                ps.setInt(8, toShiftId);
+            }
+
             ps.setString(9, r.getReason());
             ps.setString(10, r.getStatus());
-            ps.setObject(11, r.getApprovedBy());
+
+            if (r.getApprovedBy() == null) {
+                ps.setNull(11, Types.INTEGER);
+            } else {
+                ps.setObject(11, r.getApprovedBy());
+            }
 
             ps.executeUpdate();
             System.out.println("[ShiftRequestDAO] ✅ Thêm yêu cầu thành công.");
@@ -418,19 +451,44 @@ public class ShiftRequestDAO {
     public void addPassRequest(ShiftRequest r) {
         String sql = """
         INSERT INTO ShiftRequests
-        (EmployeeID, ToStaffID, Type, TargetDate, FromDate, FromShiftID, Reason, Status, CreatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, GETDATE())
+        (EmployeeID, ToStaffID, Type, TargetDate, FromDate, ToDate, FromShiftID, ToShiftID, Reason, Status, ApprovedBy, CreatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())
     """;
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, r.getEmployeeID());
-            ps.setInt(2, r.getToStaffID());
-            ps.setString(3, r.getType());         // 'Leave' hoặc 'Extra'
-            ps.setDate(4, r.getFromDate());       // ✅ TargetDate = FromDate (chỉ 1 ngày)
-            ps.setDate(5, r.getFromDate());       // FromDate
-            ps.setInt(6, r.getFromShiftID());
-            ps.setString(7, r.getReason());
-            ps.setString(8, r.getStatus());
+
+            Integer toStaffId = (r.getToStaffID() <= 0) ? null : r.getToStaffID();
+            if (toStaffId == null) {
+                ps.setNull(2, Types.INTEGER);
+            } else {
+                ps.setInt(2, toStaffId);
+            }
+
+            ps.setString(3, r.getType());         // 'DoctorRegister', 'DoctorCancel', 'DoctorPass', etc.
+
+            Date fromDate = r.getFromDate();
+            ps.setDate(4, fromDate);       // ✅ TargetDate = FromDate
+            ps.setDate(5, fromDate);       // FromDate
+
+            // For pass requests, ToDate is null
+            ps.setNull(6, Types.DATE);
+
+            Integer fromShiftId = r.getFromShiftID() > 0 ? r.getFromShiftID() : null;
+            if (fromShiftId == null) {
+                ps.setNull(7, Types.INTEGER);
+            } else {
+                ps.setInt(7, fromShiftId);
+            }
+
+            // For pass requests, ToShiftID is null
+            ps.setNull(8, Types.INTEGER);
+
+            ps.setString(9, r.getReason());
+            ps.setString(10, r.getStatus());
+
+            // ApprovedBy is null initially
+            ps.setNull(11, Types.INTEGER);
 
             ps.executeUpdate();
             System.out.println("[ShiftRequestDAO] ✅ Thêm yêu cầu " + r.getType() + " thành công.");

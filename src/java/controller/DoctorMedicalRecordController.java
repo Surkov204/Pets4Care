@@ -15,10 +15,12 @@ import model.Booking;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 @WebServlet("/doctor/medical-records")
 public class DoctorMedicalRecordController extends HttpServlet {
@@ -52,9 +54,63 @@ public class DoctorMedicalRecordController extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/doctor/medical-records");
                 }
                 return;
+            } else if ("create".equals(action)) {
+                String bookingIdStr = request.getParameter("bookingId");
+                if (bookingIdStr != null && !bookingIdStr.isEmpty()) {
+                    int bookingId = Integer.parseInt(bookingIdStr);
+                    Booking booking = bookingDAO.getBookingById(bookingId);
+
+                    if (booking == null || booking.getDoctorId() != doctorId) {
+                        response.sendRedirect(request.getContextPath() + "/doctor/medical-records?error=unauthorized");
+                        return;
+                    }
+
+                    // Check if medical record already exists
+                    if (medicalRecordDAO.getByBookingId(bookingId) != null) {
+                        response.sendRedirect(request.getContextPath() + "/doctor/medical-records?error=exists");
+                        return;
+                    }
+
+                    request.setAttribute("booking", booking);
+                    request.setAttribute("mode", "create");
+                    request.getRequestDispatcher("/doctor/medical-record-form.jsp").forward(request, response);
+                } else {
+                    response.sendRedirect(request.getContextPath() + "/doctor/medical-records?error=missing_booking");
+                }
+                return;
+            } else if ("edit".equals(action)) {
+                int recordId = Integer.parseInt(request.getParameter("id"));
+                MedicalRecord record = getMedicalRecordById(recordId);
+
+                if (record == null || record.getDoctorId() != doctorId) {
+                    response.sendRedirect(request.getContextPath() + "/doctor/medical-records?error=unauthorized");
+                    return;
+                }
+
+                // Get the booking information for the form
+                Booking booking = bookingDAO.getBookingById(record.getBookingId());
+                if (booking == null) {
+                    response.sendRedirect(request.getContextPath() + "/doctor/medical-records?error=booking_not_found");
+                    return;
+                }
+
+                request.setAttribute("record", record);
+                request.setAttribute("booking", booking);
+                request.setAttribute("mode", "edit");
+                request.getRequestDispatcher("/doctor/medical-record-form.jsp").forward(request, response);
+                return;
             }
             
             List<MedicalRecord> medicalRecords = medicalRecordDAO.getByDoctorId(doctorId);
+
+            // Create a set of booking IDs that already have medical records for quick lookup
+            java.util.Set<Integer> bookingsWithRecords = new java.util.HashSet<>();
+            for (MedicalRecord record : medicalRecords) {
+                // Only include records that are linked to bookings (bookingId > 0)
+                if (record.getBookingId() > 0) {
+                    bookingsWithRecords.add(record.getBookingId());
+                }
+            }
 
             // Get all appointments for this doctor (both pending and completed)
             List<Booking> allAppointments = bookingDAO.getBookingsByDoctorAndDateRange(
@@ -69,12 +125,28 @@ public class DoctorMedicalRecordController extends HttpServlet {
             List<Booking> upcomingAppointments = new ArrayList<>();
 
             for (Booking appointment : allAppointments) {
-                if ("Hoàn thành".equals(appointment.getStatus()) || "completed".equals(appointment.getStatus())) {
+                // First check if this booking already has a medical record
+                if (bookingsWithRecords.contains(appointment.getBookingId())) {
+                    // Skip bookings that already have medical records - they appear in the medical records table
+                    continue;
+                }
+
+                // For bookings without medical records, categorize by status
+                // Remove diacritics to avoid encoding issues
+                String status = appointment.getStatus();
+                if (status != null) {
+                    status = removeDiacritics(status).toLowerCase();
+                }
+
+                if (status != null && (status.contains("hoan thanh") || status.contains("completed"))) {
                     completedAppointments.add(appointment);
-                } else if ("pending".equals(appointment.getStatus()) || "Chờ xác nhận".equals(appointment.getStatus())) {
+                } else if (status != null && (status.contains("cho xac nhan") || status.contains("pending"))) {
                     pendingAppointments.add(appointment);
-                } else if ("confirmed".equals(appointment.getStatus()) || "Đã xác nhận".equals(appointment.getStatus())) {
+                } else if (status != null && (status.contains("da xac nhan") || status.contains("confirmed"))) {
                     upcomingAppointments.add(appointment);
+                } else {
+                    // If status doesn't match any known pattern, assume it needs medical record creation
+                    completedAppointments.add(appointment);
                 }
             }
             
@@ -82,6 +154,10 @@ public class DoctorMedicalRecordController extends HttpServlet {
             request.setAttribute("completedAppointments", completedAppointments);
             request.setAttribute("pendingAppointments", pendingAppointments);
             request.setAttribute("upcomingAppointments", upcomingAppointments);
+
+            // Get all pets and customers for manual medical record creation
+            // This would require additional DAOs - for now, we'll use a simple approach
+            request.setAttribute("canCreateManual", true);
             
             request.getRequestDispatcher("/doctor/medical-record.jsp").forward(request, response);
             
@@ -128,17 +204,39 @@ public class DoctorMedicalRecordController extends HttpServlet {
     private void createMedicalRecord(HttpServletRequest request, Doctor doctor) throws Exception {
         MedicalRecord record = new MedicalRecord();
 
-        int bookingId = Integer.parseInt(request.getParameter("bookingId"));
-        Booking booking = bookingDAO.getBookingById(bookingId);
+        String bookingIdStr = request.getParameter("bookingId");
+        if (bookingIdStr != null && !bookingIdStr.isEmpty()) {
+            // Create from existing booking
+            int bookingId = Integer.parseInt(bookingIdStr);
+            Booking booking = bookingDAO.getBookingById(bookingId);
 
-        if (booking == null || booking.getDoctorId() != doctor.getDoctorId()) {
-            throw new IllegalAccessException("Unauthorized access to booking");
+            if (booking == null || booking.getDoctorId() != doctor.getDoctorId()) {
+                throw new IllegalAccessException("Unauthorized access to booking");
+            }
+
+            record.setBookingId(bookingId);
+            record.setPetId(booking.getPetId());
+            record.setCustomerId(booking.getCustomerId());
+
+            // Update booking status to completed if not already
+            if (!"Hoàn thành".equals(booking.getStatus()) && !"completed".equals(booking.getStatus())) {
+                bookingDAO.updateBookingStatus(bookingId, "Hoàn thành");
+            }
+        } else {
+            // Manual creation - require petId and customerId
+            String petIdStr = request.getParameter("petId");
+            String customerIdStr = request.getParameter("customerId");
+
+            if (petIdStr == null || petIdStr.isEmpty() || customerIdStr == null || customerIdStr.isEmpty()) {
+                throw new IllegalArgumentException("Pet ID and Customer ID are required for manual medical record creation");
+            }
+
+            record.setPetId(Integer.parseInt(petIdStr));
+            record.setCustomerId(Integer.parseInt(customerIdStr));
+            // bookingId remains null for manual records
         }
 
-        record.setBookingId(bookingId);
-        record.setPetId(booking.getPetId());
         record.setDoctorId(doctor.getDoctorId());
-        record.setCustomerId(booking.getCustomerId());
         record.setExaminationDate(new Timestamp(System.currentTimeMillis()));
 
         setMedicalRecordFields(request, record);
@@ -146,12 +244,6 @@ public class DoctorMedicalRecordController extends HttpServlet {
         if (!medicalRecordDAO.createMedicalRecord(record)) {
             throw new Exception("Failed to create medical record");
         }
-
-        // Update booking status to completed
-        bookingDAO.updateBookingStatus(bookingId, "Hoàn thành");
-
-        // Also save to medical history - this is already handled by the MedicalRecord table
-        // which stores all completed appointments with medical records
     }
     
     private void updateMedicalRecord(HttpServletRequest request, Doctor doctor) throws Exception {
@@ -201,6 +293,16 @@ public class DoctorMedicalRecordController extends HttpServlet {
         record.setFollowUpNotes(request.getParameter("followUpNotes"));
     }
     
+    /**
+     * Remove diacritics from Vietnamese text to avoid encoding issues
+     */
+    private String removeDiacritics(String text) {
+        if (text == null) return null;
+        String normalized = Normalizer.normalize(text, Normalizer.Form.NFD);
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        return pattern.matcher(normalized).replaceAll("");
+    }
+
     private MedicalRecord getMedicalRecordById(int recordId) {
         return medicalRecordDAO.getByRecordId(recordId);
     }

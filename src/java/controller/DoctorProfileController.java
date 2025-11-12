@@ -2,7 +2,6 @@ package controller;
 
 import dao.DoctorDAO;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,7 +10,6 @@ import java.io.IOException;
 import java.util.logging.Logger;
 import model.Doctor;
 
-@WebServlet("/doctor/profile")
 public class DoctorProfileController extends HttpServlet {
     private static final Logger logger = Logger.getLogger(DoctorProfileController.class.getName());
     private final DoctorDAO doctorDAO = new DoctorDAO();

@@ -2,7 +2,8 @@
 <web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
-         version="6.0">
+         version="6.0"
+         metadata-complete="false">
 
     <!-- Order -->
     <servlet>
@@ -156,7 +157,15 @@
         <url-pattern>/home</url-pattern>
     </servlet-mapping>
 
-
+    <!-- Doctor Profile -->
+    <servlet>
+        <servlet-name>DoctorProfileController</servlet-name>
+        <servlet-class>controller.DoctorProfileController</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DoctorProfileController</servlet-name>
+        <url-pattern>/doctor/profile</url-pattern>
+    </servlet-mapping>
 
     <welcome-file-list>
         <!-- Khuyên dùng index.jsp rồi forward sang /home để chắc chắn -->

@@ -38,6 +38,10 @@
             <file>file:/D:/Pet4Cares/Pets4Care/src/java/controller/AdminStaffServlet.java</file>
             <file>file:/D:/Pet4Cares/Pets4Care/web/admin/view-staff.jsp</file>
             <file>file:/D:/Pet4Cares/Pets4Care/web/admin/manage-staff.jsp</file>
+            <file>file:/D:/Pet4Cares/Pets4Care/src/java/controller/VerifyNetworkServlet.java</file>
+            <file>file:/D:/Pet4Cares/Pets4Care/src/java/controller/ChatbotController.java</file>
+            <file>file:/D:/Pet4Cares/Pets4Care/src/java/service/ChatbotService.java</file>
+            <file>file:/D:/Pet4Cares/Pets4Care/src/java/controller/UpdatePetServlet.java</file>
         </group>
     </open-files>
 </project-private>

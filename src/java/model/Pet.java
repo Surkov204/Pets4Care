@@ -163,6 +163,34 @@ public class Pet {
         }
     }
     
+    public String getSpeciesDisplayName() {
+        if (species == null) return "Không xác định";
+        switch (species.toLowerCase()) {
+            case "dog":
+            case "chó":
+                return "Chó";
+            case "cat":
+            case "mèo":
+                return "Mèo";
+            case "bird":
+            case "chim":
+                return "Chim";
+            case "rabbit":
+            case "thỏ":
+                return "Thỏ";
+            case "hamster":
+                return "Hamster";
+            case "fish":
+            case "cá":
+                return "Cá";
+            case "other":
+            case "khác":
+                return "Khác";
+            default:
+                return species; // Nếu không khớp, trả về giá trị gốc
+        }
+    }
+    
     public String getAgeText() {
         if (age == 1) {
             return "1 tuổi";

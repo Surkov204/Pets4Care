@@ -216,9 +216,9 @@
                             </div>
                             <div class="card-body">
                                 <c:choose>
-                                    <c:when test="${booking.status == 'pending'}">
+                                    <c:when test="${booking.status == 'pending' || booking.status == 'Chưa thanh toán' || booking.status == 'Chờ xác nhận'}">
                                         <button type="button" class="btn btn-success w-100 mb-2"
-                                                onclick="updateStatus('confirmed')">
+                                                onclick="updateStatus('Đã xác nhận')">
                                             <i class="fas fa-check"></i> Xác nhận đặt lịch
                                         </button>
                                         <button type="button" class="btn btn-danger w-100"
@@ -226,7 +226,7 @@
                                             <i class="fas fa-times"></i> Hủy đặt lịch
                                         </button>
                                     </c:when>
-                                    <c:when test="${booking.status == 'confirmed'}">
+                                    <c:when test="${booking.status == 'Đã xác nhận' || booking.status == 'confirmed'}">
                                         <button type="button" class="btn btn-info w-100 mb-2"
                                                 onclick="updateStatus('in_progress')">
                                             <i class="fas fa-play"></i> Bắt đầu dịch vụ

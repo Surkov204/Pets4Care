@@ -113,23 +113,36 @@ public class LoginServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp");
     }
 
-    private void handleCustomerLogin(HttpServletRequest request, HttpServletResponse response, 
-                                   Customer customer, String email, String password, String rememberMe) 
-                                   throws IOException {
-        
+    private void handleCustomerLogin(HttpServletRequest request, HttpServletResponse response,
+            Customer customer, String email, String password, String rememberMe)
+            throws IOException {
         HttpSession session = request.getSession();
         session.setAttribute("currentUser", customer);
-        session.setAttribute("role", "customer");
         session.setAttribute("userId", customer.getCustomerId());
         session.setAttribute("userName", customer.getName());
+        session.setAttribute("role", customer.getRole() != null ? customer.getRole().toLowerCase() : "customer");
 
-        logger.info("Customer login successful: " + customer.getName());
-
-        // Xử lý Remember Me
+        // ✅ Ghi nhớ đăng nhập trước khi chuyển trang
         handleRememberMe(response, email, password, rememberMe);
 
-        // Chuyển về trang chủ cho customer
-        response.sendRedirect(request.getContextPath() + "/home");
+        logger.info("Customer login successful: " + customer.getName() + " (" + customer.getRole() + ")");
+
+        // ✅ Điều hướng theo quyền thực tế
+        String role = customer.getRole() != null ? customer.getRole().toLowerCase() : "customer";
+        switch (role) {
+            case "staff":
+                response.sendRedirect(request.getContextPath() + "/staff/dashboard.jsp");
+                break;
+            case "doctor":
+                response.sendRedirect(request.getContextPath() + "/doctor/dashboard");
+                break;
+            case "admin":
+                response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp");
+                break;
+            default:
+                response.sendRedirect(request.getContextPath() + "/home");
+                break;
+        }
     }
 
     private void handleStaffLogin(HttpServletRequest request, HttpServletResponse response, 
@@ -172,7 +185,7 @@ public class LoginServlet extends HttpServlet {
         handleRememberMe(response, email, password, rememberMe);
 
         // Chuyển hướng đến trang doctor dashboard
-        response.sendRedirect(request.getContextPath() + "/doctor/doctor-dashboard.jsp");
+        response.sendRedirect(request.getContextPath() + "/doctor/dashboard");
     }
 
     private String determineStaffRedirectUrl(String position) {
@@ -185,7 +198,7 @@ public class LoginServlet extends HttpServlet {
                 return "staff/dashboard.jsp";
             case "doctor":
             case "bác sĩ thú y":
-                return "doctor/doctor-dashboard";
+                return "doctor/dashboard";
             default:
                 return "staff/bookings";
         }

@@ -210,6 +210,28 @@ public class PetDAO implements IPetDAO {
     }
     
     /**
+     * Xóa thú cưng theo ID và customer ID (để đảm bảo quyền truy cập)
+     */
+    public boolean deletePetById(int petId, int customerId) {
+        String sql = "DELETE FROM Pet WHERE id = ? AND customer_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, petId);
+            stmt.setInt(2, customerId);
+            
+            return stmt.executeUpdate() > 0;
+            
+        } catch (SQLException e) {
+            logger.severe("Error deleting pet by ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return false;
+    }
+    
+    /**
      * Kiểm tra đã có thông tin thú cưng chưa
      */
     @Override

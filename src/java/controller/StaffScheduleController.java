@@ -109,41 +109,41 @@ public class StaffScheduleController extends HttpServlet {
         String shiftType = request.getParameter("shift");
 
         try {
-            if ("register".equals(action)) {
-                // ✅ Kiểm tra quyền đăng ký
-                if (!settingDAO.isShiftRegistrationEnabled()) {
-                    session.setAttribute("errorMessage", "⏰ Admin chưa mở đăng ký ca!");
-                    response.sendRedirect(request.getContextPath() + "/staff/mySchedule");
-                    return;
-                }
-
-                LocalDate workDay = LocalDate.parse(dayParam);
-                LocalDate nextMonday = LocalDate.now().with(DayOfWeek.MONDAY).plusWeeks(1);
-                LocalDate nextSunday = nextMonday.plusDays(6);
-
-                if (workDay.isBefore(nextMonday) || workDay.isAfter(nextSunday)) {
-                    session.setAttribute("errorMessage", "❌ Chỉ được đăng ký ca trong tuần kế tiếp!");
-                    response.sendRedirect(request.getContextPath() + "/staff/mySchedule");
-                    return;
-                }
-
-                workDAO.addScheduleByShiftType(staffId, workDay, shiftType);
-                session.setAttribute("successMessage", "✅ Đăng ký ca thành công!");
-            }
-
-            else if ("cancelMultiple".equals(action)) {
-                String[] items = request.getParameterValues("cancelItems");
-                if (items != null) {
-                    for (String item : items) {
-                        String[] parts = item.split("\\|");
-                        LocalDate workDate = LocalDate.parse(parts[0]);
-                        int shiftId = Integer.parseInt(parts[1]);
-                        workDAO.deleteScheduleByStaffShiftDate(staffId, shiftId, workDate);
+            switch (action) {
+                case "register" -> {
+                    // ✅ Chỉ kiểm tra khi đăng ký ca
+                    if (!settingDAO.isShiftRegistrationEnabled()) {
+                        session.setAttribute("errorMessage", "⏰ Admin chưa mở đăng ký ca!");
+                        response.sendRedirect(request.getContextPath() + "/staff/mySchedule");
+                        return;
                     }
-                    session.setAttribute("successMessage", "🗑️ Hủy ca thành công!");
+
+                    LocalDate workDay = LocalDate.parse(dayParam);
+                    LocalDate nextMonday = LocalDate.now().with(DayOfWeek.MONDAY).plusWeeks(1);
+                    LocalDate nextSunday = nextMonday.plusDays(6);
+
+                    if (workDay.isBefore(nextMonday) || workDay.isAfter(nextSunday)) {
+                        session.setAttribute("errorMessage", "❌ Chỉ được đăng ký ca trong tuần kế tiếp!");
+                        response.sendRedirect(request.getContextPath() + "/staff/mySchedule");
+                        return;
+                    }
+
+                    workDAO.addScheduleByShiftType(staffId, workDay, shiftType);
+                    session.setAttribute("successMessage", "✅ Đăng ký ca thành công!");
+                }
+                case "cancelMultiple" -> {
+                    String[] items = request.getParameterValues("cancelItems");
+                    if (items != null) {
+                        for (String item : items) {
+                            String[] parts = item.split("\\|");
+                            LocalDate workDate = LocalDate.parse(parts[0]);
+                            int shiftId = Integer.parseInt(parts[1]);
+                            workDAO.deleteScheduleByStaffShiftDate(staffId, shiftId, workDate);
+                        }
+                        session.setAttribute("successMessage", "🗑️ Hủy ca thành công!");
+                    }
                 }
             }
-
         } catch (Exception e) {
             e.printStackTrace();
             session.setAttribute("errorMessage", "❌ Có lỗi xảy ra khi xử lý yêu cầu!");

@@ -47,7 +47,7 @@ public class BoardingBooking {
         this.specialNotes = specialNotes;
         this.emergencyPhone1 = emergencyPhone1;
         this.emergencyPhone2 = emergencyPhone2;
-        this.status = "pending";
+        this.status = "Chờ xác nhận";
         this.createdAt = new Timestamp(System.currentTimeMillis());
         this.updatedAt = new Timestamp(System.currentTimeMillis());
     }

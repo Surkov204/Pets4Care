@@ -264,7 +264,6 @@
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
                 <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
-                <li><a href="health-check-booking">ĐẶT LỊCH KHÁM</a></li>
                 <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
                 <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
@@ -331,22 +330,17 @@
                         <h3>Chuồng & Nhà</h3>
                         <p>Không gian sống thoải mái</p>
                     </div>
-                    <div class="category-card" onclick="location.href = 'search?categoryId=9'">
-                        <div class="category-icon">💊</div>
-                        <h3>Sức khỏe</h3>
-                        <p>Chăm sóc và bảo vệ sức khỏe</p>
-                    </div>
                     <div class="category-card" onclick="location.href = 'search?categoryId=8'">
                         <div class="category-icon">💎</div>
                         <h3>Trang sức</h3>
                         <p>Làm đẹp cho thú cưng</p>
                     </div>
-                    <div class="category-card" onclick="location.href = 'search?categoryId=13'">
+                    <div class="category-card" onclick="location.href = 'health-check-booking'">
                         <div class="category-icon">🩺</div>
                         <h3>Thăm khám sức khỏe</h3>
                         <p>Dịch vụ kiểm tra & theo dõi thú cưng</p>
                     </div>
-                    <div class="category-card" onclick="location.href = 'search?categoryId=14'">
+                    <div class="category-card" onclick="location.href = 'spa-service.jsp'">
                         <div class="category-icon">💆</div>
                         <h3>Spa</h3>
                         <p>Chăm sóc & làm đẹp toàn diện</p>

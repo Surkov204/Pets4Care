@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
         *** GENERATED FROM project.xml - DO NOT EDIT  ***
         ***         EDIT ../build.xml INSTEAD         ***
@@ -779,17 +779,7 @@ or ant -Dj2ee.platform.classpath=&lt;server_classpath&gt; (where no properties f
         </macrodef>
     </target>
     <target name="-init-taskdefs">
-        <fail unless="libs.CopyLibs.classpath">
-The libs.CopyLibs.classpath property is not set up.
-This property must point to 
-org-netbeans-modules-java-j2seproject-copylibstask.jar file which is part
-of NetBeans IDE installation and is usually located at 
-&lt;netbeans_installation&gt;/java&lt;version&gt;/ant/extra folder.
-Either open the project in the IDE and make sure CopyLibs library
-exists or setup the property manually. For example like this:
- ant -Dlibs.CopyLibs.classpath=a/path/to/org-netbeans-modules-java-j2seproject-copylibstask.jar
-                </fail>
-        <taskdef classpath="${libs.CopyLibs.classpath}" resource="org/netbeans/modules/java/j2seproject/copylibstask/antlib.xml"/>
+        <!-- CopyLibs taskdef removed - using standard Ant copy tasks instead of copyfiles -->
     </target>
     <target name="-init-ap-cmdline-properties">
         <property name="annotation.processing.enabled" value="true"/>
@@ -992,6 +982,9 @@ exists or setup the property manually. For example like this:
         <copy file="${file.reference.httpclient-4.5.13.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
         <copy file="${file.reference.httpclient-4.5.14.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
         <copy file="${file.reference.httpcore-4.4.13.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
+        <copy file="${file.reference.jackson-annotations-2.15.0.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
+        <copy file="${file.reference.jackson-core-2.15.0.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
+        <copy file="${file.reference.jackson-databind-2.15.0.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
         <copy file="${file.reference.jakarta.activation-2.0.1.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
         <copy file="${file.reference.jakarta.mail-2.0.1.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
         <copy file="${file.reference.jakarta.servlet-api-6.0.0.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
@@ -1001,6 +994,7 @@ exists or setup the property manually. For example like this:
         <copy file="${file.reference.jaxb-core-2.3.0.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
         <copy file="${file.reference.jaxb-impl-2.3.0.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
         <copy file="${file.reference.jbcrypt-0.4.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
+        <copy file="${file.reference.json-20240303.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
         <copy file="${file.reference.mssql-jdbc-12.10.0.jre11.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
         <copy file="${file.reference.sqljdbc42-6.0.8112.jar}" todir="${dist.ear.dir}/lib" failonerror="false"/>
         <mkdir dir="${build.web.dir}/META-INF"/>
@@ -1017,6 +1011,9 @@ exists or setup the property manually. For example like this:
         <copy file="${file.reference.httpclient-4.5.13.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
         <copy file="${file.reference.httpclient-4.5.14.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
         <copy file="${file.reference.httpcore-4.4.13.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
+        <copy file="${file.reference.jackson-annotations-2.15.0.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
+        <copy file="${file.reference.jackson-core-2.15.0.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
+        <copy file="${file.reference.jackson-databind-2.15.0.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
         <copy file="${file.reference.jakarta.activation-2.0.1.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
         <copy file="${file.reference.jakarta.mail-2.0.1.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
         <copy file="${file.reference.jakarta.servlet-api-6.0.0.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
@@ -1026,6 +1023,7 @@ exists or setup the property manually. For example like this:
         <copy file="${file.reference.jaxb-core-2.3.0.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
         <copy file="${file.reference.jaxb-impl-2.3.0.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
         <copy file="${file.reference.jbcrypt-0.4.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
+        <copy file="${file.reference.json-20240303.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
         <copy file="${file.reference.mssql-jdbc-12.10.0.jre11.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
         <copy file="${file.reference.sqljdbc42-6.0.8112.jar}" todir="${build.web.dir}/WEB-INF/lib" failonerror="false"/>
     </target>
@@ -1468,4 +1466,3 @@ exists or setup the property manually. For example like this:
     <target depends="init,undeploy-clean,deps-clean,do-clean,check-clean,-post-clean" description="Clean build products." name="clean"/>
     <target depends="clean" description="Clean build products." name="clean-ear"/>
 </project>
-

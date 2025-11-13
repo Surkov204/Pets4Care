@@ -416,6 +416,9 @@
                             <span id="chatBadge" class="chat-badge">3</span>
                         </a>
                     </li>
+                    <li><a href="${pageContext.request.contextPath}/staff/boarding-management">
+                            <i class="fas fa-hotel"></i> Boarding Management
+                        </a></li>
 
                     <li><a href="${pageContext.request.contextPath}/staff/products"><i class="fas fa-box"></i> View Product</a></li>
             </aside>
@@ -600,14 +603,15 @@
                                         actionButtons = `
                                                 <div style="display:flex; gap:10px; margin-top:10px;">
                                                     <form action="${pageContext.request.contextPath}/staff/acceptShiftRequest" method="post" style="margin:0;">
-                                                        <input type="hidden" name="requestId" value="${'$'}{n.id}">
-                                                        <input type="hidden" name="notificationId" value="${n.notificationID}">
+                                                      <input type="hidden" name="requestId" value="\${n.relatedRequestID}">
+                                                      <input type="hidden" name="notificationId" value="\${n.notificationID}">
                                                         <button type="submit" style="background:#28a745; color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">
                                                             Chấp nhận
                                                         </button>
                                                     </form>
                                                     <form action="${pageContext.request.contextPath}/staff/rejectShiftRequest" method="post" style="margin:0;">
-                                                        <input type="hidden" name="requestId" value="${'$'}{n.id}">
+                                                        <input type="hidden" name="requestId" value="${n.relatedRequestID || ''}">
+                                                        <input type="hidden" name="notificationId" value="${n.notificationID}">
                                                         <button type="submit" style="background:#dc3545; color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">
                                                             Từ chối
                                                         </button>
@@ -655,7 +659,7 @@
             document.addEventListener("DOMContentLoaded", () => {
                 const btn = document.getElementById("attendanceButton");
                 const generateBtn = document.getElementById("generatePayrollBtn");
-                
+
                 async function verifyCompanyNetwork() {
                     try {
                         const res = await fetch("${pageContext.request.contextPath}/staff/verifyNetwork");
@@ -683,9 +687,10 @@
                 }
 
                 btn.addEventListener("click", async () => {
-                        const inCompanyWifi = await verifyCompanyNetwork();
-                        if (!inCompanyWifi) return; // ❌ dừng nếu sai Wi-Fi{
-                        
+                    const inCompanyWifi = await verifyCompanyNetwork();
+                    if (!inCompanyWifi)
+                        return; // ❌ dừng nếu sai Wi-Fi{
+
                     try {
                         const formData = new URLSearchParams();
                         formData.append("action", "toggle");

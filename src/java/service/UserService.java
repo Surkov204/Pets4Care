@@ -30,6 +30,7 @@ public class UserService implements IUserService {
                 }
             } catch (Exception e) {
                 System.err.println("Password check error: " + e.getMessage());
+                e.printStackTrace();
             }
         }
         return null;

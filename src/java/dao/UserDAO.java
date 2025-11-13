@@ -248,7 +248,8 @@ public class UserDAO {
         customer.setPhone(rs.getString("phone"));
         customer.setStatus(rs.getString("status"));
         customer.setGoogleId(rs.getString("google_id"));
-        customer.setRole(rs.getString("role"));
+        // Bảng Customer không có cột role, để null
+        customer.setRole(null);
         return customer;
     }
 

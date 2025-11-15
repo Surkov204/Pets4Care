@@ -301,7 +301,7 @@ public class PayOSService {
                     } else if (serviceBookingExists(orderCode)) {
                         // Kiểm tra xem có phải service booking không (trong bảng Booking với order_id = orderCode)
                         System.out.println("ℹ️ Order #" + orderCode + " found in Booking table, updating service bookings...");
-                        updated = updateServiceBookingPaymentStatus(orderCode, "Đã thanh toán");
+                        updated = updateServiceBookingPaymentStatus(orderCode, "Hoàn thành");
                     } else {
                         // Không thấy trong [Order] và Booking → thử cập nhật cho booking lưu trú
                         System.out.println("ℹ️ Order #" + orderCode + " not found in [Order] or Booking, trying boarding_bookings...");

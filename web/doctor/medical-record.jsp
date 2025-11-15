@@ -200,8 +200,8 @@
         <ul>
             <li><a href="${pageContext.request.contextPath}/doctor/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
             <li><a href="${pageContext.request.contextPath}/doctor/medical-records" class="active"><i class="fas fa-notes-medical"></i> Medical Records</a></li>
-            <li><a href="${pageContext.request.contextPath}/doctor/appointments"><i class="fas fa-stethoscope"></i> Appointments</a></li>
             <li><a href="${pageContext.request.contextPath}/doctor/work-schedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
+             <li><a href="${pageContext.request.contextPath}/doctor/appointments"><i class="fas fa-stethoscope"></i> Appointments</a></li>
             <li><a href="${pageContext.request.contextPath}/doctor/profile"><i class="fas fa-user-md"></i> Doctor Profile</a></li>
         </ul>
     </aside>
@@ -334,13 +334,10 @@
                                 </c:if>
                             </div>
                             <div style="margin-left: 15px;">
-                                <form action="${pageContext.request.contextPath}/doctor/medical-records" method="post" style="margin: 0;" onsubmit="return confirmCreateRecord('${appt.petName}')">
-                                    <input type="hidden" name="action" value="create">
-                                    <input type="hidden" name="bookingId" value="${appt.bookingId}">
-                                    <button type="submit" class="btn-primary" style="padding: 10px 20px; font-size: 14px;">
-                                        <i class="fas fa-plus"></i> Tạo hồ sơ y tế
-                                    </button>
-                                </form>
+                                <a href="${pageContext.request.contextPath}/doctor/medical-records?action=create&bookingId=${appt.bookingId}"
+                                   class="btn-primary" style="padding: 10px 20px; font-size: 14px; text-decoration: none; display: inline-block;">
+                                    <i class="fas fa-plus"></i> Tạo hồ sơ y tế
+                                </a>
                             </div>
                         </div>
                     </c:forEach>
@@ -454,8 +451,8 @@
                                             class="btn-small" style="background: #4CAF50; color: white; text-decoration: none; padding: 8px 12px; border-radius: 5px; display: inline-block; margin-right: 5px;">
                                              <i class="fas fa-eye"></i> Xem
                                          </a>
-                                         <a href="${pageContext.request.contextPath}/doctor/medical-records?action=view&id=${record.recordId}"
-                                            class="btn-small" style="background: #2196F3; color: white; text-decoration: none; padding: 8px 12px; border-radius: 5px; display: inline-block;">
+                                         <a href="${pageContext.request.contextPath}/doctor/medical-records?action=edit&id=${record.recordId}"
+                                            class="btn-small" style="background: #ff9800; color: white; text-decoration: none; padding: 8px 12px; border-radius: 5px; display: inline-block;">
                                              <i class="fas fa-edit"></i> Sửa
                                          </a>
                                      </td>
@@ -530,6 +527,7 @@ document.addEventListener('click', function(event) {
 function confirmCreateRecord(petName) {
     return confirm('Bạn có chắc chắn muốn tạo hồ sơ y tế cho thú cưng "' + petName + '"?\n\nHồ sơ y tế sẽ được tạo với thông tin từ lịch hẹn và bạn có thể chỉnh sửa chi tiết sau.');
 }
+
 
 // Show success/error messages
 window.onload = function() {

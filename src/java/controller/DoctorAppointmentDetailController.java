@@ -2,6 +2,7 @@ package controller;
 
 import dao.BookingDAO;
 import dao.PetDAO;
+import dao.MedicalRecordDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -13,12 +14,14 @@ import java.util.logging.Logger;
 import model.Booking;
 import model.Doctor;
 import model.Pet;
+import model.MedicalRecord;
 
 @WebServlet("/doctor/appointment-detail")
 public class DoctorAppointmentDetailController extends HttpServlet {
     private static final Logger logger = Logger.getLogger(DoctorAppointmentDetailController.class.getName());
     private final BookingDAO bookingDAO = new BookingDAO();
     private final PetDAO petDAO = new PetDAO();
+    private final MedicalRecordDAO medicalRecordDAO = new MedicalRecordDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -57,8 +60,12 @@ public class DoctorAppointmentDetailController extends HttpServlet {
                 pet = petDAO.getPetById(booking.getPetId());
             }
 
+            // Check if medical record exists for this booking
+            MedicalRecord medicalRecord = medicalRecordDAO.getByBookingId(bookingId);
+
             request.setAttribute("booking", booking);
             request.setAttribute("pet", pet);
+            request.setAttribute("medicalRecord", medicalRecord);
 
             request.getRequestDispatcher("/doctor/appointment-detail.jsp").forward(request, response);
 

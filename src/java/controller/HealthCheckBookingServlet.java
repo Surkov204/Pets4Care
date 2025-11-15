@@ -7,11 +7,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import service.HealthCheckBookingService;
+import dao.MedicalRecordDAO;
+import dao.PetDAO;
 import model.Customer;
 import model.Booking;
 import model.BookingServiceItem;
 import model.CartItem;
 import model.Product;
+import model.MedicalRecord;
+import model.Pet;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -20,6 +24,8 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.logging.Logger;
 import model.PetServiceModel;
 
@@ -30,15 +36,19 @@ import model.PetServiceModel;
  */
 @WebServlet("/health-check-booking")
 public class HealthCheckBookingServlet extends HttpServlet {
-    
+
     private static final Logger logger = Logger.getLogger(HealthCheckBookingServlet.class.getName());
-    
+
     private HealthCheckBookingService healthCheckBookingService;
+    private MedicalRecordDAO medicalRecordDAO;
+    private PetDAO petDAO;
     
     @Override
     public void init() throws ServletException {
         super.init();
         this.healthCheckBookingService = new HealthCheckBookingService();
+        this.medicalRecordDAO = new MedicalRecordDAO();
+        this.petDAO = new PetDAO();
     }
     
     @Override
@@ -117,18 +127,34 @@ public class HealthCheckBookingServlet extends HttpServlet {
     /**
      * Hiển thị danh sách dịch vụ khám sức khỏe
      */
-    private void showHealthCheckServices(HttpServletRequest request, HttpServletResponse response, Customer customer) 
+    private void showHealthCheckServices(HttpServletRequest request, HttpServletResponse response, Customer customer)
             throws ServletException, IOException {
-        
+
         List<PetServiceModel> healthCheckServices = healthCheckBookingService.getActiveHealthCheckServices();
-        List<Booking> healthCheckBookings = healthCheckBookingService.getHealthCheckBookingsByCustomerId(customer.getCustomerId());
-        
-        // Get pet information
+
+        // Get selected pet information
         model.Pet pet = null;
+        String petIdParam = request.getParameter("petId");
         try {
-            service.PetService petService = new service.PetService();
-            pet = petService.getPetByCustomerId(customer.getCustomerId());
-            
+            if (petIdParam != null && !petIdParam.trim().isEmpty()) {
+                // Get pet by ID if specified in URL
+                int petId = Integer.parseInt(petIdParam);
+                pet = petDAO.getPetById(petId);
+                // Verify pet belongs to customer
+                if (pet != null && pet.getCustomerId() != customer.getCustomerId()) {
+                    logger.warning("Pet ID " + petId + " does not belong to customer " + customer.getCustomerId());
+                    pet = null;
+                }
+            }
+
+            // If no pet selected or invalid, get the first pet as default
+            if (pet == null) {
+                List<Pet> customerPets = petDAO.getPetsByCustomerId(customer.getCustomerId());
+                if (customerPets != null && !customerPets.isEmpty()) {
+                    pet = customerPets.get(0); // Default to first pet
+                }
+            }
+
             // Log pet information for debugging
             if (pet != null) {
                 logger.info("Pet found for customer " + customer.getCustomerId() + ": " + pet.getPetName());
@@ -140,13 +166,43 @@ public class HealthCheckBookingServlet extends HttpServlet {
             logger.warning("Could not get pet information: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
+        // Get bookings filtered by selected pet
+        List<Booking> healthCheckBookings;
+        if (pet != null) {
+            healthCheckBookings = healthCheckBookingService.getHealthCheckHistoryByPetId(pet.getId());
+        } else {
+            healthCheckBookings = Collections.emptyList(); // No pet selected, no bookings to show
+        }
+
+        // Load medical records for the selected pet (not other pets)
+        List<Pet> customerPets = null;
+        Map<Integer, List<MedicalRecord>> petsMedicalRecords = new HashMap<>();
+
+        try {
+            customerPets = petDAO.getPetsByCustomerId(customer.getCustomerId());
+            logger.info("Customer has " + (customerPets != null ? customerPets.size() : 0) + " pets");
+
+            // Only load medical records for the selected pet
+            if (pet != null) {
+                List<MedicalRecord> petRecords = medicalRecordDAO.getByPetId(pet.getId());
+                if (!petRecords.isEmpty()) {
+                    petsMedicalRecords.put(pet.getId(), petRecords);
+                    logger.info("Selected pet " + pet.getPetName() + " has " + petRecords.size() + " medical records");
+                }
+            }
+        } catch (Exception e) {
+            logger.warning("Could not load medical records for selected pet: " + e.getMessage());
+        }
+
         request.setAttribute("healthCheckServices", healthCheckServices);
         request.setAttribute("healthCheckBookings", healthCheckBookings);
         request.setAttribute("pet", pet);
-        
-        logger.info("Forwarding to dat-lich-kham.jsp with " + healthCheckBookings.size() + " bookings");
-        
+        request.setAttribute("customerPets", customerPets);
+        request.setAttribute("petsMedicalRecords", petsMedicalRecords);
+
+        logger.info("Forwarding to dat-lich-kham.jsp with " + healthCheckBookings.size() + " bookings and " + petsMedicalRecords.size() + " pets with medical records");
+
         request.getRequestDispatcher("/dat-lich-kham.jsp").forward(request, response);
     }
     
@@ -245,16 +301,24 @@ public class HealthCheckBookingServlet extends HttpServlet {
         
         try {
             // Lấy thông tin từ form
+            String petIdParam = request.getParameter("petId");
             String serviceIdParam = request.getParameter("serviceId");
             String appointmentDate = request.getParameter("appointmentDate");
             String appointmentTime = request.getParameter("appointmentTime");
             String note = request.getParameter("note");
             String doctorIdParam = request.getParameter("doctorId");
-            
-            logger.info("Form data - serviceId: " + serviceIdParam + ", date: " + appointmentDate + 
-                       ", time: " + appointmentTime + ", doctorId: " + doctorIdParam);
-            
+
+            logger.info("Form data - petId: " + petIdParam + ", serviceId: " + serviceIdParam + ", date: " + appointmentDate +
+                        ", time: " + appointmentTime + ", doctorId: " + doctorIdParam);
+
             // Validate dữ liệu đầu vào
+            if (petIdParam == null || petIdParam.trim().isEmpty()) {
+                logger.warning("Missing petId");
+                session.setAttribute("errorMessage", "Vui lòng chọn thú cưng");
+                response.sendRedirect(request.getContextPath() + "/health-check-booking");
+                return;
+            }
+
             if (serviceIdParam == null || serviceIdParam.trim().isEmpty()) {
                 logger.warning("Missing serviceId");
                 session.setAttribute("errorMessage", "Vui lòng chọn dịch vụ khám");
@@ -283,6 +347,7 @@ public class HealthCheckBookingServlet extends HttpServlet {
                 return;
             }
             
+            int petId = Integer.parseInt(petIdParam);
             int serviceId = Integer.parseInt(serviceIdParam);
             int doctorId = Integer.parseInt(doctorIdParam);
             
@@ -308,14 +373,24 @@ public class HealthCheckBookingServlet extends HttpServlet {
                 return;
             }
             
+            // Kiểm tra trùng lịch trước khi tạo booking
+            logger.info("Checking for conflicting appointments...");
+            if (healthCheckBookingService.hasConflictingAppointment(doctorId, appointmentStart)) {
+                logger.warning("❌ Conflicting appointment detected!");
+                session.setAttribute("errorMessage", "Bác sĩ đã có lịch hẹn vào thời gian này. Vui lòng chọn thời gian khác.");
+                response.sendRedirect(request.getContextPath() + "/health-check-booking");
+                return;
+            }
+
             // Tạo booking
             logger.info("Calling healthCheckBookingService.createHealthCheckBooking()...");
-            boolean success = healthCheckBookingService.createHealthCheckBooking(customer, serviceId, appointmentStart, note, doctorId);
-            
+            boolean success = healthCheckBookingService.createHealthCheckBooking(customer, petId, serviceId, appointmentStart, note, doctorId);
+
             if (success) {
                 logger.info("✅ Booking created successfully!");
                 session.setAttribute("successMessage", "Đặt lịch khám sức khỏe thành công! Chúng tôi sẽ liên hệ lại để xác nhận.");
-                response.sendRedirect(request.getContextPath() + "/health-check-booking");
+                // Redirect back to the selected pet's page
+                response.sendRedirect(request.getContextPath() + "/health-check-booking?petId=" + petId);
             } else {
                 logger.severe("❌ Booking creation failed!");
                 session.setAttribute("errorMessage", "Đặt lịch khám sức khỏe thất bại. Vui lòng kiểm tra lại thông tin thú cưng hoặc thử lại sau.");

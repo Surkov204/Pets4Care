@@ -29,7 +29,7 @@ public List<Booking> getAllBookings() {
         "       svc.service_names " +
         "FROM dbo.Booking b " +
         "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
-        "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.pet_id " +
+        "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.id " +
         "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
         "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
         "OUTER APPLY ( " +
@@ -50,7 +50,7 @@ public List<Booking> getAllBookings() {
         "       d.name AS doctor_name " +
         "FROM dbo.Booking b " +
         "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
-        "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.pet_id " +
+        "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.id " +
         "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
         "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
         "ORDER BY b.appointment_start DESC";
@@ -100,7 +100,7 @@ public List<Booking> getAllBookings() {
             "         WHERE bs.booking_id = b.booking_id) AS service_names " +
             "FROM dbo.Booking b " +
             "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
-            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.pet_id " +
+            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.id " +
             "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
             "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
             "WHERE b.booking_id = ?";
@@ -301,7 +301,7 @@ public List<Booking> getAllBookings() {
             "         WHERE bs.booking_id = b.booking_id) AS service_names " +
             "FROM dbo.Booking b " +
             "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
-            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.pet_id " +
+            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.id " +
             "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
             "WHERE b.status = ? " +
             "ORDER BY b.appointment_start DESC";
@@ -341,7 +341,7 @@ public List<Booking> getAllBookings() {
             "         WHERE bs.booking_id = b.booking_id) AS service_names " +
             "FROM dbo.Booking b " +
             "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
-            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.pet_id " +
+            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.id " +
             "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
             "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
             "WHERE CAST(b.appointment_start AS date) = ? " +
@@ -382,7 +382,7 @@ public List<Booking> getAllBookings() {
             "         WHERE bs.booking_id = b.booking_id) AS service_names " +
             "FROM dbo.Booking b " +
             "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
-            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.pet_id " +
+            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.id " +
             "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
             "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
             "WHERE CAST(b.appointment_start AS date) BETWEEN ? AND ? " +
@@ -424,7 +424,7 @@ public List<Booking> getAllBookings() {
             "         WHERE bs.booking_id = b.booking_id) AS service_names " +
             "FROM dbo.Booking b " +
             "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
-            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.pet_id " +
+            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.id " +
             "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
             "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
             "WHERE c.name  LIKE ? OR c.phone LIKE ? OR c.email LIKE ? OR p.name LIKE ? OR b.note LIKE ? " +
@@ -509,7 +509,12 @@ public List<Booking> getAllBookings() {
             ps.setInt(2, booking.getPetId());
             ps.setTimestamp(3, booking.getAppointmentStart());
             ps.setTimestamp(4, booking.getAppointmentEnd());
-            ps.setString(5, booking.getStatus());
+            String statusToSet = booking.getStatus();
+            if (statusToSet == null || statusToSet.trim().isEmpty()) {
+                statusToSet = "Hoàn thành"; // Force status if not set
+            }
+            ps.setString(5, statusToSet);
+            logger.info("BookingDAO.addBooking - Setting status: " + statusToSet + " for booking");
             ps.setString(6, booking.getNote());
             if (booking.getDoctorId() > 0) {
                 ps.setInt(7, booking.getDoctorId());
@@ -528,6 +533,7 @@ public List<Booking> getAllBookings() {
             }
             ps.setTimestamp(10, booking.getCreatedAt());
 
+<<<<<<< HEAD
                 logger.info("Executing INSERT INTO Booking...");
                 int rows = ps.executeUpdate();
                 logger.info("Rows affected: " + rows);
@@ -546,6 +552,14 @@ public List<Booking> getAllBookings() {
                     }
                 } else {
                     logger.warning("INSERT executed but no rows affected");
+=======
+            logger.info("BookingDAO.addBooking - About to execute insert with status: " + statusToSet);
+            int rows = ps.executeUpdate();
+            logger.info("BookingDAO.addBooking - Insert executed, rows affected: " + rows);
+            if (rows > 0) {
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) booking.setBookingId(keys.getInt(1));
+>>>>>>> origin/master
                 }
             }
         } catch (SQLException e) {
@@ -742,7 +756,7 @@ public List<Booking> getAllBookings() {
             "         WHERE bs.booking_id = b.booking_id) AS service_names " +
             "FROM dbo.Booking b " +
             "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
-            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.pet_id " +
+            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.id " +
             "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
             "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
             "ORDER BY b.appointment_start DESC";
@@ -985,6 +999,80 @@ public List<Booking> getAllBookings() {
     @Override
     public List<Booking> getAllBookingsForStaffView() {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    /**
+     * Get bookings by pet ID and date range
+     */
+    public List<Booking> getBookingsByPetIdAndDateRange(int petId, Timestamp startDate, Timestamp endDate) {
+        List<Booking> bookings = new ArrayList<>();
+        String sql = """
+            SELECT b.*,
+                   c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email,
+                   p.pet_name AS pet_name, p.species AS pet_type,
+                   s.name AS staff_name,
+                   d.name AS doctor_name,
+                   (SELECT STRING_AGG(ps.name, ', ')
+                      FROM dbo.Booking_Service bs
+                      JOIN dbo.PetService ps ON ps.service_id = bs.service_id
+                      WHERE bs.booking_id = b.booking_id) AS service_names
+            FROM dbo.Booking b
+            LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id
+            LEFT JOIN dbo.Pet p ON b.pet_id = p.id
+            LEFT JOIN dbo.Staff s ON b.staff_id = s.staff_id
+            LEFT JOIN dbo.Doctor d ON b.doctor_id = d.doctor_id
+            WHERE b.pet_id = ?
+            AND b.appointment_start BETWEEN ? AND ?
+            ORDER BY b.appointment_start ASC
+            """;
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, petId);
+            ps.setTimestamp(2, startDate);
+            ps.setTimestamp(3, endDate);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    bookings.add(mapResultSetToBooking(rs));
+                }
+            }
+
+        } catch (Exception e) {
+            logger.severe("Error getting bookings by pet ID and date range: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return bookings;
+    }
+
+    // Helper method to map ResultSet to Booking object
+    private Booking mapResultSetToBooking(ResultSet rs) throws SQLException {
+        Booking booking = new Booking();
+        booking.setBookingId(rs.getInt("booking_id"));
+        booking.setCustomerId(rs.getInt("customer_id"));
+        booking.setPetId(rs.getInt("pet_id"));
+        booking.setAppointmentStart(rs.getTimestamp("appointment_start"));
+        booking.setAppointmentEnd(rs.getTimestamp("appointment_end"));
+        booking.setStatus(rs.getString("status"));
+        booking.setNote(rs.getString("note"));
+        booking.setCreatedAt(rs.getTimestamp("created_at"));
+        booking.setDoctorId(rs.getInt("doctor_id"));
+        booking.setStaffId(rs.getInt("staff_id"));
+        booking.setOrderId(rs.getInt("order_id"));
+
+        // Set joined fields
+        booking.setCustomerName(rs.getString("customer_name"));
+        booking.setCustomerPhone(rs.getString("customer_phone"));
+        booking.setCustomerEmail(rs.getString("customer_email"));
+        booking.setPetName(rs.getString("pet_name"));
+        booking.setPetType(rs.getString("pet_type"));
+        booking.setStaffName(rs.getString("staff_name"));
+        booking.setDoctorName(rs.getString("doctor_name"));
+        booking.setServiceNames(rs.getString("service_names"));
+
+        return booking;
     }
 }
 

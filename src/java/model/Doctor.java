@@ -7,7 +7,6 @@ public class Doctor {
     private String phone;
     private String password;
     private String specialization;
-    private String scheduleNote;
 
     // Constructors
     public Doctor() {}
@@ -70,14 +69,6 @@ public class Doctor {
         this.specialization = specialization;
     }
 
-    public String getScheduleNote() {
-        return scheduleNote;
-    }
-
-    public void setScheduleNote(String scheduleNote) {
-        this.scheduleNote = scheduleNote;
-    }
-
     @Override
     public String toString() {
         return "Doctor{" +
@@ -86,7 +77,6 @@ public class Doctor {
                 ", email='" + email + '\'' +
                 ", phone='" + phone + '\'' +
                 ", specialization='" + specialization + '\'' +
-                ", scheduleNote='" + scheduleNote + '\'' +
                 '}';
     }
 }

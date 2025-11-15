@@ -1,30 +1,18 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ page import="dao.DoctorDAO" %>
-<%@ page import="dao.BookingDAO" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ page import="model.Doctor" %>
-<%@ page import="model.Booking" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.time.LocalDate" %>
-<%@ page import="java.time.format.DateTimeFormatter" %>
 <%
-    // Kiểm tra đăng nhập
     Doctor doctor = (Doctor) session.getAttribute("doctor");
     if (doctor == null) {
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
     }
     
-    // Lấy tham số
-    String dateParam = request.getParameter("date");
-    LocalDate selectedDate = dateParam != null ? LocalDate.parse(dateParam) : LocalDate.now();
-    
-    // Lấy dữ liệu
-    BookingDAO bookingDAO = new BookingDAO();
-    List<Booking> appointments = bookingDAO.getBookingsByDoctorAndDate(doctor.getDoctorId(), selectedDate);
-    
-    request.setAttribute("selectedDate", selectedDate);
-    request.setAttribute("appointments", appointments);
+    if (request.getAttribute("appointments") == null) {
+        response.sendRedirect(request.getContextPath() + "/doctor/appointments");
+        return;
+    }
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -221,7 +209,7 @@
                 <a href="${pageContext.request.contextPath}/home.jsp">
                     <i class="fas fa-home"></i> Trang chủ
                 </a>
-                <a href="doctor-profile.jsp">
+                <a href="${pageContext.request.contextPath}/doctor/profile">
                     <i class="fas fa-user-edit"></i> Chỉnh sửa thông tin
                 </a>
                 <a href="${pageContext.request.contextPath}/logout">
@@ -236,11 +224,11 @@
     <!-- Sidebar -->
     <aside class="staff-sidebar">
         <ul>
-            <li><a href="doctor-dashboard.jsp"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="medical-record.jsp"><i class="fas fa-notes-medical"></i> Medical Records</a></li>
-            <li><a href="work-schedule.jsp"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
-            <li><a href="appointments.jsp" class="active"><i class="fas fa-stethoscope"></i> Appointments</a></li>
-            <li><a href="doctor-profile.jsp"><i class="fas fa-user-md"></i> Doctor Profile</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/medical-records"><i class="fas fa-notes-medical"></i> Medical Records</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/work-schedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/appointments" class="active"><i class="fas fa-stethoscope"></i> Appointments</a></li>
+            <li><a href="${pageContext.request.contextPath}/doctor/profile"><i class="fas fa-user-md"></i> Doctor Profile</a></li>
         </ul>
     </aside>
 
@@ -256,11 +244,11 @@
             <form method="get">
                 <label for="date"><i class="fas fa-calendar"></i> Chọn ngày:</label>
                 <input type="date" name="date" id="date" class="date-input" 
-                       value="${selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)}">
+                       value="${selectedDateIso}">
                 <button type="submit" class="btn-primary">
                     <i class="fas fa-search"></i> Xem lịch hẹn
                 </button>
-                <a href="appointments.jsp" class="btn-primary" style="text-decoration: none; display: inline-block;">
+                <a href="${pageContext.request.contextPath}/doctor/appointments" class="btn-primary" style="text-decoration: none; display: inline-block;">
                     <i class="fas fa-calendar-day"></i> Hôm nay
                 </a>
             </form>
@@ -299,7 +287,12 @@
                                     <td>${appointment.petType}</td>
                                     <td>${appointment.serviceNames}</td>
                                     <td>
-                                        <span class="status status-${appointment.status}">${appointment.status}</span>
+                                        <span class="status <c:choose>
+                                            <c:when test="${appointment.status == 'Hoàn thành' || appointment.status == 'completed'}">status-completed</c:when>
+                                            <c:when test="${appointment.status == 'Đã xác nhận' || appointment.status == 'confirmed'}">status-confirmed</c:when>
+                                            <c:when test="${appointment.status == 'pending' || appointment.status == 'Chưa thanh toán'}">status-pending</c:when>
+                                            <c:otherwise>status-cancelled</c:otherwise>
+                                        </c:choose>">${appointment.status}</span>
                                     </td>
                                     <td>
                                         <c:if test="${not empty appointment.note}">
@@ -311,23 +304,15 @@
                                     </td>
                                     <td>
                                         <div class="appointment-actions">
-                                            <a href="appointment-detail.jsp?id=${appointment.bookingId}" class="btn-small">
+                                            <a href="${pageContext.request.contextPath}/doctor/appointment-detail?id=${appointment.bookingId}" class="btn-small">
                                                 <i class="fas fa-eye"></i> Chi tiết
                                             </a>
-                                            <c:if test="${appointment.status == 'pending'}">
-                                                <a href="update-appointment-status?bookingId=${appointment.bookingId}&status=confirmed" class="btn-small">
-                                                    <i class="fas fa-check"></i> Xác nhận
-                                                </a>
-                                            </c:if>
-                                            <c:if test="${appointment.status == 'confirmed'}">
-                                                <a href="update-appointment-status?bookingId=${appointment.bookingId}&status=completed" class="btn-small">
-                                                    <i class="fas fa-check-circle"></i> Hoàn thành
-                                                </a>
-                                            </c:if>
-                                            <c:if test="${appointment.status != 'cancelled' && appointment.status != 'completed'}">
-                                                <a href="update-appointment-status?bookingId=${appointment.bookingId}&status=cancelled" class="btn-small btn-danger">
-                                                    <i class="fas fa-times"></i> Hủy
-                                                </a>
+                                            <c:if test="${appointment.status == 'completed' || appointment.status == 'Hoàn thành'}">
+                                                <c:if test="${not empty medicalRecordsMap[appointment.bookingId]}">
+                                                    <a href="${pageContext.request.contextPath}/doctor/medical-record-detail?id=${medicalRecordsMap[appointment.bookingId].recordId}" class="btn-small" style="background: #2196F3;">
+                                                        <i class="fas fa-file-medical"></i> Xem hồ sơ
+                                                    </a>
+                                                </c:if>
                                             </c:if>
                                         </div>
                                     </td>
@@ -340,24 +325,26 @@
                     <div class="no-appointments">
                         <i class="fas fa-calendar-times"></i>
                         <h3>Không có lịch hẹn nào</h3>
-                        <p>Không có cuộc hẹn nào vào ngày ${selectedDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}</p>
+                        <p>Không có cuộc hẹn nào vào ngày ${selectedDateDisplay}</p>
                     </div>
                 </c:otherwise>
             </c:choose>
         </div>
 
+
+
         <!-- Statistics -->
         <div class="date-selector">
-            <h3><i class="fas fa-chart-bar"></i> Thống kê ngày ${selectedDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}</h3>
+            <h3><i class="fas fa-chart-bar"></i> Thống kê ngày ${selectedDateDisplay}</h3>
             <div style="display: flex; gap: 20px; margin-top: 15px;">
                 <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; flex: 1;">
-                    <strong>Tổng số cuộc hẹn:</strong> ${appointments.size()}
+                    <strong>Tổng số cuộc hẹn:</strong> ${fn:length(allAppointments)}
                 </div>
                 <div style="background: #fff3e0; padding: 15px; border-radius: 5px; flex: 1;">
-                    <strong>Chờ xác nhận:</strong> 
+                    <strong>Chờ xác nhận:</strong>
                     <c:set var="pendingCount" value="0" />
-                    <c:forEach var="appointment" items="${appointments}">
-                        <c:if test="${appointment.status == 'pending'}">
+                    <c:forEach var="appointment" items="${allAppointments}">
+                        <c:if test="${appointment.status == 'pending' || appointment.status == 'Chờ xác nhận'}">
                             <c:set var="pendingCount" value="${pendingCount + 1}" />
                         </c:if>
                     </c:forEach>
@@ -366,13 +353,72 @@
                 <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; flex: 1;">
                     <strong>Đã xác nhận:</strong>
                     <c:set var="confirmedCount" value="0" />
-                    <c:forEach var="appointment" items="${appointments}">
-                        <c:if test="${appointment.status == 'confirmed'}">
+                    <c:forEach var="appointment" items="${allAppointments}">
+                        <c:if test="${appointment.status == 'confirmed' || appointment.status == 'Đã xác nhận'}">
                             <c:set var="confirmedCount" value="${confirmedCount + 1}" />
                         </c:if>
                     </c:forEach>
                     ${confirmedCount}
                 </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Appointments Section -->
+        <div class="date-selector" style="margin-top: 30px;">
+            <h3><i class="fas fa-calendar-week"></i> Lịch hẹn sắp tới (14 ngày tới)</h3>
+            <div class="appointments-table" style="margin-top: 15px;">
+                <c:choose>
+                    <c:when test="${not empty upcomingAppointments}">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Ngày & Giờ</th>
+                                    <th>Khách hàng</th>
+                                    <th>Thú cưng</th>
+                                    <th>Loại</th>
+                                    <th>Dịch vụ</th>
+                                    <th>Trạng thái</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach var="upcoming" items="${upcomingAppointments}">
+                                    <tr>
+                                        <td>
+                                            <strong style="color: #667eea;">
+                                                ${upcoming.appointmentStart}
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <strong>${upcoming.customerName}</strong><br>
+                                            <small>${upcoming.customerPhone}</small>
+                                        </td>
+                                        <td>${upcoming.petName}</td>
+                                        <td>${upcoming.petType}</td>
+                                        <td><small>${upcoming.serviceNames}</small></td>
+                                        <td>
+                                            <span class="status status-${upcoming.status}">${upcoming.status}</span>
+                                        </td>
+                                        <td>
+                                            <div class="appointment-actions">
+                                                <a href="${pageContext.request.contextPath}/doctor/appointment-detail?id=${upcoming.bookingId}" class="btn-small">
+                                                    <i class="fas fa-eye"></i> Xem
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                            </tbody>
+                        </table>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="no-appointments">
+                            <i class="fas fa-calendar-check"></i>
+                            <h3>Không có lịch hẹn sắp tới</h3>
+                            <p>Bạn không có lịch hẹn nào trong 14 ngày tới</p>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
             </div>
         </div>
     </main>
@@ -392,11 +438,16 @@ function toggleDropdown() {
 document.addEventListener('click', function(event) {
     const dropdown = document.getElementById('dropdownMenu');
     const avatar = document.querySelector('.avatar');
-    
+
     if (!avatar.contains(event.target)) {
         dropdown.classList.remove('show');
     }
 });
+
+// Confirm medical record creation
+function confirmCreateRecord(petName) {
+    return confirm('Bạn có chắc chắn muốn tạo hồ sơ y tế cho thú cưng "' + petName + '"?\n\nHồ sơ y tế sẽ được tạo với thông tin từ lịch hẹn và bạn có thể chỉnh sửa chi tiết sau.');
+}
 </script>
 
 </body>

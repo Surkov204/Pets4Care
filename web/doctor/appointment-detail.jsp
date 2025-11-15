@@ -1,61 +1,17 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ page import="dao.DoctorDAO" %>
-<%@ page import="dao.BookingDAO" %>
-<%@ page import="dao.PetDAO" %>
 <%@ page import="model.Doctor" %>
 <%@ page import="model.Booking" %>
 <%@ page import="model.Pet" %>
-<%@ page import="java.time.format.DateTimeFormatter" %>
 <%
-    // Kiểm tra đăng nhập
     Doctor doctor = (Doctor) session.getAttribute("doctor");
     if (doctor == null) {
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
     }
     
-    // Lấy booking ID từ parameter
-    String bookingIdStr = request.getParameter("id");
-    if (bookingIdStr == null || bookingIdStr.trim().isEmpty()) {
-        response.sendRedirect(request.getContextPath() + "/doctor/appointments.jsp?error=missing_id");
-        return;
-    }
-    
-    try {
-        int bookingId = Integer.parseInt(bookingIdStr);
-        BookingDAO bookingDAO = new BookingDAO();
-        Booking booking = bookingDAO.getBookingById(bookingId);
-        
-        // Kiểm tra booking có tồn tại và thuộc về doctor này không
-        if (booking == null) {
-            response.sendRedirect(request.getContextPath() + "/doctor/appointments.jsp?error=booking_not_found");
-            return;
-        }
-        
-        if (booking.getDoctorId() != doctor.getDoctorId()) {
-            response.sendRedirect(request.getContextPath() + "/doctor/appointments.jsp?error=unauthorized");
-            return;
-        }
-        
-        // Lấy thông tin thú cưng chi tiết
-        Pet pet = null;
-        if (booking.getPetId() > 0) {
-            PetDAO petDAO = new PetDAO();
-            pet = petDAO.getPetById(booking.getPetId());
-        }
-        
-        request.setAttribute("booking", booking);
-        request.setAttribute("pet", pet);
-        
-        // Lấy thông báo success/error
-        String successMessage = request.getParameter("success");
-        String errorMessage = request.getParameter("error");
-        request.setAttribute("successMessage", successMessage);
-        request.setAttribute("errorMessage", errorMessage);
-        
-    } catch (NumberFormatException e) {
-        response.sendRedirect(request.getContextPath() + "/doctor/appointments.jsp?error=invalid_id");
+    if (request.getAttribute("booking") == null) {
+        response.sendRedirect(request.getContextPath() + "/doctor/appointments?error=booking_not_found");
         return;
     }
 %>
@@ -267,7 +223,7 @@
                 <a href="${pageContext.request.contextPath}/home.jsp">
                     <i class="fas fa-home"></i> Trang chủ
                 </a>
-                <a href="doctor-profile.jsp">
+                <a href="${pageContext.request.contextPath}/doctor/profile">
                     <i class="fas fa-user-edit"></i> Chỉnh sửa thông tin
                 </a>
                 <a href="${pageContext.request.contextPath}/logout">
@@ -294,26 +250,57 @@
     <main class="staff-content">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1><i class="fas fa-calendar-check"></i> Chi tiết lịch hẹn #${booking.bookingId}</h1>
-            <a href="appointments.jsp" class="btn-action">
+            <a href="${pageContext.request.contextPath}/doctor/appointments" class="btn-action">
                 <i class="fas fa-arrow-left"></i> Quay lại
             </a>
         </div>
 
-        <c:if test="${not empty successMessage}">
+        <c:if test="${not empty param.success}">
             <div class="alert alert-success">
                 <i class="fas fa-check-circle"></i> 
                 <c:choose>
-                    <c:when test="${successMessage == 'updated'}">Cập nhật thông tin y tế thành công!</c:when>
+                    <c:when test="${param.success == 'updated'}">Cập nhật thông tin y tế thành công!</c:when>
                     <c:otherwise>Thao tác thành công!</c:otherwise>
                 </c:choose>
             </div>
-        </c:if>
 
-        <c:if test="${not empty errorMessage}">
+            <!-- Create Medical Record for Completed Appointments -->
+            <c:if test="${booking.status == 'completed' || booking.status == 'Hoàn thành'}">
+                <c:if test="${empty medicalRecord}">
+                    <div class="detail-card" style="background: linear-gradient(135deg, #e8f5e8, #f0f8f0); border-left: 4px solid #4CAF50;">
+                        <h3 style="color: #2e7d32;"><i class="fas fa-notes-medical"></i> Tạo hồ sơ y tế</h3>
+                        <p style="margin-bottom: 20px; color: #333;">
+                            Lịch hẹn này đã hoàn thành. Bạn có thể tạo hồ sơ y tế để ghi lại thông tin khám bệnh và điều trị cho thú cưng.
+                        </p>
+                        <form action="${pageContext.request.contextPath}/doctor/medical-records" method="post" style="display: inline;">
+                            <input type="hidden" name="action" value="create">
+                            <input type="hidden" name="bookingId" value="${booking.bookingId}">
+                            <button type="submit" class="btn-action" style="background: #4CAF50; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
+                                <i class="fas fa-plus"></i> Tạo hồ sơ y tế
+                            </button>
+                        </form>
+                    </div>
+                </c:if>
+                <c:if test="${not empty medicalRecord}">
+                    <div class="detail-card" style="background: linear-gradient(135deg, #e3f2fd, #f0f8ff); border-left: 4px solid #2196F3;">
+                        <h3 style="color: #1565c0;"><i class="fas fa-file-medical"></i> Hồ sơ y tế đã tồn tại</h3>
+                        <p style="margin-bottom: 20px; color: #333;">
+                            Hồ sơ y tế cho lịch hẹn này đã được tạo. Bạn có thể xem và chỉnh sửa thông tin y tế.
+                        </p>
+                        <a href="${pageContext.request.contextPath}/doctor/medical-records?action=view&id=${medicalRecord.recordId}"
+                           class="btn-action" style="background: #2196F3; text-decoration: none;">
+                            <i class="fas fa-eye"></i> Xem hồ sơ y tế
+                        </a>
+                    </div>
+                </c:if>
+            </c:if>
+
+        </c:if>
+        <c:if test="${not empty param.error}">
             <div class="alert alert-error">
                 <i class="fas fa-exclamation-circle"></i> 
                 <c:choose>
-                    <c:when test="${errorMessage == 'update_failed'}">Cập nhật thất bại. Vui lòng thử lại.</c:when>
+                    <c:when test="${param.error == 'update_failed'}">Cập nhật thất bại. Vui lòng thử lại.</c:when>
                     <c:otherwise>Có lỗi xảy ra.</c:otherwise>
                 </c:choose>
             </div>
@@ -427,47 +414,6 @@
                 </c:if>
             </div>
 
-            <!-- Cập nhật thông tin y tế -->
-            <div class="detail-card">
-                <h3><i class="fas fa-notes-medical"></i> Cập nhật tiến độ bệnh trạng</h3>
-                
-                <c:if test="${not empty booking.note}">
-                    <div class="alert" style="background: #e3f2fd; color: #1565c0; margin-bottom: 20px;">
-                        <strong>Ghi chú hiện tại:</strong><br>
-                        ${booking.note}
-                    </div>
-                </c:if>
-
-                <form method="POST" action="${pageContext.request.contextPath}/update-medical-info" class="medical-form">
-                    <input type="hidden" name="bookingId" value="${booking.bookingId}">
-                    
-                    <div class="form-group">
-                        <label for="medicalNote">
-                            <i class="fas fa-stethoscope"></i> Chẩn đoán / Ghi chú y tế:
-                        </label>
-                        <textarea id="medicalNote" name="medicalNote" rows="6" 
-                                  placeholder="Nhập chẩn đoán, kế hoạch điều trị, tiến độ bệnh trạng hoặc các ghi chú y tế khác...">${booking.note}</textarea>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px;">
-                        <button type="submit" class="btn-action">
-                            <i class="fas fa-save"></i> Lưu thông tin y tế
-                        </button>
-                        <c:if test="${booking.status == 'pending'}">
-                            <a href="${pageContext.request.contextPath}/update-appointment-status?bookingId=${booking.bookingId}&status=confirmed" 
-                               class="btn-action">
-                                <i class="fas fa-check"></i> Xác nhận lịch hẹn
-                            </a>
-                        </c:if>
-                        <c:if test="${booking.status == 'confirmed'}">
-                            <a href="${pageContext.request.contextPath}/update-appointment-status?bookingId=${booking.bookingId}&status=completed" 
-                               class="btn-action">
-                                <i class="fas fa-check-circle"></i> Đánh dấu hoàn thành
-                            </a>
-                        </c:if>
-                    </div>
-                </form>
-            </div>
         </c:if>
     </main>
 </div>

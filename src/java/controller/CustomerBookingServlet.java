@@ -7,6 +7,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import service.BookingService;
+import dao.BookingDAO;
+import dao.DoctorDAO;
+import dao.MedicalRecordDAO;
 import model.Customer;
 import model.Pet;
 import model.PetServiceModel;
@@ -31,13 +34,19 @@ public class CustomerBookingServlet extends HttpServlet {
     private static final Logger logger = Logger.getLogger(CustomerBookingServlet.class.getName());
     
     private BookingService bookingService;
+    private BookingDAO bookingDAO;
+    private DoctorDAO doctorDAO;
     private PetService petService;
-    
+    private MedicalRecordDAO medicalRecordDAO;
+
     @Override
     public void init() throws ServletException {
         super.init();
         this.bookingService = new BookingService();
+        this.bookingDAO = new BookingDAO();
+        this.doctorDAO = new DoctorDAO();
         this.petService = new PetService();
+        this.medicalRecordDAO = new MedicalRecordDAO();
     }
     
     @Override
@@ -98,6 +107,9 @@ public class CustomerBookingServlet extends HttpServlet {
             } else if (action != null && action.equals("cancel")) {
                 // Hủy booking
                 cancelBooking(request, response, customer);
+            } else if (action != null && action.equals("cancel-pending")) {
+                // Hủy booking đang chờ thanh toán
+                cancelPendingBooking(request, response, customer);
             }
             
         } catch (Exception e) {
@@ -189,13 +201,35 @@ public class CustomerBookingServlet extends HttpServlet {
     /**
      * Hiển thị lịch sử đặt lịch
      */
-    private void showBookingHistory(HttpServletRequest request, HttpServletResponse response, Customer customer) 
+    private void showBookingHistory(HttpServletRequest request, HttpServletResponse response, Customer customer)
             throws ServletException, IOException {
-        
+
+        // Xử lý success/error messages từ URL parameters
+        String success = request.getParameter("success");
+        String error = request.getParameter("error");
+
+        if ("payment_completed".equals(success)) {
+            request.setAttribute("success", "Thanh toán thành công! Lịch hẹn của bạn đã hoàn thành và sẵn sàng để bác sĩ khám.");
+        } else if ("payment_cancelled".equals(error)) {
+            request.setAttribute("error", "Thanh toán đã bị hủy. Lịch hẹn đã bị xóa.");
+        }
+
         List<Booking> bookings = bookingService.getBookingsByCustomerId(customer.getCustomerId());
-        
+
+        // Load medical records for completed bookings
+        java.util.Map<Integer, model.MedicalRecord> medicalRecordsMap = new java.util.HashMap<>();
+        for (Booking booking : bookings) {
+            if ("Hoàn thành".equals(booking.getStatus()) || "completed".equals(booking.getStatus())) {
+                model.MedicalRecord record = medicalRecordDAO.getByBookingId(booking.getBookingId());
+                if (record != null) {
+                    medicalRecordsMap.put(booking.getBookingId(), record);
+                }
+            }
+        }
+
         request.setAttribute("bookings", bookings);
-        
+        request.setAttribute("medicalRecordsMap", medicalRecordsMap);
+
         request.getRequestDispatcher("/customer/booking-history.jsp").forward(request, response);
     }
     
@@ -306,22 +340,51 @@ public class CustomerBookingServlet extends HttpServlet {
             int totalDuration = bookingService.calculateTotalDuration(serviceIds);
             Timestamp appointmentEnd = new Timestamp(appointmentStart.getTime() + (totalDuration * 60 * 1000L));
             
+            // Validate: Mỗi thú cưng chỉ được đặt 1 lần trong 1 tuần
+            int petId = petService.getPetByCustomerId(customer.getCustomerId()).getId();
+            if (hasPetBookedThisWeek(petId, appointmentStart)) {
+                request.setAttribute("error", "Thú cưng này đã có lịch hẹn trong tuần này. Vui lòng chọn thời gian khác.");
+                response.sendRedirect(request.getContextPath() + "/customer/booking?action=form&serviceIds=" + serviceIdsParam);
+                return;
+            }
+
             // Tạo booking object
             Booking booking = new Booking();
             booking.setCustomerId(customer.getCustomerId());
-            booking.setPetId(petService.getPetByCustomerId(customer.getCustomerId()).getId());
+            booking.setPetId(petId);
             booking.setAppointmentStart(appointmentStart);
             booking.setAppointmentEnd(appointmentEnd);
-            booking.setStatus("Chưa thanh toán");
+            booking.setStatus("Hoàn thành"); // Đặt thành công mặc định để test
             booking.setNote(note != null ? note.trim() : "");
             booking.setCreatedAt(new Timestamp(System.currentTimeMillis()));
-            
-            // Tạo booking
+
+            // Gán bác sĩ mặc định (fallback)
+            int fallbackDoctorId = doctorDAO.getAnyActiveDoctorId();
+            if (fallbackDoctorId > 0) {
+                booking.setDoctorId(fallbackDoctorId);
+                logger.info("Assigned fallback doctor ID: " + fallbackDoctorId);
+            }
+
+            logger.info("Creating booking with status: " + booking.getStatus());
+
+            // Tạo booking trực tiếp
             boolean success = bookingService.createBooking(booking, serviceIds, quantities);
-            
+
+            logger.info("Booking creation success: " + success + ", booking ID: " + booking.getBookingId() + ", status: " + booking.getStatus());
+
             if (success) {
-                request.setAttribute("success", "Đặt lịch thành công! Chúng tôi sẽ liên hệ lại để xác nhận.");
-                response.sendRedirect(request.getContextPath() + "/customer/booking?action=history");
+                // Lấy booking ID vừa tạo
+                int bookingId = booking.getBookingId();
+
+                // Đảm bảo status được set đúng
+                booking.setStatus("Hoàn thành");
+                logger.info("Updating booking status to: " + booking.getStatus() + " for booking ID: " + booking.getBookingId());
+                boolean updateSuccess = bookingDAO.updateBooking(booking);
+                logger.info("Booking status update success: " + updateSuccess);
+
+                // Chuyển đến trang lịch sử booking
+                response.sendRedirect(request.getContextPath() + "/customer/booking?action=history&success=booking_created");
+                return;
             } else {
                 request.setAttribute("error", "Đặt lịch thất bại. Vui lòng thử lại.");
                 response.sendRedirect(request.getContextPath() + "/customer/booking?action=form&serviceIds=" + serviceIdsParam);
@@ -376,10 +439,74 @@ public class CustomerBookingServlet extends HttpServlet {
             }
             
             response.sendRedirect(request.getContextPath() + "/customer/booking?action=history");
-            
+
         } catch (NumberFormatException e) {
             request.setAttribute("error", "ID booking không hợp lệ");
             response.sendRedirect(request.getContextPath() + "/customer/booking?action=history");
+        }
+    }
+
+    /**
+     * Hủy booking đang chờ thanh toán (xóa dữ liệu trong session)
+     */
+    private void cancelPendingBooking(HttpServletRequest request, HttpServletResponse response, Customer customer)
+            throws IOException {
+
+        HttpSession session = request.getSession();
+
+        // Xóa dữ liệu booking đang chờ thanh toán khỏi session
+        session.removeAttribute("pendingBooking");
+        session.removeAttribute("pendingServiceIds");
+        session.removeAttribute("pendingQuantities");
+        session.removeAttribute("tempOrderId");
+
+        // Trả về response JSON cho AJAX
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write("{\"success\":true}");
+    }
+
+    /**
+     * Check if a pet has already booked an appointment this week
+     */
+    private boolean hasPetBookedThisWeek(int petId, Timestamp appointmentTime) {
+        try {
+            // Calculate start and end of the week containing the appointment time
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.setTime(appointmentTime);
+
+            // Set to Monday of the week
+            cal.set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY);
+            cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            cal.set(java.util.Calendar.MINUTE, 0);
+            cal.set(java.util.Calendar.SECOND, 0);
+            cal.set(java.util.Calendar.MILLISECOND, 0);
+            Timestamp weekStart = new Timestamp(cal.getTimeInMillis());
+
+            // Set to Sunday of the week
+            cal.add(java.util.Calendar.DAY_OF_WEEK, 6);
+            cal.set(java.util.Calendar.HOUR_OF_DAY, 23);
+            cal.set(java.util.Calendar.MINUTE, 59);
+            cal.set(java.util.Calendar.SECOND, 59);
+            cal.set(java.util.Calendar.MILLISECOND, 999);
+            Timestamp weekEnd = new Timestamp(cal.getTimeInMillis());
+
+            // Check if pet has any booking in this week (except cancelled ones)
+            List<Booking> existingBookings = bookingDAO.getBookingsByPetIdAndDateRange(petId, weekStart, weekEnd);
+
+            // Filter out cancelled bookings
+            for (Booking booking : existingBookings) {
+                String status = booking.getStatus();
+                if (status != null && !status.contains("hủy") && !status.contains("cancel")) {
+                    return true; // Found an active booking this week
+                }
+            }
+
+            return false; // No active bookings found this week
+
+        } catch (Exception e) {
+            logger.severe("Error checking pet booking for week: " + e.getMessage());
+            return false; // Allow booking if check fails
         }
     }
 }

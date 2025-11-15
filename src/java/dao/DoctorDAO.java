@@ -3,6 +3,8 @@ package dao;
 import model.Doctor;
 import utils.DBConnection;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class DoctorDAO {
@@ -74,7 +76,6 @@ public class DoctorDAO {
         doctor.setPhone(rs.getString("phone"));
         doctor.setPassword(getStringByAny(rs, "password"));
         doctor.setSpecialization(getStringByAny(rs, "specialization", "specializaton", "specializ", "speciality"));
-        doctor.setScheduleNote(getStringByAny(rs, "schedule_note", "scheduleNote", "schedule"));
         return doctor;
     }
 
@@ -105,6 +106,24 @@ public class DoctorDAO {
             }
         }
         return null;
+    }
+
+    public List<Doctor> getAllExcept(int doctorId) {
+        List<Doctor> doctors = new ArrayList<>();
+        String sql = "SELECT * FROM Doctor WHERE doctor_id <> ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, doctorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    doctors.add(mapDoctorFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error fetching doctors: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return doctors;
     }
 
     /**

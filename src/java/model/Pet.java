@@ -16,6 +16,7 @@ public class Pet {
     private String breed;
     private int age;
     private String gender;
+    private Double weightKg;
     private String description;
     private String healthStatus;
     private String imagePath;
@@ -90,6 +91,14 @@ public class Pet {
     
     public void setGender(String gender) {
         this.gender = gender;
+    }
+    
+    public Double getWeightKg() {
+        return weightKg;
+    }
+    
+    public void setWeightKg(Double weightKg) {
+        this.weightKg = weightKg;
     }
     
     public String getDescription() {
@@ -198,6 +207,59 @@ public class Pet {
             return age + " tuổi";
         }
     }
+
+    public String getWeightDisplay() {
+        if (weightKg == null) {
+            return "Chưa cập nhật";
+        }
+        if (weightKg % 1 == 0) {
+            return String.format(java.util.Locale.US, "%.0f kg", weightKg);
+        }
+        return String.format(java.util.Locale.US, "%.1f kg", weightKg);
+    }
+
+    public String getSizeGroupDisplay() {
+        if (weightKg == null) {
+            return "Chưa phân loại";
+        }
+
+        String normalizedSpecies = species != null ? species.toLowerCase() : "";
+        double weight = weightKg.doubleValue();
+
+        if ("dog".equals(normalizedSpecies) || "chó".equals(normalizedSpecies)) {
+            if (weight < 7.0) {
+                return "Small (<7kg)";
+            } else if (weight < 16.0) {
+                return "Medium (8–15kg)";
+            } else if (weight <= 30.0) {
+                return "Large (16–30kg)";
+            } else {
+                return "Giant (31kg+)";
+            }
+        }
+
+        if ("cat".equals(normalizedSpecies) || "mèo".equals(normalizedSpecies)) {
+            if (weight < 4.0) {
+                return "Small (<4kg)";
+            } else if (weight < 6.0) {
+                return "Medium (4–6kg)";
+            } else if (weight < 8.0) {
+                return "Large (6–8kg)";
+            } else {
+                return "Giant (8kg+)";
+            }
+        }
+
+        if (weight < 2.0) {
+            return "Nhỏ (<2kg)";
+        } else if (weight < 10.0) {
+            return "Vừa (2–9kg)";
+        } else if (weight < 25.0) {
+            return "Lớn (10–24kg)";
+        } else {
+            return "Siêu lớn (25kg+)";
+        }
+    }
     
     @Override
     public String toString() {
@@ -209,6 +271,7 @@ public class Pet {
                 ", breed='" + breed + '\'' +
                 ", age=" + age +
                 ", gender='" + gender + '\'' +
+                ", weightKg=" + weightKg +
                 ", healthStatus='" + healthStatus + '\'' +
                 '}';
     }

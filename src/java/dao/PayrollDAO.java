@@ -27,7 +27,7 @@ public class PayrollDAO {
     // ✅ Lấy danh sách phiếu lương
     public List<PayrollRecord> getPayrollHistory(int staffId) {
         List<PayrollRecord> list = new ArrayList<>();
-        String sql = "SELECT * FROM PayrollRecords WHERE StaffID = ? ORDER BY CreatedAt DESC";
+        String sql = "SELECT PayrollID, EmployeeID AS StaffID, PeriodStart, PeriodEnd, TotalHours, HourlyRate, TotalSalary, CreatedAt FROM PayrollRecords WHERE EmployeeType = 'STAFF' AND EmployeeID = ? ORDER BY CreatedAt DESC";
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, staffId);
@@ -52,9 +52,9 @@ public class PayrollDAO {
     }
     public PayrollRecord getLatestPayroll(int staffId) {
         String sql = """
-        SELECT TOP 1 *
+        SELECT TOP 1 PayrollID, EmployeeID AS StaffID, PeriodStart, PeriodEnd, TotalHours, HourlyRate, TotalSalary, CreatedAt
         FROM PayrollRecords
-        WHERE StaffID = ?
+        WHERE EmployeeType = 'STAFF' AND EmployeeID = ?
         ORDER BY CreatedAt DESC
     """;
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {

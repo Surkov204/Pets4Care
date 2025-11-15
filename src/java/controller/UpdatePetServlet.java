@@ -49,6 +49,7 @@ public class UpdatePetServlet extends HttpServlet {
             String breed = request.getParameter("breed");
             String ageStr = request.getParameter("age");
             String gender = request.getParameter("gender");
+            String weightStr = request.getParameter("weightKg");
             String healthStatus = request.getParameter("healthStatus");
             String description = request.getParameter("description");
             String petIdStr = request.getParameter("petId");
@@ -60,6 +61,7 @@ public class UpdatePetServlet extends HttpServlet {
             logger.info("Breed: '" + breed + "'");
             logger.info("Age: '" + ageStr + "'");
             logger.info("Gender: '" + gender + "'");
+            logger.info("Weight (kg): '" + weightStr + "'");
             logger.info("Health Status: '" + healthStatus + "'");
             logger.info("Description: '" + description + "'");
             logger.info("Pet ID: '" + petIdStr + "'");
@@ -68,6 +70,23 @@ public class UpdatePetServlet extends HttpServlet {
             if (petName == null || petName.trim().isEmpty()) {
                 logger.warning("Pet name validation failed - petName is null or empty");
                 request.getSession().setAttribute("errorMessage", "Tên thú cưng không được để trống!");
+                response.sendRedirect(request.getContextPath() + "/petinfoservlet");
+                return;
+            }
+
+            Double weightKg = null;
+            if (weightStr != null && !weightStr.trim().isEmpty()) {
+                try {
+                    weightKg = Double.parseDouble(weightStr.trim());
+                } catch (NumberFormatException e) {
+                    request.getSession().setAttribute("errorMessage", "Cân nặng phải là số hợp lệ!");
+                    response.sendRedirect(request.getContextPath() + "/petinfoservlet");
+                    return;
+                }
+            }
+
+            if (weightKg != null && (weightKg <= 0 || weightKg > 200)) {
+                request.getSession().setAttribute("errorMessage", "Cân nặng phải lớn hơn 0 và nhỏ hơn hoặc bằng 200kg!");
                 response.sendRedirect(request.getContextPath() + "/petinfoservlet");
                 return;
             }
@@ -132,6 +151,7 @@ public class UpdatePetServlet extends HttpServlet {
             pet.setBreed(breed != null ? breed.trim() : "");
             pet.setAge(age);
             pet.setGender(gender != null ? gender.trim() : "");
+            pet.setWeightKg(weightKg);
             pet.setHealthStatus(healthStatus != null ? healthStatus.trim() : "");
             pet.setDescription(description != null ? description.trim() : "");
 

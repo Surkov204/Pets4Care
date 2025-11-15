@@ -683,12 +683,21 @@
                         var html = '';
                         for (var i=0; i<pets.length; i++) {
                             var p = pets[i];
+                            var weightKg = (p.weightKg !== null && p.weightKg !== undefined) ? parseFloat(p.weightKg) : null;
+                            var adjustedPrice = calculateAdjustedPrice(servicePrice, p.species, weightKg);
+                            var weightLabel = 'chưa cập nhật cân nặng';
+                            if (weightKg !== null && !isNaN(weightKg)) {
+                                weightLabel = (Number.isInteger(weightKg) ? weightKg.toFixed(0) : weightKg.toFixed(1)) + 'kg';
+                            }
+                            var displayPrice = adjustedPrice.toLocaleString('vi-VN');
                             html += '<label class="flex items-center space-x-2 py-1 cursor-pointer hover:bg-gray-50 px-2 rounded">';
                             html += '<input type="checkbox" name="pet-' + serviceId + '" value="' + p.id + '" ';
                             html += 'data-pet-name="' + p.petName + '" data-pet-species="' + p.species + '" ';
-                            html += 'onchange="updatePetPrice(' + serviceId + ', ' + servicePrice + ')" ';
+                            html += 'data-pet-weight="' + (weightKg !== null ? weightKg : '') + '" ';
+                            html += 'data-adjusted-price="' + adjustedPrice + '" data-base-price="' + servicePrice + '" ';
+                            html += 'onchange="updatePetPrice(' + serviceId + ')" ';
                             html += 'class="pet-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">';
-                            html += '<span class="text-sm text-gray-700">' + p.petName + ' (' + p.species + ')</span>';
+                            html += '<span class="text-sm text-gray-700">' + p.petName + ' (' + p.species + ', ' + weightLabel + ') - ' + displayPrice + '₫</span>';
                             html += '</label>';
                         }
                         checkboxContainer.innerHTML = html;
@@ -702,11 +711,74 @@
                     });
                 }, 'json');
                 
+                // Hàm tính giá điều chỉnh theo cân nặng
+                function calculateAdjustedPrice(basePrice, species, weightKg) {
+                    if (!basePrice || basePrice <= 0) {
+                        return 0;
+                    }
+                    var normalized = (species || '').toLowerCase();
+                    var weight = (weightKg !== null && weightKg !== undefined) ? parseFloat(weightKg) : null;
+                    var multiplier = 1;
+                    
+                    if (weight === null || isNaN(weight) || weight <= 0 || weight > 200) {
+                        return roundToNearestThousand(basePrice);
+                    }
+                    
+                    if (normalized === 'dog' || normalized === 'chó') {
+                        if (weight < 7) {
+                            multiplier = 0.90;
+                        } else if (weight < 16) {
+                            multiplier = 1.0;
+                        } else if (weight <= 30) {
+                            multiplier = 1.25;
+                        } else {
+                            multiplier = 1.5;
+                        }
+                    } else if (normalized === 'cat' || normalized === 'mèo') {
+                        if (weight < 4) {
+                            multiplier = 0.92;
+                        } else if (weight < 6) {
+                            multiplier = 1.0;
+                        } else if (weight < 8) {
+                            multiplier = 1.12;
+                        } else {
+                            multiplier = 1.28;
+                        }
+                    } else {
+                        if (weight < 2) {
+                            multiplier = 0.95;
+                        } else if (weight < 10) {
+                            multiplier = 1.0;
+                        } else if (weight < 25) {
+                            multiplier = 1.18;
+                        } else {
+                            multiplier = 1.35;
+                        }
+                    }
+                    
+                    return roundToNearestThousand(basePrice * multiplier);
+                }
+                
+                function roundToNearestThousand(value) {
+                    if (!value || !isFinite(value)) {
+                        return 0;
+                    }
+                    return Math.round(value / 1000) * 1000;
+                }
+                
                 // Hàm cập nhật giá khi chọn/bỏ chọn pet
-                window.updatePetPrice = function(serviceId, pricePerPet) {
+                window.updatePetPrice = function(serviceId) {
                     var checkboxes = document.querySelectorAll('input[name="pet-' + serviceId + '"]:checked');
                     var selectedCount = checkboxes.length;
-                    var totalPrice = pricePerPet * selectedCount;
+                    var totalPrice = 0;
+                    
+                    checkboxes.forEach(function(cb) {
+                        var adjusted = parseFloat(cb.dataset.adjustedPrice);
+                        if (isNaN(adjusted) || adjusted <= 0) {
+                            adjusted = parseFloat(cb.dataset.basePrice) || 0;
+                        }
+                        totalPrice += adjusted;
+                    });
                     
                     // Cập nhật hiển thị
                     var petCountEl = document.getElementById('pet-count-' + serviceId);
@@ -735,8 +807,8 @@
                 function updateCartTotal() {
                     var total = 0;
                     $('[id^="item-total-"]').each(function() {
-                        var priceText = $(this).text().replace(/[^\d.]/g, '');
-                        total += parseFloat(priceText) || 0;
+                        var priceText = $(this).text().replace(/[^\d]/g, '');
+                        total += parseInt(priceText, 10) || 0;
                     });
                     $('#cart-total').text(total.toLocaleString('vi-VN') + '₫');
                 }

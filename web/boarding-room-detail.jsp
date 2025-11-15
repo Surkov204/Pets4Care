@@ -235,10 +235,122 @@
         <!-- Room Detail Card -->
         <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
             <div class="grid md:grid-cols-2 gap-8">
-                <!-- Left: Room Icon/Image -->
-                <div class="text-center">
-                    <div class="service-icon-large">
-                        <%= room.getRoomEmoji() %>
+                <!-- Left: Room Images Gallery -->
+                <div class="space-y-4">
+                    <%
+                        // Tạo đường dẫn ảnh dựa trên roomType và roomName
+                        int roomId = room.getRoomId();
+                        String basePath = request.getContextPath() + "/images/";
+                        String roomType = room.getRoomType() != null ? room.getRoomType().toLowerCase() : "";
+                        String roomName = room.getRoomName() != null ? room.getRoomName().toLowerCase() : "";
+                        
+                        // Xác định ảnh dựa trên roomType
+                        String roomImage1, roomImage2, roomImage3;
+                        String fallbackImage1, fallbackImage2, fallbackImage3;
+                        
+                        // Kiểm tra nếu là phòng chó lớn
+                        if (roomType.contains("dog_large") || roomType.equals("dog_large") ||
+                            (roomName.contains("large") && roomName.contains("dog"))) {
+                            roomImage1 = basePath + "room-dog-large1.jpg";
+                            roomImage2 = basePath + "room-dog-large2.jpg";
+                            roomImage3 = basePath + "room-dog-large3.jpg";
+                            fallbackImage1 = basePath + "room-dog-large1.jpg";
+                            fallbackImage2 = basePath + "room-dog-large2.jpg";
+                            fallbackImage3 = basePath + "room-dog-large3.jpg";
+                        }
+                        // Kiểm tra nếu là phòng chó nhỏ
+                        else if (roomType.contains("dog_small") || roomType.equals("dog_small") ||
+                                 (roomName.contains("small") && roomName.contains("dog"))) {
+                            roomImage1 = basePath + "room-dog-small1.jpg";
+                            roomImage2 = basePath + "room-dog-small2.jpg";
+                            roomImage3 = basePath + "room-dog-small3.jpg";
+                            // Fallback về large nếu không có small
+                            fallbackImage1 = basePath + "room-dog-large1.jpg";
+                            fallbackImage2 = basePath + "room-dog-large2.jpg";
+                            fallbackImage3 = basePath + "room-dog-large3.jpg";
+                        }
+                        // Kiểm tra nếu là phòng mèo thông thường (cat_standard)
+                        else if (roomType.contains("cat_standard") || roomType.equals("cat_standard") ||
+                                 (roomName.contains("cat") && (roomName.contains("standard") || roomName.contains("thông thường") || roomName.contains("thong thuong")))) {
+                            roomImage1 = basePath + "room-cat-normal1.jpg";
+                            roomImage2 = basePath + "room-cat-normal2.jpg";
+                            roomImage3 = basePath + "room-cat-normal3.jpg";
+                            // Fallback về dog large nếu không có cat normal
+                            fallbackImage1 = basePath + "room-dog-large1.jpg";
+                            fallbackImage2 = basePath + "room-dog-large2.jpg";
+                            fallbackImage3 = basePath + "room-dog-large3.jpg";
+                        }
+                        // Kiểm tra nếu là phòng mèo VIP
+                        else if (roomType.contains("cat_vip") || roomType.equals("cat_vip") ||
+                                 (roomName.contains("cat") && roomName.contains("vip"))) {
+                            roomImage1 = basePath + "room-cat-vip1.jpg";
+                            roomImage2 = basePath + "room-cat-vip2.jpg";
+                            roomImage3 = basePath + "room-cat-vip3.jpg";
+                            // Fallback về cat normal nếu không có cat vip, sau đó về dog large
+                            fallbackImage1 = basePath + "room-cat-normal1.jpg";
+                            fallbackImage2 = basePath + "room-cat-normal2.jpg";
+                            fallbackImage3 = basePath + "room-cat-normal3.jpg";
+                        }
+                        // Kiểm tra nếu là phòng mèo khác (fallback chung)
+                        else if (roomType.contains("cat") || roomName.contains("cat")) {
+                            roomImage1 = basePath + "room-cat-normal1.jpg";
+                            roomImage2 = basePath + "room-cat-normal2.jpg";
+                            roomImage3 = basePath + "room-cat-normal3.jpg";
+                            // Fallback về dog large nếu không có cat normal
+                            fallbackImage1 = basePath + "room-dog-large1.jpg";
+                            fallbackImage2 = basePath + "room-dog-large2.jpg";
+                            fallbackImage3 = basePath + "room-dog-large3.jpg";
+                        }
+                        // Kiểm tra nếu là phòng hỗn hợp
+                        else if (roomType.contains("mixed") || roomName.contains("mixed")) {
+                            roomImage1 = basePath + "room-mixed1.jpg";
+                            roomImage2 = basePath + "room-mixed2.jpg";
+                            roomImage3 = basePath + "room-mixed3.jpg";
+                            // Fallback về dog large nếu không có mixed
+                            fallbackImage1 = basePath + "room-dog-large1.jpg";
+                            fallbackImage2 = basePath + "room-dog-large2.jpg";
+                            fallbackImage3 = basePath + "room-dog-large3.jpg";
+                        }
+                        // Mặc định: dùng ảnh chó lớn
+                        else {
+                            roomImage1 = basePath + "room-dog-large1.jpg";
+                            roomImage2 = basePath + "room-dog-large2.jpg";
+                            roomImage3 = basePath + "room-dog-large3.jpg";
+                            fallbackImage1 = basePath + "room-dog-large1.jpg";
+                            fallbackImage2 = basePath + "room-dog-large2.jpg";
+                            fallbackImage3 = basePath + "room-dog-large3.jpg";
+                        }
+                    %>
+                    <!-- Main Image -->
+                    <div class="relative overflow-hidden rounded-lg shadow-lg" style="height: 400px;">
+                        <img id="mainImage" src="<%= roomImage1 %>" 
+                             alt="<%= room.getRoomName() %>" 
+                             class="w-full h-full object-cover transition-opacity duration-300"
+                             onerror="this.onerror=null; this.src='<%= fallbackImage1 %>';">
+                    </div>
+                    <!-- Thumbnail Images -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="relative overflow-hidden rounded-lg cursor-pointer border-2 border-orange-500 hover:border-orange-600 transition-all" 
+                             onclick="changeMainImage('<%= roomImage1 %>')">
+                            <img src="<%= roomImage1 %>" 
+                                 alt="<%= room.getRoomName() %> - Ảnh 1" 
+                                 class="w-full h-24 object-cover hover:opacity-80 transition-opacity"
+                                 onerror="this.onerror=null; this.src='<%= fallbackImage1 %>';">
+                        </div>
+                        <div class="relative overflow-hidden rounded-lg cursor-pointer border-2 border-gray-300 hover:border-orange-500 transition-all" 
+                             onclick="changeMainImage('<%= roomImage2 %>')">
+                            <img src="<%= roomImage2 %>" 
+                                 alt="<%= room.getRoomName() %> - Ảnh 2" 
+                                 class="w-full h-24 object-cover hover:opacity-80 transition-opacity"
+                                 onerror="this.onerror=null; this.src='<%= fallbackImage2 %>';">
+                        </div>
+                        <div class="relative overflow-hidden rounded-lg cursor-pointer border-2 border-gray-300 hover:border-orange-500 transition-all" 
+                             onclick="changeMainImage('<%= roomImage3 %>')">
+                            <img src="<%= roomImage3 %>" 
+                                 alt="<%= room.getRoomName() %> - Ảnh 3" 
+                                 class="w-full h-24 object-cover hover:opacity-80 transition-opacity"
+                                 onerror="this.onerror=null; this.src='<%= fallbackImage3 %>';">
+                        </div>
                     </div>
                 </div>
 
@@ -774,6 +886,31 @@
                 });
             }
         });
+
+        // Change main image when clicking thumbnail
+        function changeMainImage(imageSrc) {
+            const mainImage = document.getElementById('mainImage');
+            if (mainImage) {
+                mainImage.style.opacity = '0';
+                setTimeout(() => {
+                    mainImage.src = imageSrc;
+                    mainImage.style.opacity = '1';
+                }, 150);
+            }
+            
+            // Update thumbnail borders
+            const thumbnails = document.querySelectorAll('.grid.grid-cols-3 > div');
+            thumbnails.forEach(thumb => {
+                const img = thumb.querySelector('img');
+                if (img && img.src.includes(imageSrc.split('/').pop())) {
+                    thumb.classList.remove('border-gray-300');
+                    thumb.classList.add('border-orange-500');
+                } else {
+                    thumb.classList.remove('border-orange-500');
+                    thumb.classList.add('border-gray-300');
+                }
+            });
+        }
 
 
         // Filter reviews by rating

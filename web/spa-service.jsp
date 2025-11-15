@@ -1,6 +1,7 @@
 <%@page import="model.Customer"%>
 <%@page import="model.CartItem"%>
 <%@page import="model.PetServiceModel"%>
+<%@page import="model.Pet"%>
 <%@page import="dao.BoardingRoomDAO"%>
 <%@page import="java.util.Map"%>
 <%@page import="java.util.List"%>

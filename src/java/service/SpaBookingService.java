@@ -2,11 +2,13 @@ package service;
 
 import dao.BookingDAO;
 import dao.BookingServiceDAO;
+import dao.PetDAO;
 import dao.PetServiceDAO;
 import model.Booking;
 import model.BookingServiceItem;
 import model.Customer;
 import model.PetServiceModel;
+import model.Pet;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import utils.PetPricingUtils;
 
 /**
  * Service xử lý logic nghiệp vụ cho Spa Booking
@@ -28,11 +31,13 @@ public class SpaBookingService {
     private BookingDAO bookingDAO;
     private BookingServiceDAO bookingServiceDAO;
     private PetServiceDAO petServiceDAO;
+    private PetDAO petDAO;
     
     public SpaBookingService() {
         this.bookingDAO = new BookingDAO();
         this.bookingServiceDAO = new BookingServiceDAO();
         this.petServiceDAO = new PetServiceDAO();
+        this.petDAO = new PetDAO();
     }
 
     /**
@@ -72,11 +77,26 @@ public class SpaBookingService {
     public int createSingleSpaBooking(Customer customer, int petId, int serviceId, int quantity,
                                           java.sql.Timestamp start, String note) {
         try {
-            if (!validateSpaService(serviceId) || quantity <= 0) return -1;
+            logger.info("=== createSingleSpaBooking START ===");
+            logger.info("Customer ID: " + customer.getCustomerId());
+            logger.info("Pet ID: " + petId);
+            logger.info("Service ID: " + serviceId);
+            logger.info("Quantity: " + quantity);
+            logger.info("Start: " + start);
+            
+            if (!validateSpaService(serviceId)) {
+                logger.warning("Service validation failed for serviceId: " + serviceId);
+                return -1;
+            }
+            if (quantity <= 0) {
+                logger.warning("Invalid quantity: " + quantity);
+                return -1;
+            }
 
             // Tính end (đã xóa kiểm tra khả dụng - cho phép nhiều khách đặt cùng giờ)
             int duration = calculateDurationForSingle(serviceId, quantity);
             java.sql.Timestamp end = new java.sql.Timestamp(start.getTime() + (long) duration * 60 * 1000);
+            logger.info("Duration: " + duration + " minutes, End: " + end);
 
             Booking booking = new Booking();
             booking.setCustomerId(customer.getCustomerId());
@@ -87,40 +107,75 @@ public class SpaBookingService {
             booking.setNote(note != null ? note.trim() : "");
             booking.setCreatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
 
+            logger.info("Attempting to add booking to database...");
             boolean created = bookingDAO.addBooking(booking);
             if (!created) {
-                logger.warning("Failed to add booking to database");
+                logger.severe("Failed to add booking to database");
                 return -1;
             }
             if (booking.getBookingId() <= 0) {
-                logger.warning("Booking created but booking_id is not set: " + booking.getBookingId());
+                logger.severe("Booking created but booking_id is not set: " + booking.getBookingId());
                 return -1;
             }
+            logger.info("Booking created successfully with ID: " + booking.getBookingId());
 
             PetServiceModel svc = petServiceDAO.getServiceById(serviceId);
-            if (svc == null) return -1;
+            if (svc == null) {
+                logger.severe("Service not found for serviceId: " + serviceId);
+                return -1;
+            }
+            logger.info("Service found: " + svc.getName() + ", Price: " + svc.getPrice() + ", Duration: " + svc.getDuration());
+
+            BigDecimal priceToApply = svc.getPrice();
+            if (petId > 0) {
+                Pet bookingPet = petDAO.getPetById(petId);
+                if (bookingPet != null) {
+                    logger.info("Pet found: " + bookingPet.getPetName() + ", Species: " + bookingPet.getSpecies() + ", Weight: " + bookingPet.getWeightKg());
+                    BigDecimal adjusted = PetPricingUtils.calculateAdjustedPrice(svc, bookingPet);
+                    if (adjusted != null && adjusted.compareTo(BigDecimal.ZERO) > 0) {
+                        priceToApply = adjusted;
+                        logger.info("Price adjusted from " + svc.getPrice() + " to " + priceToApply);
+                    }
+                } else {
+                    logger.warning("Pet not found for petId: " + petId + ", using base price");
+                }
+            }
 
             BookingServiceItem item = new BookingServiceItem();
             item.setBookingId(booking.getBookingId());
             item.setServiceId(serviceId);
             item.setQuantity(quantity);
-            item.setPrice(svc.getPrice());
+            item.setPrice(priceToApply);
             item.setNote("");
+            item.setServiceDuration(svc.getDuration());
+            item.setCreatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
+            
+            logger.info("BookingServiceItem prepared: bookingId=" + item.getBookingId() + 
+                       ", serviceId=" + item.getServiceId() + 
+                       ", quantity=" + item.getQuantity() + 
+                       ", price=" + item.getPrice() + 
+                       ", duration=" + item.getServiceDuration() + 
+                       ", createdAt=" + item.getCreatedAt());
 
+            logger.info("Attempting to add booking service item...");
             boolean itemAdded = bookingServiceDAO.addBookingService(item);
             if (!itemAdded) {
-                logger.warning("Failed to add booking service item for booking_id: " + booking.getBookingId());
+                logger.severe("Failed to add booking service item for booking_id: " + booking.getBookingId());
                 // Xóa booking đã tạo nếu không thêm được service item
                 try {
                     bookingDAO.deleteBooking(booking.getBookingId());
+                    logger.info("Rolled back booking: " + booking.getBookingId());
                 } catch (Exception ex) {
-                    logger.warning("Failed to rollback booking: " + ex.getMessage());
+                    logger.severe("Failed to rollback booking: " + ex.getMessage());
+                    ex.printStackTrace();
                 }
                 return -1;
             }
+            logger.info("=== createSingleSpaBooking SUCCESS ===");
             logger.info("Successfully created booking ID: " + booking.getBookingId() + " for pet ID: " + petId);
             return booking.getBookingId();
         } catch (Exception e) {
+            logger.severe("=== createSingleSpaBooking EXCEPTION ===");
             logger.log(java.util.logging.Level.SEVERE, "Lỗi tạo booking đơn lẻ", e);
             e.printStackTrace();
             return -1;
@@ -231,6 +286,11 @@ public class SpaBookingService {
             }
             
             // 2. Tạo chi tiết booking service
+            Pet bookingPet = null;
+            if (booking.getPetId() > 0) {
+                bookingPet = petDAO.getPetById(booking.getPetId());
+            }
+
             for (int i = 0; i < serviceIds.size(); i++) {
                 int serviceId = serviceIds.get(i);
                 int quantity = quantities.get(i);
@@ -245,8 +305,17 @@ public class SpaBookingService {
                 bookingService.setBookingId(booking.getBookingId());
                 bookingService.setServiceId(serviceId);
                 bookingService.setQuantity(quantity);
-                bookingService.setPrice(service.getPrice());
+                BigDecimal priceToApply = service.getPrice();
+                if (bookingPet != null) {
+                    BigDecimal adjusted = PetPricingUtils.calculateAdjustedPrice(service, bookingPet);
+                    if (adjusted != null && adjusted.compareTo(BigDecimal.ZERO) > 0) {
+                        priceToApply = adjusted;
+                    }
+                }
+                bookingService.setPrice(priceToApply);
                 bookingService.setNote("");
+                bookingService.setServiceDuration(service.getDuration());
+                bookingService.setCreatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
                 
                 boolean detailCreated = bookingServiceDAO.addBookingService(bookingService);
                 if (!detailCreated) {

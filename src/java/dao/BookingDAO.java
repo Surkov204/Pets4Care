@@ -463,8 +463,47 @@ public List<Booking> getAllBookings() {
             " (customer_id, pet_id, appointment_start, appointment_end, status, note, doctor_id, staff_id, order_id, created_at) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection conn = DBConnection.getConnection()) {
+            logger.info("=== addBooking START ===");
+            logger.info("Customer ID: " + booking.getCustomerId());
+            logger.info("Pet ID: " + booking.getPetId());
+            logger.info("Appointment Start: " + booking.getAppointmentStart());
+            logger.info("Appointment End: " + booking.getAppointmentEnd());
+            logger.info("Status: " + booking.getStatus());
+            logger.info("Note: " + booking.getNote());
+            logger.info("Doctor ID: " + booking.getDoctorId());
+            logger.info("Staff ID: " + booking.getStaffId());
+            logger.info("Order ID: " + booking.getOrderId());
+            logger.info("Created At: " + booking.getCreatedAt());
+
+            // Validate foreign keys before insert
+            logger.info("Validating foreign keys...");
+            
+            // Check customer exists
+            try (PreparedStatement checkCustomer = conn.prepareStatement("SELECT 1 FROM dbo.Customer WHERE customer_id = ?")) {
+                checkCustomer.setInt(1, booking.getCustomerId());
+                try (ResultSet rs = checkCustomer.executeQuery()) {
+                    if (!rs.next()) {
+                        logger.severe("Customer ID " + booking.getCustomerId() + " does not exist in Customer table");
+                        return false;
+                    }
+                }
+            }
+            logger.info("Customer ID " + booking.getCustomerId() + " exists");
+            
+            // Check pet exists
+            try (PreparedStatement checkPet = conn.prepareStatement("SELECT 1 FROM dbo.Pet WHERE id = ?")) {
+                checkPet.setInt(1, booking.getPetId());
+                try (ResultSet rs = checkPet.executeQuery()) {
+                    if (!rs.next()) {
+                        logger.severe("Pet ID " + booking.getPetId() + " does not exist in Pet table");
+                        return false;
+                    }
+                }
+            }
+            logger.info("Pet ID " + booking.getPetId() + " exists");
+
+            try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setInt(1, booking.getCustomerId());
             ps.setInt(2, booking.getPetId());
@@ -489,17 +528,40 @@ public List<Booking> getAllBookings() {
             }
             ps.setTimestamp(10, booking.getCreatedAt());
 
-            int rows = ps.executeUpdate();
-            if (rows > 0) {
-                try (ResultSet keys = ps.getGeneratedKeys()) {
-                    if (keys.next()) booking.setBookingId(keys.getInt(1));
+                logger.info("Executing INSERT INTO Booking...");
+                int rows = ps.executeUpdate();
+                logger.info("Rows affected: " + rows);
+                
+                if (rows > 0) {
+                    try (ResultSet keys = ps.getGeneratedKeys()) {
+                        if (keys.next()) {
+                            int bookingId = keys.getInt(1);
+                            booking.setBookingId(bookingId);
+                            logger.info("=== addBooking SUCCESS ===");
+                            logger.info("Booking created with ID: " + bookingId);
+                            return true;
+                        } else {
+                            logger.warning("No generated keys returned");
+                        }
+                    }
+                } else {
+                    logger.warning("INSERT executed but no rows affected");
                 }
-                return true;
             }
         } catch (SQLException e) {
+            logger.severe("=== addBooking SQL EXCEPTION ===");
             logger.severe("Error adding booking: " + e.getMessage());
+            logger.severe("SQL State: " + e.getSQLState());
+            logger.severe("Error Code: " + e.getErrorCode());
+            logger.severe("SQL: " + sql);
+            e.printStackTrace();
+        } catch (Exception e) {
+            logger.severe("=== addBooking GENERAL EXCEPTION ===");
+            logger.severe("Unexpected error: " + e.getMessage());
             e.printStackTrace();
         }
+        
+        logger.warning("=== addBooking FAILED ===");
         return false;
     }
 

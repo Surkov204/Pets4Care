@@ -1,10 +1,9 @@
 <%@page import="model.Customer"%>
 <%@page import="model.CartItem"%>
 <%@page import="model.PetServiceModel"%>
-<%@page import="model.Pet"%>
 <%@page import="model.Review"%>
-<%@page import="java.util.Map"%>
 <%@page import="java.util.List"%>
+<%@page import="java.util.Map"%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
@@ -25,7 +24,6 @@
     // Get service from request attributes
     PetServiceModel service = (PetServiceModel) request.getAttribute("service");
     List<Review> reviews = (List<Review>) request.getAttribute("reviews");
-    List<Pet> customerPets = (List<Pet>) request.getAttribute("customerPets");
     
     if (service == null) {
         response.sendRedirect(request.getContextPath() + "/spa-booking?action=services");
@@ -222,29 +220,125 @@
         <!-- Service Detail Card -->
         <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
             <div class="grid md:grid-cols-2 gap-8">
-                <!-- Left: Service Icon/Image -->
-                <div class="text-center">
-                    <div class="service-icon-large">
-                        <% 
-                            String icon = "🛁"; // default
-                            String serviceName = service.getName().toLowerCase();
-                            if (serviceName.contains("cắt") || serviceName.contains("tỉa")) {
-                                icon = "✂️";
-                            } else if (serviceName.contains("móng")) {
-                                icon = "💅";
-                            } else if (serviceName.contains("tai") || serviceName.contains("răng")) {
-                                icon = "🦷";
-                            } else if (serviceName.contains("massage")) {
-                                icon = "💆";
-                            } else if (serviceName.contains("cao cấp") || serviceName.contains("spa")) {
-                                icon = "✨";
-                            } else if (serviceName.contains("thuốc") || serviceName.contains("ký sinh")) {
-                                icon = "🧴";
-                            } else if (serviceName.contains("da") || serviceName.contains("lông")) {
-                                icon = "🌿";
+                <!-- Left: Service Images Gallery -->
+                <div class="space-y-4">
+                    <%
+                        // Tạo đường dẫn ảnh dựa trên tên dịch vụ và service ID
+                        int serviceId = service.getServiceId();
+                        String basePath = request.getContextPath() + "/images/";
+                        String serviceName = service.getName() != null ? service.getName().toLowerCase() : "";
+                        String serviceType = service.getServiceType() != null ? service.getServiceType().toLowerCase() : "spa";
+                        
+                        // Xác định ảnh dựa trên tên dịch vụ
+                        String serviceImage1, serviceImage2, serviceImage3;
+                        String fallbackImage1, fallbackImage2, fallbackImage3;
+                        
+                        // Kiểm tra nếu là dịch vụ "tắm rửa" - bao gồm nhiều biến thể tên
+                        boolean isBathService = serviceName.contains("tắm rửa") || 
+                                                serviceName.contains("tam rua") ||
+                                                serviceName.contains("tắm + vệ sinh") ||
+                                                serviceName.contains("tam + ve sinh") ||
+                                                serviceName.contains("tắm và vệ sinh") ||
+                                                serviceName.contains("tam va ve sinh") ||
+                                                (serviceName.contains("tắm") && serviceName.contains("vệ sinh")) ||
+                                                (serviceName.contains("tam") && serviceName.contains("ve sinh")) ||
+                                                serviceName.contains("vệ sinh cơ bản") ||
+                                                serviceName.contains("ve sinh co ban");
+                        
+                        if (isBathService) {
+                            serviceImage1 = basePath + "bath1.png";
+                            serviceImage2 = basePath + "bath2.jpg";
+                            serviceImage3 = basePath + "bath3.jpg";
+                            fallbackImage1 = basePath + "bath1.png";
+                            fallbackImage2 = basePath + "bath2.jpg";
+                            fallbackImage3 = basePath + "bath3.jpg";
+                        }
+                        // Kiểm tra nếu là dịch vụ "spa cao cấp"
+                        else if (serviceName.contains("spa cao cấp") || serviceName.contains("spa cao cap") || 
+                                 serviceName.contains("cao cấp") || serviceName.contains("cao cap")) {
+                            serviceImage1 = basePath + "spa-caocap1.jpg";
+                            serviceImage2 = basePath + "spa-caocap2.jpg";
+                            serviceImage3 = basePath + "spa-caocap3.jpg";
+                            fallbackImage1 = basePath + "spa-caocap1.jpg";
+                            fallbackImage2 = basePath + "spa-caocap2.jpg";
+                            fallbackImage3 = basePath + "spa-caocap3.jpg";
+                        }
+                        // Kiểm tra nếu là dịch vụ "Cắt tỉa lông chuyên nghiệp"
+                        else if (serviceName.contains("cắt tỉa lông") || serviceName.contains("cat tia long") ||
+                                 serviceName.contains("cắt tỉa") || serviceName.contains("cat tia") ||
+                                 (serviceName.contains("cắt") && serviceName.contains("lông")) ||
+                                 (serviceName.contains("cat") && serviceName.contains("long"))) {
+                            serviceImage1 = basePath + "cut1.jpg";
+                            serviceImage2 = basePath + "cut2.jpg";
+                            serviceImage3 = basePath + "cut3.jpg";
+                            fallbackImage1 = basePath + "cut1.jpg";
+                            fallbackImage2 = basePath + "cut2.jpg";
+                            fallbackImage3 = basePath + "cut3.jpg";
+                        }
+                        // Kiểm tra nếu là dịch vụ "Vệ sinh răng miệng"
+                        else if (serviceName.contains("vệ sinh răng miệng") || serviceName.contains("ve sinh rang mieng") ||
+                                 serviceName.contains("răng miệng") || serviceName.contains("rang mieng") ||
+                                 (serviceName.contains("vệ sinh") && serviceName.contains("răng")) ||
+                                 (serviceName.contains("ve sinh") && serviceName.contains("rang"))) {
+                            serviceImage1 = basePath + "teeth1.jpg";
+                            serviceImage2 = basePath + "teeth2.jpg";
+                            serviceImage3 = basePath + "teeth3.jpg";
+                            fallbackImage1 = basePath + "teeth1.jpg";
+                            fallbackImage2 = basePath + "teeth2.jpg";
+                            fallbackImage3 = basePath + "teeth3.jpg";
+                        }
+                        // Các dịch vụ khác: sử dụng ảnh theo service ID
+                        else {
+                            serviceImage1 = basePath + "service_" + serviceId + "_1.jpg";
+                            serviceImage2 = basePath + "service_" + serviceId + "_2.jpg";
+                            serviceImage3 = basePath + "service_" + serviceId + "_3.jpg";
+                            
+                            // Ảnh fallback dựa trên service_type
+                            if ("spa".equals(serviceType)) {
+                                fallbackImage1 = basePath + "spa_default_1.jpg";
+                                fallbackImage2 = basePath + "spa_default_2.jpg";
+                                fallbackImage3 = basePath + "spa_default_3.jpg";
+                            } else if ("health_check".equals(serviceType)) {
+                                fallbackImage1 = basePath + "health_default_1.jpg";
+                                fallbackImage2 = basePath + "health_default_2.jpg";
+                                fallbackImage3 = basePath + "health_default_3.jpg";
+                            } else {
+                                fallbackImage1 = basePath + "service_default_1.jpg";
+                                fallbackImage2 = basePath + "service_default_2.jpg";
+                                fallbackImage3 = basePath + "service_default_3.jpg";
                             }
-                        %>
-                        <%= icon %>
+                        }
+                    %>
+                    <!-- Main Image -->
+                    <div class="relative overflow-hidden rounded-lg shadow-lg" style="height: 400px;">
+                        <img id="mainImage" src="<%= serviceImage1 %>" 
+                             alt="<%= service.getName() %>" 
+                             class="w-full h-full object-cover transition-opacity duration-300"
+                             onerror="this.onerror=null; this.src='<%= fallbackImage1 %>';">
+                    </div>
+                    <!-- Thumbnail Images -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="relative overflow-hidden rounded-lg cursor-pointer border-2 border-orange-500 hover:border-orange-600 transition-all" 
+                             onclick="changeMainImage('<%= serviceImage1 %>')">
+                            <img src="<%= serviceImage1 %>" 
+                                 alt="<%= service.getName() %> - Ảnh 1" 
+                                 class="w-full h-24 object-cover hover:opacity-80 transition-opacity"
+                                 onerror="this.onerror=null; this.src='<%= fallbackImage1 %>';">
+                        </div>
+                        <div class="relative overflow-hidden rounded-lg cursor-pointer border-2 border-gray-300 hover:border-orange-500 transition-all" 
+                             onclick="changeMainImage('<%= serviceImage2 %>')">
+                            <img src="<%= serviceImage2 %>" 
+                                 alt="<%= service.getName() %> - Ảnh 2" 
+                                 class="w-full h-24 object-cover hover:opacity-80 transition-opacity"
+                                 onerror="this.onerror=null; this.src='<%= fallbackImage2 %>';">
+                        </div>
+                        <div class="relative overflow-hidden rounded-lg cursor-pointer border-2 border-gray-300 hover:border-orange-500 transition-all" 
+                             onclick="changeMainImage('<%= serviceImage3 %>')">
+                            <img src="<%= serviceImage3 %>" 
+                                 alt="<%= service.getName() %> - Ảnh 3" 
+                                 class="w-full h-24 object-cover hover:opacity-80 transition-opacity"
+                                 onerror="this.onerror=null; this.src='<%= fallbackImage3 %>';">
+                        </div>
                     </div>
                 </div>
 
@@ -635,6 +729,30 @@
             }
         });
 
+        // Change main image when clicking thumbnail
+        function changeMainImage(imageSrc) {
+            const mainImage = document.getElementById('mainImage');
+            if (mainImage) {
+                mainImage.style.opacity = '0';
+                setTimeout(() => {
+                    mainImage.src = imageSrc;
+                    mainImage.style.opacity = '1';
+                }, 150);
+            }
+            
+            // Update thumbnail borders
+            const thumbnails = document.querySelectorAll('.grid.grid-cols-3 > div');
+            thumbnails.forEach(thumb => {
+                const img = thumb.querySelector('img');
+                if (img && img.src.includes(imageSrc.split('/').pop())) {
+                    thumb.classList.remove('border-gray-300');
+                    thumb.classList.add('border-orange-500');
+                } else {
+                    thumb.classList.remove('border-orange-500');
+                    thumb.classList.add('border-gray-300');
+                }
+            });
+        }
 
         // Filter reviews by rating
         let currentFilter = 0; // 0 = all, 1-5 = specific rating
@@ -962,7 +1080,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             const descriptionText = document.getElementById('descriptionText');
             const toggleButton = document.getElementById('descriptionToggle');
-            
             if (descriptionText && toggleButton) {
                 // Wait a bit for layout to settle
                 setTimeout(function() {

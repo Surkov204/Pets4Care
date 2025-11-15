@@ -7,7 +7,7 @@ public class StaffSalaryDAO {
 
     // ✅ Lấy lương hiện tại của 1 nhân viên
     public Double getHourlyRate(int staffId) {
-        String sql = "SELECT HourlyRate FROM StaffSalary WHERE StaffID = ?";
+        String sql = "SELECT HourlyRate FROM StaffSalary WHERE EmployeeType = 'STAFF' AND EmployeeID = ?";
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, staffId);
@@ -21,9 +21,9 @@ public class StaffSalaryDAO {
 
     // ✅ Cập nhật hoặc thêm mới lương
     public boolean updateHourlyRate(int staffId, double newRate) {
-        String checkSql = "SELECT COUNT(*) FROM StaffSalary WHERE StaffID = ?";
-        String updateSql = "UPDATE StaffSalary SET HourlyRate = ?, UpdatedAt = GETDATE() WHERE StaffID = ?";
-        String insertSql = "INSERT INTO StaffSalary (StaffID, HourlyRate, UpdatedAt) VALUES (?, ?, GETDATE())";
+        String checkSql = "SELECT COUNT(*) FROM StaffSalary WHERE EmployeeType = 'STAFF' AND EmployeeID = ?";
+        String updateSql = "UPDATE StaffSalary SET HourlyRate = ?, UpdatedAt = GETDATE() WHERE EmployeeType = 'STAFF' AND EmployeeID = ?";
+        String insertSql = "INSERT INTO StaffSalary (EmployeeType, EmployeeID, HourlyRate, UpdatedAt) VALUES ('STAFF', ?, ?, GETDATE())";
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement check = con.prepareStatement(checkSql)) {

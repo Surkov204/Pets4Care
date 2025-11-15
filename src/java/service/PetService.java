@@ -29,6 +29,7 @@ public class PetService implements IPetService {
         System.out.println("Breed: " + pet.getBreed());
         System.out.println("Age: " + pet.getAge());
         System.out.println("Gender: " + pet.getGender());
+        System.out.println("Weight (kg): " + pet.getWeightKg());
         
         if (!validatePetInfo(pet)) {
             System.out.println("Validation failed for pet save");
@@ -49,6 +50,7 @@ public class PetService implements IPetService {
         System.out.println("Breed: " + pet.getBreed());
         System.out.println("Age: " + pet.getAge());
         System.out.println("Gender: " + pet.getGender());
+        System.out.println("Weight (kg): " + pet.getWeightKg());
         
         if (!validatePetInfo(pet)) {
             System.out.println("Validation failed for pet update");
@@ -147,6 +149,13 @@ public class PetService implements IPetService {
         if (pet.getGender() == null || (!pet.getGender().equals("male") && !pet.getGender().equals("female"))) {
             System.out.println("Invalid gender: " + pet.getGender());
             return false;
+        }
+
+        if (pet.getWeightKg() != null) {
+            if (pet.getWeightKg() <= 0 || pet.getWeightKg() > 200) {
+                System.out.println("Invalid weight: " + pet.getWeightKg());
+                return false;
+            }
         }
         
         // Validate customer ID

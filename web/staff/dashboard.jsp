@@ -406,9 +406,12 @@
             <!-- Sidebar -->
             <aside class="staff-sidebar">
                 <ul>
-                    <li><a href="${pageContext.request.contextPath}/staff/viewOrder"><i class="fas fa-receipt"></i> View Orders</a></li>
+                    <li><a href="${pageContext.request.contextPath}/staff/dashboard.jsp">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a></li>
+<!--                    <li><a href="${pageContext.request.contextPath}/staff/viewOrder"><i class="fas fa-receipt"></i> View Orders</a></li>-->
                     <li><a href="${pageContext.request.contextPath}/staff/mySchedule"><i class="fas fa-calendar-alt"></i> My Work Schedule</a></li>
-                    <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-users"></i> Customer Profile</a></li>
+<!--                    <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-users"></i> Customer Profile</a></li>-->
                     <li><a href="${pageContext.request.contextPath}/staff/services-booking"><i class="fas fa-list"></i> Services Booking</a></li>
                     <li class="chat-item">
                         <a href="${pageContext.request.contextPath}/staff/chatCustomer" id="chatMenuItem">
@@ -461,10 +464,10 @@
                         <table class="salary-table">
                             <thead>
                                 <tr>
-                                    <th>Tháng</th>
-                                    <th>Tổng giờ</th>
-                                    <th>Lương/Giờ (₫)</th>
-                                    <th>Tổng Lương (₫)</th>
+                                    <th>Kỳ lương</th>
+                                    <th>Lương tháng chuẩn (₫)</th>
+                                    <th>Số ca hoàn thành</th>
+                                    <th>Lương thực nhận (₫)</th>
                                     <th>Ngày Tạo</th>
                                 </tr>
                             </thead>
@@ -472,12 +475,35 @@
                                 <c:if test="${not empty sessionScope.latestPayroll}">
                                     <tr>
                                         <td>${sessionScope.latestPayroll.periodStart} → ${sessionScope.latestPayroll.periodEnd}</td>
-                                        <td>${sessionScope.latestPayroll.totalHours}</td>
-                                        <td>${sessionScope.latestPayroll.hourlyRate}</td>
+
+                                        <!-- Lương tháng chuẩn -->
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${sessionScope.latestPayroll.baseSalary != null}">
+                                                    ${sessionScope.latestPayroll.baseSalary}
+                                                </c:when>
+                                                <c:otherwise>Chưa thiết lập</c:otherwise>
+                                            </c:choose>
+                                        </td>
+
+                                        <!-- Số ca hoàn thành -->
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${sessionScope.latestPayroll.actualShifts != null}">
+                                                    ${sessionScope.latestPayroll.actualShifts}
+                                                </c:when>
+                                                <c:otherwise>0</c:otherwise>
+                                            </c:choose>
+                                        </td>
+
+                                        <!-- Lương thực nhận -->
                                         <td><b>${sessionScope.latestPayroll.totalSalary}</b></td>
+
+                                        <!-- Ngày tạo -->
                                         <td>${sessionScope.latestPayroll.createdAt}</td>
                                     </tr>
                                 </c:if>
+
                                 <c:if test="${empty sessionScope.latestPayroll}">
                                     <tr><td colspan="5" class="empty-msg">Chưa có dữ liệu lương.</td></tr>
                                 </c:if>

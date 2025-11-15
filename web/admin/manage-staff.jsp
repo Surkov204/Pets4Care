@@ -276,6 +276,7 @@
 
                 <!-- Tab 1: Thông tin nhân viên -->
                 <div id="tab-info" class="tab-content active">
+
                     <div class="stat-boxes">
                         <div class="stat-box"><h3>👑 Admin</h3><div class="number"><%= adminCount%></div></div>
                         <div class="stat-box"><h3>👔 Quản lý</h3><div class="number"><%= managerCount%></div></div>
@@ -285,53 +286,81 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th><th>Tên</th><th>Email</th><th>Vị trí</th><th>Ghi chú</th><th>Hành động</th>
-                                <th>Lương/Giờ (₫)</th><th>Ghi chú</th><th>Hành động</th>
+                                <th>ID</th>
+                                <th>Tên</th>
+                                <th>Email</th>
+                                <th>Vị trí</th>
+
+                                <th>Lương/Giờ</th>
+                                <th>Ghi chú</th>
+                                <th>Hành động</th>
+
+                                <th>Lương/Tháng</th>
+                                <th>Ca chuẩn</th>
+                                <th>Hành động</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             <%
                                 if (staffList != null && !staffList.isEmpty()) {
-                                    // Tạo DAO để lấy lương từng nhân viên
+
                                     dao.StaffSalaryDAO salaryDAO = new dao.StaffSalaryDAO();
 
                                     for (Staff s : staffList) {
                                         Double rate = salaryDAO.getHourlyRate(s.getStaffId());
+                                        Double base = salaryDAO.getMonthlyBaseSalary(s.getStaffId());
+                                        Integer standardShifts = salaryDAO.getStandardShifts(s.getStaffId());
                             %>
+
                             <tr>
                                 <td><%= s.getStaffId()%></td>
                                 <td><%= s.getName()%></td>
                                 <td><%= s.getEmail()%></td>
                                 <td><%= s.getPosition()%></td>
 
-                                <!-- 💰 Thêm cột Lương/Giờ -->
-                                <td><%= rate != null ? String.format("%.0f", rate) : "18000"%></td>
+                                <!-- Lương theo giờ -->
+                                <td><%= rate != null ? String.format("%,.0f", rate) : "18000"%></td>
 
                                 <!-- Ghi chú -->
                                 <td><%= s.getScheduleNote() != null ? s.getScheduleNote() : "-"%></td>
 
-                                <!-- Hành động -->
+                                <!-- Xem / Xóa -->
                                 <td>
                                     <a href="view-staff?id=<%= s.getStaffId()%>" class="btn edit">✏️ Xem</a>
                                     <a href="delete-staff?id=<%= s.getStaffId()%>" class="btn delete"
                                        onclick="return confirm('Xóa nhân viên này?')">🗑️ Xóa</a>
-                                    <!-- 💰 Nút cập nhật lương -->
+                                </td>
+
+                                <!-- Lương tháng -->
+                                <td><%= base != null ? String.format("%,.0f", base) : "Chưa đặt"%></td>
+
+                                <!-- Ca chuẩn -->
+                                <td><%= standardShifts != null ? standardShifts : "-"%></td>
+
+                                <!-- Nút mở modal -->
+                                <td>
                                     <button class="btn approve"
-                                            onclick="openSalaryModal(<%= s.getStaffId()%>, '<%= rate != null ? rate : 18000%>')">
-                                        💰 Cập nhật lương
+                                            onclick="openSalaryModal(
+                                            <%= s.getStaffId()%>,
+                                        '<%= base != null ? base : ""%>',
+                                        '<%= standardShifts != null ? standardShifts : ""%>'
+                                        )">
+                                        💰 Lương tháng
                                     </button>
                                 </td>
+
                             </tr>
+
                             <%
                                 }
                             } else {
                             %>
-                            <tr><td colspan="7">Không có nhân viên nào.</td></tr>
-                            <%
-                                }
-                            %>
+                            <tr><td colspan="10">Không có nhân viên nào.</td></tr>
+                            <% } %>
                         </tbody>
                     </table>
+
                 </div>
 
                 <!-- Tab 2: Ca làm việc -->
@@ -772,7 +801,7 @@
                                 <input type="hidden" id="assignDate" name="date">
                                 <input type="hidden" id="assignShiftId" name="shiftType">
                                 <input type="hidden" name="weekOffset" value="<%= weekOffset%>">
-                                
+
                                 <label>Chọn nhân viên:</label>
                                 <select name="staffId" required>
                                     <c:forEach var="s" items="${staffList}">
@@ -832,13 +861,22 @@
                 <div id="salaryModal" class="modal">
                     <div class="modal-content" style="width:350px;">
                         <span class="close-btn" onclick="closeSalaryModal()">&times;</span>
-                        <h3 style="text-align:center;">💰 Cập nhật lương theo giờ</h3>
+                        <h3 style="text-align:center;">💰 Cập nhật lương tháng</h3>
+
                         <form id="salaryForm">
                             <input type="hidden" id="salaryStaffId" name="staffId">
-                            <label>Mức lương/giờ (₫):</label>
-                            <input type="number" id="salaryRate" name="hourlyRate" required min="10000"
+
+                            <label>Lương cơ bản / tháng (₫):</label>
+                            <input type="number" id="baseSalary" name="baseSalary" required min="3000000"
                                    style="width:100%; padding:8px; margin-top:6px;">
-                            <button type="submit" class="mini-btn" style="width:100%;margin-top:10px;">💾 Lưu thay đổi</button>
+
+                            <label style="margin-top:10px;">Số ca chuẩn / tháng:</label>
+                            <input type="number" id="standardShifts" name="standardShifts" required min="10" max="30"
+                                   style="width:100%; padding:8px; margin-top:6px;">
+
+                            <button type="submit" class="mini-btn" style="width:100%; margin-top:12px;">
+                                💾 Lưu thay đổi
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -846,11 +884,6 @@
         </div>
 
         <script>
-            function openSalaryModal(id, rate) {
-                document.getElementById('salaryStaffId').value = id;
-                document.getElementById('salaryRate').value = rate;
-                document.getElementById('salaryModal').style.display = 'flex';
-            }
             function closeSalaryModal() {
                 document.getElementById('salaryModal').style.display = 'none';
             }
@@ -868,6 +901,14 @@
                 if (data.status === 'success')
                     window.location.reload();
             });
+            function openSalaryModal(id, base, standardShifts) {
+                document.getElementById('salaryStaffId').value = id;
+                document.getElementById('baseSalary').value = base;
+                document.getElementById('standardShifts').value = standardShifts;
+
+                document.getElementById('salaryModal').style.display = 'flex';
+            }
+
             function showTab(name, el) {
                 document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
                 document.querySelectorAll('.tab-buttons button').forEach(b => b.classList.remove('active'));

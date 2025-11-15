@@ -258,6 +258,9 @@
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/CustomerService.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/BookingService.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/BoardingRoom.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/MedicalRecord.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/Doctor.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/DoctorPayrollDAO.java</file>
         </group>
     </open-files>
 </project-private>

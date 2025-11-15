@@ -140,19 +140,19 @@ public class DoctorScheduleController extends HttpServlet {
                         session.setAttribute("errorMessage", "⚠️ Ca làm không hợp lệ.");
                         break;
                     }
-                    String reason = Optional.ofNullable(request.getParameter("reason")).orElse("Bác sĩ đăng ký ca mới");
+                    // Check if doctor already has a shift on this date
+                    if (workDAO.hasDoctorShift(doctorId, Date.valueOf(workDay), shiftId)) {
+                        session.setAttribute("errorMessage", "⚠️ Bạn đã có ca làm vào ngày này.");
+                        break;
+                    }
 
-                    ShiftRequest req = new ShiftRequest();
-                    req.setEmployeeID(doctorId);
-                    req.setToStaffID(0);
-                    req.setType("DoctorRegister");
-                    req.setFromDate(Date.valueOf(workDay));
-                    req.setFromShiftID(shiftId);
-                    req.setReason(reason);
-                    req.setStatus("Pending");
-                    shiftReqDAO.addPassRequest(req);
-                    notiDAO.createNotification(1, "Yêu cầu đăng ký ca (Doctor)", "Bác sĩ " + doctor.getName() + " xin đăng ký ca mới.");
-                    session.setAttribute("successMessage", "✅ Đã gửi yêu cầu đăng ký ca, chờ admin duyệt!");
+                    // Register directly to WorkSchedule table
+                    boolean success = workDAO.addScheduleForDoctor(doctorId, workDay, shiftType);
+                    if (success) {
+                        session.setAttribute("successMessage", "✅ Đã đăng ký ca thành công!");
+                    } else {
+                        session.setAttribute("errorMessage", "❌ Có lỗi xảy ra khi đăng ký ca.");
+                    }
                     break;
                 }
                 case "cancelMultiple" -> {

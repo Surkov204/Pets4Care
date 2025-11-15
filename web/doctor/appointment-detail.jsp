@@ -263,8 +263,39 @@
                     <c:otherwise>Thao tác thành công!</c:otherwise>
                 </c:choose>
             </div>
-        </c:if>
 
+            <!-- Create Medical Record for Completed Appointments -->
+            <c:if test="${booking.status == 'completed' || booking.status == 'Hoàn thành'}">
+                <c:if test="${empty medicalRecord}">
+                    <div class="detail-card" style="background: linear-gradient(135deg, #e8f5e8, #f0f8f0); border-left: 4px solid #4CAF50;">
+                        <h3 style="color: #2e7d32;"><i class="fas fa-notes-medical"></i> Tạo hồ sơ y tế</h3>
+                        <p style="margin-bottom: 20px; color: #333;">
+                            Lịch hẹn này đã hoàn thành. Bạn có thể tạo hồ sơ y tế để ghi lại thông tin khám bệnh và điều trị cho thú cưng.
+                        </p>
+                        <form action="${pageContext.request.contextPath}/doctor/medical-records" method="post" style="display: inline;">
+                            <input type="hidden" name="action" value="create">
+                            <input type="hidden" name="bookingId" value="${booking.bookingId}">
+                            <button type="submit" class="btn-action" style="background: #4CAF50; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
+                                <i class="fas fa-plus"></i> Tạo hồ sơ y tế
+                            </button>
+                        </form>
+                    </div>
+                </c:if>
+                <c:if test="${not empty medicalRecord}">
+                    <div class="detail-card" style="background: linear-gradient(135deg, #e3f2fd, #f0f8ff); border-left: 4px solid #2196F3;">
+                        <h3 style="color: #1565c0;"><i class="fas fa-file-medical"></i> Hồ sơ y tế đã tồn tại</h3>
+                        <p style="margin-bottom: 20px; color: #333;">
+                            Hồ sơ y tế cho lịch hẹn này đã được tạo. Bạn có thể xem và chỉnh sửa thông tin y tế.
+                        </p>
+                        <a href="${pageContext.request.contextPath}/doctor/medical-records?action=view&id=${medicalRecord.recordId}"
+                           class="btn-action" style="background: #2196F3; text-decoration: none;">
+                            <i class="fas fa-eye"></i> Xem hồ sơ y tế
+                        </a>
+                    </div>
+                </c:if>
+            </c:if>
+
+        </c:if>
         <c:if test="${not empty param.error}">
             <div class="alert alert-error">
                 <i class="fas fa-exclamation-circle"></i> 
@@ -383,47 +414,6 @@
                 </c:if>
             </div>
 
-            <!-- Cập nhật thông tin y tế -->
-            <div class="detail-card">
-                <h3><i class="fas fa-notes-medical"></i> Cập nhật tiến độ bệnh trạng</h3>
-                
-                <c:if test="${not empty booking.note}">
-                    <div class="alert" style="background: #e3f2fd; color: #1565c0; margin-bottom: 20px;">
-                        <strong>Ghi chú hiện tại:</strong><br>
-                        ${booking.note}
-                    </div>
-                </c:if>
-
-                <form method="POST" action="${pageContext.request.contextPath}/update-medical-info" class="medical-form">
-                    <input type="hidden" name="bookingId" value="${booking.bookingId}">
-                    
-                    <div class="form-group">
-                        <label for="medicalNote">
-                            <i class="fas fa-stethoscope"></i> Chẩn đoán / Ghi chú y tế:
-                        </label>
-                        <textarea id="medicalNote" name="medicalNote" rows="6" 
-                                  placeholder="Nhập chẩn đoán, kế hoạch điều trị, tiến độ bệnh trạng hoặc các ghi chú y tế khác...">${booking.note}</textarea>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px;">
-                        <button type="submit" class="btn-action">
-                            <i class="fas fa-save"></i> Lưu thông tin y tế
-                        </button>
-                        <c:if test="${booking.status == 'pending'}">
-                            <a href="${pageContext.request.contextPath}/update-appointment-status?bookingId=${booking.bookingId}&status=confirmed" 
-                               class="btn-action">
-                                <i class="fas fa-check"></i> Xác nhận lịch hẹn
-                            </a>
-                        </c:if>
-                        <c:if test="${booking.status == 'confirmed'}">
-                            <a href="${pageContext.request.contextPath}/update-appointment-status?bookingId=${booking.bookingId}&status=completed" 
-                               class="btn-action">
-                                <i class="fas fa-check-circle"></i> Đánh dấu hoàn thành
-                            </a>
-                        </c:if>
-                    </div>
-                </form>
-            </div>
         </c:if>
     </main>
 </div>

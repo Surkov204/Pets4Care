@@ -11,8 +11,7 @@ public class DoctorPayrollDAO {
     // ✅ Gọi thủ tục tính lương
     public boolean generatePayroll(int doctorId, Date start, Date end) {
         String sql = "{CALL GenerateDoctorPayroll(?, ?, ?)}";
-        try (Connection con = DBConnection.getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
+        try (Connection con = DBConnection.getConnection(); CallableStatement cs = con.prepareCall(sql)) {
             cs.setInt(1, doctorId);
             cs.setDate(2, start);
             cs.setDate(3, end);
@@ -28,18 +27,17 @@ public class DoctorPayrollDAO {
     public List<PayrollRecord> getPayrollHistory(int doctorId) {
         List<PayrollRecord> list = new ArrayList<>();
         String sql = "SELECT * FROM DoctorPayrollRecords WHERE DoctorID = ? ORDER BY CreatedAt DESC";
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, doctorId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 PayrollRecord p = new PayrollRecord(
                         rs.getInt("PayrollID"),
-                        rs.getInt("DoctorID"),
+                        rs.getInt("StaffID"),
                         rs.getDate("PeriodStart"),
                         rs.getDate("PeriodEnd"),
-                        rs.getDouble("TotalHours"),
-                        rs.getDouble("HourlyRate"),
+                        rs.getInt("ActualShifts"),
+                        rs.getDouble("BaseSalary"),
                         rs.getDouble("TotalSalary"),
                         rs.getTimestamp("CreatedAt")
                 );
@@ -54,18 +52,17 @@ public class DoctorPayrollDAO {
     // ✅ Lấy phiếu lương mới nhất
     public PayrollRecord getLatestPayroll(int doctorId) {
         String sql = "SELECT TOP 1 * FROM DoctorPayrollRecords WHERE DoctorID = ? ORDER BY CreatedAt DESC";
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, doctorId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return new PayrollRecord(
                         rs.getInt("PayrollID"),
-                        rs.getInt("DoctorID"),
+                        rs.getInt("StaffID"),
                         rs.getDate("PeriodStart"),
                         rs.getDate("PeriodEnd"),
-                        rs.getDouble("TotalHours"),
-                        rs.getDouble("HourlyRate"),
+                        rs.getInt("ActualShifts"),
+                        rs.getDouble("BaseSalary"),
                         rs.getDouble("TotalSalary"),
                         rs.getTimestamp("CreatedAt")
                 );
@@ -76,4 +73,3 @@ public class DoctorPayrollDAO {
         return null;
     }
 }
-

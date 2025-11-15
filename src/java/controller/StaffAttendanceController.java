@@ -40,48 +40,74 @@ public class StaffAttendanceController extends HttpServlet {
         int staffId = staff.getStaffId();
         String action = request.getParameter("action");
         boolean success = false;
-
         if ("toggle".equals(action)) {
-            // ✅ Chỉ check shift khi toggle
-            WorkSchedule currentShift = workDAO.getCurrentShiftForToday(staffId);
+
+            WorkSchedule shift = workDAO.getTodayShift(staffId);
             LocalTime now = LocalTime.now();
 
-            if (currentShift == null) {
-                out.write("{\"status\":\"error\",\"message\":\"⚠️ Hôm nay bạn không có ca làm nào đang diễn ra.\"}");
-                return;
-            }
-            if (now.isAfter(currentShift.getEndTime().toLocalTime())) {
-                out.write("{\"status\":\"error\",\"message\":\"⏰ Ca làm của bạn đã kết thúc.\"}");
+            if (shift == null) {
+                out.write("{\"status\":\"error\",\"message\":\"⚠️ Hôm nay bạn không có ca làm.\"}");
                 return;
             }
 
-            AttendanceRecord last = attendanceDAO.getLatestRecord(staffId);
-            LocalTime nowTime = LocalTime.now();
+            LocalTime start = shift.getStartTime().toLocalTime();
+            LocalTime end = shift.getEndTime().toLocalTime();
 
-            if (last != null && last.getCheckOut() == null) {
+            LocalTime earlyAllowed = start.minusMinutes(15);
+            LocalTime lateAllowed = start.plusMinutes(15);
+
+// Quá sớm
+            if (now.isBefore(earlyAllowed)) {
+                out.write("{\"status\":\"error\",\"message\":\"⏰ Bạn đến quá sớm. Ca làm bắt đầu lúc " + start + "\"}");
+                return;
+            }
+
+// Đi muộn
+            boolean isLate = false;
+            if (now.isAfter(lateAllowed) && now.isBefore(end)) {
+                isLate = true;
+            }
+
+// Hết ca
+            if (now.isAfter(end)) {
+                out.write("{\"status\":\"error\",\"message\":\"⏰ Ca làm đã kết thúc.\"}");
+                return;
+            }
+
+// Lấy record hôm nay
+            AttendanceRecord today = attendanceDAO.getTodayRecord(staffId);
+
+// CHECK-OUT
+            if (today != null && today.getCheckOut() == null) {
                 success = attendanceDAO.staffCheckOut(staffId);
                 if (success) {
                     session.setAttribute("isCheckedIn", false);
                 }
+
                 out.write(success
-                        ? "{\"status\":\"success\",\"message\":\"✅ Checkout thành công! Nghỉ ngơi nhé.\"}"
+                        ? "{\"status\":\"success\",\"message\":\"✅ Checkout thành công!\"}"
                         : "{\"status\":\"error\",\"message\":\"❌ Lỗi khi checkout.\"}");
-            } else if (last != null
-                    && last.getCheckOut() != null
-                    && last.getCheckIn().toLocalDateTime().toLocalDate().equals(LocalDate.now())
-                    && nowTime.isAfter(currentShift.getStartTime().toLocalTime())
-                    && nowTime.isBefore(currentShift.getEndTime().toLocalTime())) {
-                out.write("{\"status\":\"error\",\"message\":\"⚠️ Bạn đã hoàn thành ca này, không thể check-in lại.\"}");
-            } else {
-                success = attendanceDAO.staffCheckIn(staffId);
-                if (success) {
-                    session.setAttribute("isCheckedIn", true);
-                }
-                out.write(success
-                        ? "{\"status\":\"success\",\"message\":\"✅ Check-in thành công!\"}"
-                        : "{\"status\":\"error\",\"message\":\"❌ Lỗi khi check-in.\"}");
+                return;
             }
 
+// Không cho check-in lại trong ngày
+            if (today != null && today.getCheckOut() != null) {
+                out.write("{\"status\":\"error\",\"message\":\"Bạn đã hoàn thành ca hôm nay.\"}");
+                return;
+            }
+
+// CHECK-IN
+            success = attendanceDAO.staffCheckIn(staffId, isLate);
+
+            if (success) {
+                session.setAttribute("isCheckedIn", true);
+            }
+
+            out.write(success
+                    ? (isLate
+                            ? "{\"status\":\"success\",\"message\":\"⏰ Đi muộn! Đã check-in.\"}"
+                            : "{\"status\":\"success\",\"message\":\"✅ Check-in thành công!\"}")
+                    : "{\"status\":\"error\",\"message\":\"❌ Lỗi khi check-in.\"}");
         } else if ("generate".equals(action)) {
             // ✅ KHÔNG kiểm tra shift hiện tại — chỉ cần tính lương theo tháng
             LocalDate nowDate = LocalDate.now();

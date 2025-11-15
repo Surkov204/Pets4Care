@@ -3,20 +3,22 @@ package model;
 import java.sql.Timestamp;
 
 public class Notification {
-    private int id;
-    private int staffId;
+    private int notificationID;
+    private Integer staffID; // có thể null nếu là gửi cho admin
     private String title;
     private String message;
     private Timestamp createdAt;
     private boolean isRead;
-    private boolean isHandled; // ✅ thêm cột này
+    private boolean isHandled;
+    private Integer relatedRequestID; // 🔗 liên kết với ShiftRequests
 
+    // ===== Constructors =====
     public Notification() {}
 
-    // ✅ constructor đầy đủ
-    public Notification(int id, int staffId, String title, String message, Timestamp createdAt, boolean isRead, boolean isHandled) {
-        this.id = id;
-        this.staffId = staffId;
+    public Notification(int notificationID, Integer staffID, String title, String message,
+                        Timestamp createdAt, boolean isRead, boolean isHandled) {
+        this.notificationID = notificationID;
+        this.staffID = staffID;
         this.title = title;
         this.message = message;
         this.createdAt = createdAt;
@@ -24,29 +26,68 @@ public class Notification {
         this.isHandled = isHandled;
     }
 
-    // ✅ constructor cũ vẫn giữ lại để tương thích
-    public Notification(int id, int staffId, String title, String message, Timestamp createdAt, boolean isRead) {
-        this(id, staffId, title, message, createdAt, isRead, false);
+    // ===== Getter & Setter =====
+    public int getNotificationID() {
+        return notificationID;
     }
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public void setNotificationID(int notificationID) {
+        this.notificationID = notificationID;
+    }
 
-    public int getStaffId() { return staffId; }
-    public void setStaffId(int staffId) { this.staffId = staffId; }
+    public Integer getStaffID() {
+        return staffID;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public void setStaffID(Integer staffID) {
+        this.staffID = staffID;
+    }
 
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
+    public String getTitle() {
+        return title;
+    }
 
-    public Timestamp getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public boolean isRead() { return isRead; }
-    public void setRead(boolean isRead) { this.isRead = isRead; }
+    public String getMessage() {
+        return message;
+    }
 
-    public boolean isHandled() { return isHandled; }       // ✅ getter
-    public void setHandled(boolean isHandled) { this.isHandled = isHandled; } // ✅ setter
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public boolean isRead() {
+        return isRead;
+    }
+
+    public void setRead(boolean isRead) {
+        this.isRead = isRead;
+    }
+
+    public boolean isHandled() {
+        return isHandled;
+    }
+
+    public void setHandled(boolean isHandled) {
+        this.isHandled = isHandled;
+    }
+
+    public Integer getRelatedRequestID() {
+        return relatedRequestID;
+    }
+
+    public void setRelatedRequestID(Integer relatedRequestID) {
+        this.relatedRequestID = relatedRequestID;
+    }
 }

@@ -406,9 +406,12 @@
             <!-- Sidebar -->
             <aside class="staff-sidebar">
                 <ul>
-                    <li><a href="${pageContext.request.contextPath}/staff/viewOrder"><i class="fas fa-receipt"></i> View Orders</a></li>
+                    <li><a href="${pageContext.request.contextPath}/staff/dashboard.jsp">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a></li>
+<!--                    <li><a href="${pageContext.request.contextPath}/staff/viewOrder"><i class="fas fa-receipt"></i> View Orders</a></li>-->
                     <li><a href="${pageContext.request.contextPath}/staff/mySchedule"><i class="fas fa-calendar-alt"></i> My Work Schedule</a></li>
-                    <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-users"></i> Customer Profile</a></li>
+<!--                    <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-users"></i> Customer Profile</a></li>-->
                     <li><a href="${pageContext.request.contextPath}/staff/services-booking"><i class="fas fa-list"></i> Services Booking</a></li>
                     <li class="chat-item">
                         <a href="${pageContext.request.contextPath}/staff/chatCustomer" id="chatMenuItem">
@@ -416,6 +419,9 @@
                             <span id="chatBadge" class="chat-badge">3</span>
                         </a>
                     </li>
+                    <li><a href="${pageContext.request.contextPath}/staff/boarding-management">
+                            <i class="fas fa-hotel"></i> Boarding Management
+                        </a></li>
 
                     <li><a href="${pageContext.request.contextPath}/staff/products"><i class="fas fa-box"></i> View Product</a></li>
             </aside>
@@ -458,10 +464,10 @@
                         <table class="salary-table">
                             <thead>
                                 <tr>
-                                    <th>Tháng</th>
-                                    <th>Tổng giờ</th>
-                                    <th>Lương/Giờ (₫)</th>
-                                    <th>Tổng Lương (₫)</th>
+                                    <th>Kỳ lương</th>
+                                    <th>Lương tháng chuẩn (₫)</th>
+                                    <th>Số ca hoàn thành</th>
+                                    <th>Lương thực nhận (₫)</th>
                                     <th>Ngày Tạo</th>
                                 </tr>
                             </thead>
@@ -469,12 +475,35 @@
                                 <c:if test="${not empty sessionScope.latestPayroll}">
                                     <tr>
                                         <td>${sessionScope.latestPayroll.periodStart} → ${sessionScope.latestPayroll.periodEnd}</td>
-                                        <td>${sessionScope.latestPayroll.totalHours}</td>
-                                        <td>${sessionScope.latestPayroll.hourlyRate}</td>
+
+                                        <!-- Lương tháng chuẩn -->
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${sessionScope.latestPayroll.baseSalary != null}">
+                                                    ${sessionScope.latestPayroll.baseSalary}
+                                                </c:when>
+                                                <c:otherwise>Chưa thiết lập</c:otherwise>
+                                            </c:choose>
+                                        </td>
+
+                                        <!-- Số ca hoàn thành -->
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${sessionScope.latestPayroll.actualShifts != null}">
+                                                    ${sessionScope.latestPayroll.actualShifts}
+                                                </c:when>
+                                                <c:otherwise>0</c:otherwise>
+                                            </c:choose>
+                                        </td>
+
+                                        <!-- Lương thực nhận -->
                                         <td><b>${sessionScope.latestPayroll.totalSalary}</b></td>
+
+                                        <!-- Ngày tạo -->
                                         <td>${sessionScope.latestPayroll.createdAt}</td>
                                     </tr>
                                 </c:if>
+
                                 <c:if test="${empty sessionScope.latestPayroll}">
                                     <tr><td colspan="5" class="empty-msg">Chưa có dữ liệu lương.</td></tr>
                                 </c:if>
@@ -600,14 +629,15 @@
                                         actionButtons = `
                                                 <div style="display:flex; gap:10px; margin-top:10px;">
                                                     <form action="${pageContext.request.contextPath}/staff/acceptShiftRequest" method="post" style="margin:0;">
-                                                        <input type="hidden" name="requestId" value="${'$'}{n.id}">
-                                                        <input type="hidden" name="notificationId" value="${n.notificationID}">
+                                                      <input type="hidden" name="requestId" value="\${n.relatedRequestID}">
+                                                      <input type="hidden" name="notificationId" value="\${n.notificationID}">
                                                         <button type="submit" style="background:#28a745; color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">
                                                             Chấp nhận
                                                         </button>
                                                     </form>
                                                     <form action="${pageContext.request.contextPath}/staff/rejectShiftRequest" method="post" style="margin:0;">
-                                                        <input type="hidden" name="requestId" value="${'$'}{n.id}">
+                                                        <input type="hidden" name="requestId" value="${n.relatedRequestID || ''}">
+                                                        <input type="hidden" name="notificationId" value="${n.notificationID}">
                                                         <button type="submit" style="background:#dc3545; color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">
                                                             Từ chối
                                                         </button>
@@ -655,7 +685,7 @@
             document.addEventListener("DOMContentLoaded", () => {
                 const btn = document.getElementById("attendanceButton");
                 const generateBtn = document.getElementById("generatePayrollBtn");
-                
+
                 async function verifyCompanyNetwork() {
                     try {
                         const res = await fetch("${pageContext.request.contextPath}/staff/verifyNetwork");
@@ -683,9 +713,10 @@
                 }
 
                 btn.addEventListener("click", async () => {
-                        const inCompanyWifi = await verifyCompanyNetwork();
-                        if (!inCompanyWifi) return; // ❌ dừng nếu sai Wi-Fi{
-                        
+                    const inCompanyWifi = await verifyCompanyNetwork();
+                    if (!inCompanyWifi)
+                        return; // ❌ dừng nếu sai Wi-Fi{
+
                     try {
                         const formData = new URLSearchParams();
                         formData.append("action", "toggle");

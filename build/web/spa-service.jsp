@@ -1,6 +1,7 @@
 <%@page import="model.Customer"%>
 <%@page import="model.CartItem"%>
 <%@page import="model.PetServiceModel"%>
+<%@page import="model.Pet"%>
 <%@page import="dao.BoardingRoomDAO"%>
 <%@page import="java.util.Map"%>
 <%@page import="java.util.List"%>
@@ -34,12 +35,18 @@
         }
     }
     
-    // Lấy roomId từ database theo roomType
+    // Lấy roomId và số phòng còn lại từ database theo roomType
     BoardingRoomDAO roomDAO = new BoardingRoomDAO();
     Integer roomIdDogLarge = roomDAO.getRoomIdByType("dog_large");
     Integer roomIdDogSmall = roomDAO.getRoomIdByType("dog_small");
     Integer roomIdCatStandard = roomDAO.getRoomIdByType("cat_standard");
     Integer roomIdCatVip = roomDAO.getRoomIdByType("cat_vip");
+    
+    // Lấy số phòng còn lại cho mỗi loại
+    int availableRoomsDogLarge = roomDAO.getAvailableRoomsCountByType("dog_large");
+    int availableRoomsDogSmall = roomDAO.getAvailableRoomsCountByType("dog_small");
+    int availableRoomsCatStandard = roomDAO.getAvailableRoomsCountByType("cat_standard");
+    int availableRoomsCatVip = roomDAO.getAvailableRoomsCountByType("cat_vip");
     
     // Debug: Log roomIds
     System.out.println("DEBUG - Room IDs from database:");
@@ -349,11 +356,16 @@
                         </div>
                         <h3 class="text-xl font-bold text-gray-800 mb-3">Phòng Chó Lớn</h3>
                         <p class="text-gray-600 mb-4 leading-relaxed">Phòng rộng rãi, có camera và điều hòa cho chó lớn. Chăm sóc 24/7 với đội ngũ chuyên nghiệp.</p>
-                        <div class="flex justify-between items-center mb-4">
+                        <div class="flex justify-between items-center mb-2">
                             <span class="price-tag">
                                 ₫400,000
                             </span>
                             <span class="duration-badge">1 ngày</span>
+                        </div>
+                        <div class="mb-4 text-center">
+                            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <%= availableRoomsDogLarge > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700" %>">
+                                <i class="fas fa-door-open"></i> Còn lại: <strong><%= availableRoomsDogLarge %></strong> phòng
+                            </span>
                         </div>
                         <a href="<%= request.getContextPath()%>/boarding-room?action=detail&roomId=<%= roomIdDogLarge %>" 
                            class="booking-btn inline-block text-center"
@@ -371,11 +383,16 @@
                         </div>
                         <h3 class="text-xl font-bold text-gray-800 mb-3">Phòng Chó Nhỏ</h3>
                         <p class="text-gray-600 mb-4 leading-relaxed">Phòng đôi cho chó nhỏ, có giường riêng. Không gian ấm cúng và an toàn.</p>
-                        <div class="flex justify-between items-center mb-4">
+                        <div class="flex justify-between items-center mb-2">
                             <span class="price-tag">
                                 ₫300,000
                             </span>
                             <span class="duration-badge">1 ngày</span>
+                        </div>
+                        <div class="mb-4 text-center">
+                            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <%= availableRoomsDogSmall > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700" %>">
+                                <i class="fas fa-door-open"></i> Còn lại: <strong><%= availableRoomsDogSmall %></strong> phòng
+                            </span>
                         </div>
                         <a href="<%= request.getContextPath()%>/boarding-room?action=detail&roomId=<%= roomIdDogSmall %>" class="booking-btn inline-block text-center">
                             🏠 Đặt phòng lưu trú
@@ -391,11 +408,16 @@
                         </div>
                         <h3 class="text-xl font-bold text-gray-800 mb-3">Phòng Mèo Tiêu Chuẩn</h3>
                         <p class="text-gray-600 mb-4 leading-relaxed">Phòng cho mèo, có cát vệ sinh và đồ chơi. Môi trường thoải mái cho mèo.</p>
-                        <div class="flex justify-between items-center mb-4">
+                        <div class="flex justify-between items-center mb-2">
                             <span class="price-tag">
                                 ₫250,000
                             </span>
                             <span class="duration-badge">1 ngày</span>
+                        </div>
+                        <div class="mb-4 text-center">
+                            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <%= availableRoomsCatStandard > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700" %>">
+                                <i class="fas fa-door-open"></i> Còn lại: <strong><%= availableRoomsCatStandard %></strong> phòng
+                            </span>
                         </div>
                         <a href="<%= request.getContextPath()%>/boarding-room?action=detail&roomId=<%= roomIdCatStandard %>" class="booking-btn inline-block text-center">
                             🏠 Đặt phòng lưu trú
@@ -411,11 +433,16 @@
                         </div>
                         <h3 class="text-xl font-bold text-gray-800 mb-3">Phòng Mèo VIP</h3>
                         <p class="text-gray-600 mb-4 leading-relaxed">Phòng VIP cho mèo, có khu chơi riêng và máy lạnh. Dịch vụ cao cấp nhất.</p>
-                        <div class="flex justify-between items-center mb-4">
+                        <div class="flex justify-between items-center mb-2">
                             <span class="price-tag">
                                 ₫350,000
                             </span>
                             <span class="duration-badge">1 ngày</span>
+                        </div>
+                        <div class="mb-4 text-center">
+                            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <%= availableRoomsCatVip > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700" %>">
+                                <i class="fas fa-door-open"></i> Còn lại: <strong><%= availableRoomsCatVip %></strong> phòng
+                            </span>
                         </div>
                         <a href="<%= request.getContextPath()%>/boarding-room?action=detail&roomId=<%= roomIdCatVip %>" class="booking-btn inline-block text-center">
                             🏠 Đặt phòng lưu trú

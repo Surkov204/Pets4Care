@@ -41,8 +41,14 @@ public class AttendanceDAO {
     // 🟢 Lấy danh sách chấm công theo nhân viên
     public List<AttendanceRecord> getAttendanceByStaff(int staffId) {
         List<AttendanceRecord> list = new ArrayList<>();
+<<<<<<< HEAD
+        String sql = "SELECT AttendanceID, EmployeeID AS StaffID, CheckIn, CheckOut, TotalHours, Status, CreatedAt FROM AttendanceRecords WHERE EmployeeType = 'STAFF' AND EmployeeID = ? ORDER BY CheckIn DESC";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+=======
         String sql = "SELECT * FROM AttendanceRecords WHERE StaffID = ? ORDER BY CheckIn DESC";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+>>>>>>> origin/master
 
             ps.setInt(1, staffId);
             ResultSet rs = ps.executeQuery();
@@ -71,8 +77,14 @@ public class AttendanceDAO {
 
     // 🟢 Lấy bản ghi mới nhất để kiểm tra đang làm hay đã checkout
     public AttendanceRecord getLatestRecord(int staffId) {
+<<<<<<< HEAD
+        String sql = "SELECT TOP 1 AttendanceID, EmployeeID AS StaffID, CheckIn, CheckOut, TotalHours, Status, CreatedAt FROM AttendanceRecords WHERE EmployeeType = 'STAFF' AND EmployeeID = ? ORDER BY CheckIn DESC";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+=======
         String sql = "SELECT TOP 1 * FROM AttendanceRecords WHERE StaffID = ? ORDER BY CheckIn DESC";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+>>>>>>> origin/master
 
             ps.setInt(1, staffId);
             ResultSet rs = ps.executeQuery();
@@ -100,7 +112,7 @@ public class AttendanceDAO {
     public boolean hasCheckedInToday(int staffId) {
         String sql = """
             SELECT COUNT(*) FROM AttendanceRecords 
-            WHERE StaffID = ? AND CAST(CheckIn AS DATE) = CAST(GETDATE() AS DATE)
+            WHERE EmployeeType = 'STAFF' AND EmployeeID = ? AND CAST(CheckIn AS DATE) = CAST(GETDATE() AS DATE)
         """;
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, staffId);

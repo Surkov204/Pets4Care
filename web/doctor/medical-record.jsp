@@ -441,7 +441,15 @@
                                      <td>
                                          <c:choose>
                                              <c:when test="${not empty record.followUpDate}">
-                                                 <fmt:formatDate value="${record.followUpDate}" pattern="dd/MM/yyyy" />
+                                                 <%
+                                                     // Lấy record từ EL variable trong forEach
+                                                     model.MedicalRecord rec = (model.MedicalRecord) pageContext.getAttribute("record");
+                                                     if (rec != null && rec.getFollowUpDate() != null) {
+                                                         java.time.LocalDate localDate = rec.getFollowUpDate();
+                                                         java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                                                         out.print(localDate.format(formatter));
+                                                     }
+                                                 %>
                                              </c:when>
                                              <c:otherwise>-</c:otherwise>
                                          </c:choose>

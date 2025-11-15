@@ -103,6 +103,14 @@
                 align-items: center;
                 gap: 0.5rem;
             }
+            .form-input[type="number"]::-webkit-outer-spin-button,
+            .form-input[type="number"]::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+            .form-input[type="number"] {
+                -moz-appearance: textfield;
+            }
             .form-input, .form-select, .form-textarea {
                 width: 100%;
                 padding: 0.9rem 1.1rem;
@@ -272,6 +280,7 @@
                 var breed = document.forms["petInfoForm"]["breed"].value;
                 var age = document.forms["petInfoForm"]["age"].value;
                 var gender = document.forms["petInfoForm"]["gender"].value;
+                var weight = document.forms["petInfoForm"]["weightKg"].value;
 
                 // Reset error styles
                 document.getElementById("petNameError").innerText = "";
@@ -279,12 +288,14 @@
                 document.getElementById("breedError").innerText = "";
                 document.getElementById("ageError").innerText = "";
                 document.getElementById("genderError").innerText = "";
+                document.getElementById("weightError").innerText = "";
 
                 document.forms["petInfoForm"]["petName"].classList.remove("input-error");
                 document.forms["petInfoForm"]["species"].classList.remove("input-error");
                 document.forms["petInfoForm"]["breed"].classList.remove("input-error");
                 document.forms["petInfoForm"]["age"].classList.remove("input-error");
                 document.forms["petInfoForm"]["gender"].classList.remove("input-error");
+                document.forms["petInfoForm"]["weightKg"].classList.remove("input-error");
 
                 // Validate pet name
                 if (petName == "" || petName.trim().length < 2) {
@@ -318,6 +329,12 @@
                 if (gender == "") {
                     document.getElementById("genderError").innerText = "Vui lòng chọn giới tính!";
                     document.forms["petInfoForm"]["gender"].classList.add("input-error");
+                    isValid = false;
+                }
+
+                if (weight == "" || isNaN(weight) || parseFloat(weight) <= 0 || parseFloat(weight) > 200) {
+                    document.getElementById("weightError").innerText = "Cân nặng phải nằm trong khoảng 0 - 200kg!";
+                    document.forms["petInfoForm"]["weightKg"].classList.add("input-error");
                     isValid = false;
                 }
 
@@ -362,6 +379,7 @@
                 document.getElementById('modalTitle').textContent = 'Thêm thú cưng mới';
                 document.getElementById('petForm').reset();
                 document.getElementById('petId').value = '';
+                document.getElementById('weightKg').value = '';
                 document.getElementById('imagePreview').style.display = 'none';
                 document.getElementById('imagePreview').innerHTML = '';
                 document.getElementById('petModal').classList.remove('hidden');
@@ -370,6 +388,7 @@
             function closePetModal() {
                 document.getElementById('petModal').classList.add('hidden');
                 document.getElementById('petForm').reset();
+                document.getElementById('weightKg').value = '';
                 document.getElementById('imagePreview').style.display = 'none';
             }
             
@@ -388,9 +407,12 @@
                 document.getElementById('modalTitle').textContent = 'Sửa thông tin thú cưng';
                 document.getElementById('petId').value = '<%= petToEdit.getId() %>';
                 document.getElementById('petName').value = '<%= petToEdit.getPetName() != null ? petToEdit.getPetName().replace("'", "\\'").replace("\"", "\\\"") : "" %>';
-                document.getElementById('species').value = '<%= petToEdit.getSpecies() != null ? petToEdit.getSpecies() : "" %>';
+                const speciesValue = '<%= petToEdit.getSpecies() != null ? petToEdit.getSpecies() : "" %>';
+                document.getElementById('species').value = speciesValue;
                 document.getElementById('breed').value = '<%= petToEdit.getBreed() != null ? petToEdit.getBreed().replace("'", "\\'").replace("\"", "\\\"") : "" %>';
                 document.getElementById('age').value = '<%= petToEdit.getAge() %>';
+                const weightValue = '<%= petToEdit.getWeightKg() != null ? petToEdit.getWeightKg() : "" %>';
+                document.getElementById('weightKg').value = weightValue;
                 <% if (petToEdit.getGender() != null && petToEdit.getGender().equals("male")) { %>
                 document.getElementById('gender_male').checked = true;
                 <% } else { %>
@@ -433,6 +455,11 @@
                 if (e.target === this) {
                     closePetModal();
                 }
+            });
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const speciesField = document.getElementById('species');
+                // Giữ event nếu cần xử lý species sau này
             });
         </script>
     </head>
@@ -599,8 +626,15 @@
                                     <span class="font-semibold"><%= pet.getAge() %> tuổi</span>
                                 </div>
                                 <div class="flex justify-between">
+                                    <span class="text-gray-600">Cân nặng:</span>
+                                    <span class="font-semibold"><%= pet.getWeightDisplay() %></span>
+                                </div>
+                                <div class="flex justify-between">
                                     <span class="text-gray-600">Giới tính:</span>
                                     <span class="font-semibold"><%= pet.getGender().equals("male") ? "♂️ Đực" : "♀️ Cái" %></span>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    <span class="font-semibold block text-right text-gray-700 mt-1"><%= pet.getSizeGroupDisplay() %></span>
                                 </div>
                             </div>
                             
@@ -680,6 +714,14 @@
                                         </label>
                                         <input type="number" name="age" id="age" class="form-input" placeholder="Tuổi (năm)" min="0" max="30" required>
                                     </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-weight"></i> Cân nặng (kg)
+                                    </label>
+                                    <input type="number" step="0.1" min="0.1" max="200" name="weightKg" id="weightKg" class="form-input" placeholder="Nhập cân nặng (kg)" required>
+                                    <p id="weightError" class="text-sm text-red-500 mt-1"></p>
                                 </div>
 
                                 <div class="form-group">

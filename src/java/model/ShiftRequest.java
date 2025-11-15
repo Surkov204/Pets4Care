@@ -6,7 +6,9 @@ import java.sql.Timestamp;
 public class ShiftRequest {
 
     private int requestID;
-    private int employeeID;     // Người gửi yêu cầu đổi ca
+    private int employeeID;     // DEPRECATED: Use staff_id or doctor_id instead
+    private int staff_id;       // Người gửi yêu cầu đổi ca (Staff)
+    private int doctor_id;      // Người gửi yêu cầu đổi ca (Doctor)
     private int toStaffID;      // Người được chọn để đổi cùng
     private String type;        // Loại yêu cầu: "Swap", "Register", ...
     private Date fromDate;      // Ngày làm hiện tại của người gửi
@@ -27,6 +29,7 @@ public class ShiftRequest {
             String reason, String status, Integer approvedBy, Timestamp createdAt) {
         this.requestID = requestID;
         this.employeeID = employeeID;
+        this.staff_id = employeeID; // Backward compatibility
         this.toStaffID = toStaffID;
         this.type = type;
         this.fromDate = fromDate;
@@ -54,6 +57,24 @@ public class ShiftRequest {
 
     public void setEmployeeID(int employeeID) {
         this.employeeID = employeeID;
+        this.staff_id = employeeID; // Backward compatibility
+    }
+    
+    public int getStaff_id() {
+        return staff_id;
+    }
+
+    public void setStaff_id(int staff_id) {
+        this.staff_id = staff_id;
+        this.employeeID = staff_id; // Backward compatibility
+    }
+    
+    public int getDoctor_id() {
+        return doctor_id;
+    }
+
+    public void setDoctor_id(int doctor_id) {
+        this.doctor_id = doctor_id;
     }
 
     public int getToStaffID() {

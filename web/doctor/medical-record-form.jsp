@@ -229,8 +229,11 @@
         <!-- Medical Record Form -->
         <div class="form-container">
             <form action="${pageContext.request.contextPath}/doctor/medical-records" method="post">
-                <input type="hidden" name="action" value="${mode}">
+                <input type="hidden" name="action" value="${mode == 'edit' ? 'update' : 'create'}">
                 <input type="hidden" name="bookingId" value="${booking.bookingId}">
+                <c:if test="${mode == 'edit'}">
+                    <input type="hidden" name="recordId" value="${record.recordId}">
+                </c:if>
 
                 <div class="form-row">
                     <div class="form-group">

@@ -89,7 +89,7 @@ public class SpaBookingServlet extends HttpServlet {
                 showSpaCart(request, response, customer);
             } else if (action == null || action.equals("services")) {
                 // Hiển thị danh sách dịch vụ Spa
-                showSpaServices(request, response);
+                showSpaServices(request, response, customer);
             } else if (action.equals("cart")) {
                 // Hiển thị giỏ hàng Spa
                 showSpaCart(request, response, customer);
@@ -256,7 +256,7 @@ public class SpaBookingServlet extends HttpServlet {
     /**
      * Hiển thị danh sách dịch vụ Spa
      */
-    private void showSpaServices(HttpServletRequest request, HttpServletResponse response) 
+    private void showSpaServices(HttpServletRequest request, HttpServletResponse response, Customer customer) 
             throws ServletException, IOException {
         
         logger.info("=== DEBUG SPA BOOKING SERVLET ===");
@@ -280,7 +280,7 @@ public class SpaBookingServlet extends HttpServlet {
             logger.severe("Error loading spa services: " + e.getMessage());
             spaServices = new ArrayList<>(); // Fallback to empty list
         }
-        
+
         request.setAttribute("spaServices", spaServices);
         
         request.getRequestDispatcher("/spa-service.jsp").forward(request, response);
@@ -546,7 +546,7 @@ public class SpaBookingServlet extends HttpServlet {
             if (customerPets == null) {
                 customerPets = new ArrayList<>(); // Đảm bảo không null
             }
-            
+
             request.setAttribute("service", service);
             request.setAttribute("reviews", reviews);
             request.setAttribute("customerPets", customerPets);
@@ -2166,7 +2166,14 @@ public class SpaBookingServlet extends HttpServlet {
                 json.append("\"age\":").append(pet.getAge()).append(",");
                 json.append("\"gender\":\"").append(escapeJson(pet.getGender())).append("\",");
                 json.append("\"description\":\"").append(escapeJson(pet.getDescription())).append("\",");
-                json.append("\"healthStatus\":\"").append(escapeJson(pet.getHealthStatus())).append("\"");
+                json.append("\"healthStatus\":\"").append(escapeJson(pet.getHealthStatus())).append("\",");
+                Double weight = pet.getWeightKg();
+                json.append("\"weightKg\":");
+                if (weight != null) {
+                    json.append(weight);
+                } else {
+                    json.append("null");
+                }
                 json.append("}");
                 
                 if (i < pets.size() - 1) {

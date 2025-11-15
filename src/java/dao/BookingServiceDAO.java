@@ -137,49 +137,108 @@ public class BookingServiceDAO {
     public boolean addBookingService(BookingServiceItem bookingService) {
         // Hỗ trợ PK dạng (booking_id, service_id): nếu đã tồn tại thì cập nhật thay vì lỗi trùng khóa
         final String SQL_EXISTS = "SELECT 1 FROM Booking_Service WHERE booking_id = ? AND service_id = ?";
-        final String SQL_INSERT = "INSERT INTO Booking_Service (booking_id, service_id, quantity, unit_price, note) VALUES (?, ?, ?, ?, ?)";
-        final String SQL_UPDATE = "UPDATE Booking_Service SET quantity = quantity + ?, unit_price = ?, note = ? WHERE booking_id = ? AND service_id = ?";
+        final String SQL_INSERT = "INSERT INTO Booking_Service (booking_id, service_id, quantity, unit_price, duration_min, created_at, note) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        final String SQL_UPDATE = "UPDATE Booking_Service SET quantity = quantity + ?, unit_price = ?, duration_min = ?, note = ? WHERE booking_id = ? AND service_id = ?";
 
         try (Connection conn = DBConnection.getConnection()) {
+            logger.info("=== addBookingService START ===");
+            logger.info("Booking ID: " + bookingService.getBookingId() + ", Service ID: " + bookingService.getServiceId());
+            
             boolean exists = false;
             try (PreparedStatement chk = conn.prepareStatement(SQL_EXISTS)) {
                 chk.setInt(1, bookingService.getBookingId());
                 chk.setInt(2, bookingService.getServiceId());
-                try (ResultSet rs = chk.executeQuery()) { exists = rs.next(); }
+                try (ResultSet rs = chk.executeQuery()) { 
+                    exists = rs.next(); 
+                }
             }
+            logger.info("Record exists: " + exists);
 
             if (!exists) {
                 try (PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
+                    java.sql.Timestamp createdAt = bookingService.getCreatedAt();
+                    if (createdAt == null) {
+                        createdAt = new java.sql.Timestamp(System.currentTimeMillis());
+                        bookingService.setCreatedAt(createdAt);
+                    }
+
                     ps.setInt(1, bookingService.getBookingId());
                     ps.setInt(2, bookingService.getServiceId());
-                    ps.setInt(3, bookingService.getQuantity());
-                    ps.setBigDecimal(4, bookingService.getPrice());
-                    ps.setString(5, bookingService.getNote());
+                    ps.setInt(3, Math.max(1, bookingService.getQuantity()));
+                    ps.setBigDecimal(4, bookingService.getPrice() != null ? bookingService.getPrice() : java.math.BigDecimal.ZERO);
+                    if (bookingService.getServiceDuration() > 0) {
+                        ps.setInt(5, bookingService.getServiceDuration());
+                    } else {
+                        ps.setNull(5, java.sql.Types.INTEGER);
+                    }
+                    ps.setTimestamp(6, createdAt);
+                    ps.setString(7, bookingService.getNote() != null ? bookingService.getNote() : "");
+                    
+                    logger.info("Executing INSERT with values: bookingId=" + bookingService.getBookingId() + 
+                               ", serviceId=" + bookingService.getServiceId() + 
+                               ", quantity=" + Math.max(1, bookingService.getQuantity()) + 
+                               ", price=" + (bookingService.getPrice() != null ? bookingService.getPrice() : java.math.BigDecimal.ZERO) + 
+                               ", duration=" + bookingService.getServiceDuration() + 
+                               ", createdAt=" + createdAt);
+                    
                     int rows = ps.executeUpdate();
                     if (rows > 0) {
+                        logger.info("=== addBookingService SUCCESS ===");
                         logger.info("Successfully added booking service: booking_id=" + bookingService.getBookingId() + ", service_id=" + bookingService.getServiceId());
                         return true;
+                    } else {
+                        logger.warning("INSERT executed but no rows affected");
                     }
+                } catch (SQLException insertEx) {
+                    logger.severe("SQL Exception during INSERT: " + insertEx.getMessage());
+                    logger.severe("SQL State: " + insertEx.getSQLState());
+                    logger.severe("Error Code: " + insertEx.getErrorCode());
+                    insertEx.printStackTrace();
+                    throw insertEx; // Re-throw to be caught by outer catch
                 }
             } else {
                 try (PreparedStatement ps = conn.prepareStatement(SQL_UPDATE)) {
                     ps.setInt(1, Math.max(1, bookingService.getQuantity()));
-                    ps.setBigDecimal(2, bookingService.getPrice());
-                    ps.setString(3, bookingService.getNote());
-                    ps.setInt(4, bookingService.getBookingId());
-                    ps.setInt(5, bookingService.getServiceId());
+                    ps.setBigDecimal(2, bookingService.getPrice() != null ? bookingService.getPrice() : java.math.BigDecimal.ZERO);
+                    if (bookingService.getServiceDuration() > 0) {
+                        ps.setInt(3, bookingService.getServiceDuration());
+                    } else {
+                        ps.setNull(3, java.sql.Types.INTEGER);
+                    }
+                    ps.setString(4, bookingService.getNote() != null ? bookingService.getNote() : "");
+                    ps.setInt(5, bookingService.getBookingId());
+                    ps.setInt(6, bookingService.getServiceId());
+                    
+                    logger.info("Executing UPDATE...");
                     int rows = ps.executeUpdate();
                     if (rows > 0) {
+                        logger.info("=== addBookingService SUCCESS (UPDATE) ===");
                         logger.info("Updated existing booking service: booking_id=" + bookingService.getBookingId() + ", service_id=" + bookingService.getServiceId());
                         return true;
+                    } else {
+                        logger.warning("UPDATE executed but no rows affected");
                     }
+                } catch (SQLException updateEx) {
+                    logger.severe("SQL Exception during UPDATE: " + updateEx.getMessage());
+                    logger.severe("SQL State: " + updateEx.getSQLState());
+                    logger.severe("Error Code: " + updateEx.getErrorCode());
+                    updateEx.printStackTrace();
+                    throw updateEx; // Re-throw to be caught by outer catch
                 }
             }
         } catch (SQLException e) {
+            logger.severe("=== addBookingService SQL EXCEPTION ===");
             logger.severe("Error adding/updating booking service: " + e.getMessage());
+            logger.severe("SQL State: " + e.getSQLState());
+            logger.severe("Error Code: " + e.getErrorCode());
+            e.printStackTrace();
+        } catch (Exception e) {
+            logger.severe("=== addBookingService GENERAL EXCEPTION ===");
+            logger.severe("Unexpected error: " + e.getMessage());
             e.printStackTrace();
         }
 
+        logger.warning("=== addBookingService FAILED ===");
         return false;
     }
 

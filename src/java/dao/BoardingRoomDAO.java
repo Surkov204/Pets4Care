@@ -87,16 +87,20 @@ public class BoardingRoomDAO {
     }
 
     /**
-     * Lấy phòng có sẵn
+     * Lấy tất cả phòng (không còn filter theo status)
      */
     public List<BoardingRoom> getAvailableRooms() {
-        String sql = "SELECT * FROM BoardingRoom WHERE status = 'available' ORDER BY room_type, room_name";
+        String sql = "SELECT * FROM BoardingRoom ORDER BY room_type, room_name";
         List<BoardingRoom> rooms = new ArrayList<>();
 
         try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                rooms.add(mapResultSetToBoardingRoom(rs));
+                BoardingRoom room = mapResultSetToBoardingRoom(rs);
+                // Tính số phòng còn lại cho mỗi room
+                int availableCount = getAvailableRoomsCountByType(room.getRoomType());
+                room.setAvailableRooms(availableCount);
+                rooms.add(room);
             }
 
         } catch (SQLException e) {
@@ -134,30 +138,52 @@ public class BoardingRoomDAO {
      * Kiểm tra phòng có sẵn trong khoảng thời gian
      */
     public boolean isRoomAvailable(int roomId, Timestamp checkInDate, Timestamp checkOutDate) {
+<<<<<<< HEAD
+        // Lấy room type từ room_id
+        String roomType = null;
+        String getRoomTypeSql = "SELECT room_type FROM BoardingRoom WHERE room_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(getRoomTypeSql)) {
+            
+=======
         // Đơn giản hóa: chỉ kiểm tra phòng có tồn tại và status = 'available'
         String sql = "SELECT COUNT(*) FROM BoardingRoom WHERE room_id = ? AND status = 'available'";
 
         try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
+>>>>>>> origin/master
             stmt.setInt(1, roomId);
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                return rs.getInt(1) > 0;
+                roomType = rs.getString("room_type");
+            } else {
+                return false;
             }
 
         } catch (SQLException e) {
-            logger.severe("Error checking room availability: " + e.getMessage());
-            e.printStackTrace();
+            logger.severe("Error getting room type: " + e.getMessage());
+            return false;
         }
+<<<<<<< HEAD
+        
+        // Kiểm tra số phòng còn lại
+        int availableCount = getAvailableRoomsCountByType(roomType);
+        return availableCount > 0;
+=======
 
         return false;
+>>>>>>> origin/master
     }
 
     /**
-     * Lấy số lượng phòng có sẵn theo loại
+     * Lấy số lượng phòng có sẵn theo loại (deprecated - dùng getAvailableRoomsCountByType)
      */
     public int getAvailableRoomCountByType(String roomType) {
+<<<<<<< HEAD
+        return getAvailableRoomsCountByType(roomType);
+=======
         String sql = "SELECT COUNT(*) FROM BoardingRoom WHERE room_type = ? AND status = 'available'";
 
         try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -175,29 +201,40 @@ public class BoardingRoomDAO {
         }
 
         return 0;
+>>>>>>> origin/master
     }
 
     /**
-     * Cập nhật trạng thái phòng
+     * Cập nhật số phòng (rooms) - được gọi khi có booking được xác nhận
      */
+<<<<<<< HEAD
+    public boolean updateRoomsCount(int roomId, int newRoomsCount) {
+        String sql = "UPDATE BoardingRoom SET rooms = ?, updated_at = ? WHERE room_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, newRoomsCount);
+=======
     public boolean updateRoomStatus(int roomId, String status) {
         String sql = "UPDATE BoardingRoom SET status = ?, updated_at = ? WHERE room_id = ?";
 
         try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, status);
+>>>>>>> origin/master
             stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
             stmt.setInt(3, roomId);
 
             int rowsAffected = stmt.executeUpdate();
 
             if (rowsAffected > 0) {
-                logger.info("Updated room status for room ID: " + roomId + " to: " + status);
+                logger.info("Updated rooms count for room ID: " + roomId + " to: " + newRoomsCount);
                 return true;
             }
 
         } catch (SQLException e) {
-            logger.severe("Error updating room status: " + e.getMessage());
+            logger.severe("Error updating rooms count: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -208,21 +245,35 @@ public class BoardingRoomDAO {
      * Tạo phòng mới
      */
     public boolean createRoom(BoardingRoom room) {
+<<<<<<< HEAD
+        String sql = "INSERT INTO BoardingRoom (room_name, room_type, rooms, price_per_day, " +
+                    "description, created_at, updated_at) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            
+=======
         String sql = "INSERT INTO BoardingRoom (room_name, room_type, capacity, price_per_day, "
                 + "description, status, created_at, updated_at) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
+>>>>>>> origin/master
             stmt.setString(1, room.getRoomName());
             stmt.setString(2, room.getRoomType());
             stmt.setInt(3, room.getCapacity());
             stmt.setDouble(4, room.getPricePerDay());
             stmt.setString(5, room.getDescription());
-            stmt.setString(6, room.getStatus());
+            stmt.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
             stmt.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
+<<<<<<< HEAD
+            
+=======
             stmt.setTimestamp(8, new Timestamp(System.currentTimeMillis()));
 
+>>>>>>> origin/master
             int rowsAffected = stmt.executeUpdate();
 
             if (rowsAffected > 0) {
@@ -246,21 +297,37 @@ public class BoardingRoomDAO {
      * Cập nhật thông tin phòng
      */
     public boolean updateRoom(BoardingRoom room) {
+<<<<<<< HEAD
+        String sql = "UPDATE BoardingRoom SET room_name = ?, room_type = ?, rooms = ?, " +
+                    "price_per_day = ?, description = ?, " +
+                    "updated_at = ? WHERE room_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+=======
         String sql = "UPDATE BoardingRoom SET room_name = ?, room_type = ?, capacity = ?, "
                 + "price_per_day = ?, description = ?, status = ?, "
                 + "updated_at = ? WHERE room_id = ?";
 
         try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
+>>>>>>> origin/master
             stmt.setString(1, room.getRoomName());
             stmt.setString(2, room.getRoomType());
             stmt.setInt(3, room.getCapacity());
             stmt.setDouble(4, room.getPricePerDay());
             stmt.setString(5, room.getDescription());
+<<<<<<< HEAD
+            stmt.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
+            stmt.setInt(7, room.getRoomId());
+            
+=======
             stmt.setString(6, room.getStatus());
             stmt.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
             stmt.setInt(8, room.getRoomId());
 
+>>>>>>> origin/master
             int rowsAffected = stmt.executeUpdate();
 
             if (rowsAffected > 0) {
@@ -277,13 +344,21 @@ public class BoardingRoomDAO {
     }
 
     /**
-     * Xóa phòng (soft delete)
+     * Xóa phòng (hard delete hoặc set rooms = 0)
      */
     public boolean deleteRoom(int roomId) {
+<<<<<<< HEAD
+        String sql = "UPDATE BoardingRoom SET rooms = 0, updated_at = ? WHERE room_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+=======
         String sql = "UPDATE BoardingRoom SET status = 'unavailable', updated_at = ? WHERE room_id = ?";
 
         try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
+>>>>>>> origin/master
             stmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
             stmt.setInt(2, roomId);
 
@@ -303,6 +378,58 @@ public class BoardingRoomDAO {
     }
 
     /**
+     * Lấy số phòng còn lại theo loại (rooms - số booking đã xác nhận và đang active)
+     */
+    public int getAvailableRoomsCountByType(String roomType) {
+        // Lấy số phòng tổng từ bảng BoardingRoom
+        String getRoomsSql = "SELECT rooms FROM dbo.BoardingRoom WHERE room_type = ?";
+        
+        // Đếm số booking đang active (trong khoảng thời gian hiện tại)
+        String countOccupiedSql = "SELECT COUNT(DISTINCT booking_id) AS occupied_count " +
+                                 "FROM dbo.boarding_bookings " +
+                                 "WHERE room_type = ? " +
+                                 "AND status IN (N'Hoàn thành', N'Đã trả', N'Đã thanh toán', N'Đang ở', N'Chờ xác nhận', N'Đã nhận về', N'Chưa nhận thú cưng') " +
+                                 "AND CAST(GETDATE() AS DATE) >= check_in_date " +
+                                 "AND CAST(GETDATE() AS DATE) <= check_out_date";
+        
+        try (Connection conn = DBConnection.getConnection()) {
+            // Lấy số phòng tổng
+            int totalRooms = 0;
+            try (PreparedStatement stmt = conn.prepareStatement(getRoomsSql)) {
+                stmt.setString(1, roomType);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    totalRooms = rs.getInt("rooms");
+                } else {
+                    logger.warning("Room type not found: " + roomType);
+                    return 0;
+                }
+            }
+            
+            // Đếm số booking đang active
+            int occupiedCount = 0;
+            try (PreparedStatement stmt = conn.prepareStatement(countOccupiedSql)) {
+                stmt.setString(1, roomType);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    occupiedCount = rs.getInt("occupied_count");
+                }
+            }
+            
+            // Tính số phòng còn lại
+            int available = totalRooms - occupiedCount;
+            logger.info("Room type: " + roomType + ", Total rooms: " + totalRooms + ", Occupied: " + occupiedCount + ", Available: " + available);
+            return available > 0 ? available : 0;
+            
+        } catch (SQLException e) {
+            logger.severe("Error getting available rooms count by type: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return 0;
+    }
+    
+    /**
      * Map ResultSet to BoardingRoom object
      */
     private BoardingRoom mapResultSetToBoardingRoom(ResultSet rs) throws SQLException {
@@ -311,20 +438,25 @@ public class BoardingRoomDAO {
         room.setRoomId(rs.getInt("room_id"));
         room.setRoomName(rs.getString("room_name"));
         room.setRoomType(rs.getString("room_type"));
-        // Map total_rooms từ database sang capacity trong model
+        // Map rooms từ database sang capacity trong model
         try {
-            room.setCapacity(rs.getInt("total_rooms"));
+            room.setCapacity(rs.getInt("rooms"));
         } catch (SQLException e) {
-            // Fallback nếu không có total_rooms, thử capacity
+            // Fallback nếu không có rooms, thử total_rooms hoặc capacity
             try {
-                room.setCapacity(rs.getInt("capacity"));
+                room.setCapacity(rs.getInt("total_rooms"));
             } catch (SQLException e2) {
-                room.setCapacity(1); // Default value
+                try {
+                    room.setCapacity(rs.getInt("capacity"));
+                } catch (SQLException e3) {
+                    room.setCapacity(1); // Default value
+                }
             }
         }
         room.setPricePerDay(rs.getDouble("price_per_day"));
         room.setDescription(rs.getString("description"));
-        room.setStatus(rs.getString("status"));
+        // Không còn cột status, set mặc định
+        room.setStatus("available");
         room.setActive(true); // Mặc định là active
         room.setCreatedAt(rs.getTimestamp("created_at"));
         room.setUpdatedAt(rs.getTimestamp("updated_at"));

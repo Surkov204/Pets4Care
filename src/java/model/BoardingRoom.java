@@ -13,6 +13,7 @@ public class BoardingRoom {
     private String roomName;
     private String roomType;
     private int capacity;
+    private int availableRooms; // Số phòng còn lại
     private double pricePerDay;
     private String description;
     private String status;
@@ -66,6 +67,14 @@ public class BoardingRoom {
     
     public void setCapacity(int capacity) {
         this.capacity = capacity;
+    }
+    
+    public int getAvailableRooms() {
+        return availableRooms;
+    }
+    
+    public void setAvailableRooms(int availableRooms) {
+        this.availableRooms = availableRooms;
     }
     
     public double getPricePerDay() {

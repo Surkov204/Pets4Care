@@ -3,6 +3,7 @@ package dao;
 import model.Pet;
 import utils.DBConnection;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -118,8 +119,8 @@ public class PetDAO implements IPetDAO {
      */
     @Override
     public boolean savePet(Pet pet) {
-        String sql = "INSERT INTO Pet (customer_id, pet_name, species, breed, age, gender, description, health_status, image_path, created_at, updated_at) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Pet (customer_id, pet_name, species, breed, age, gender, weight_kg, description, health_status, image_path, created_at, updated_at) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -130,11 +131,16 @@ public class PetDAO implements IPetDAO {
             stmt.setString(4, pet.getBreed());
             stmt.setInt(5, pet.getAge());
             stmt.setString(6, pet.getGender());
-            stmt.setString(7, pet.getDescription());
-            stmt.setString(8, pet.getHealthStatus());
-            stmt.setString(9, pet.getImagePath());
-            stmt.setTimestamp(10, new Timestamp(System.currentTimeMillis()));
+            if (pet.getWeightKg() != null) {
+                stmt.setBigDecimal(7, BigDecimal.valueOf(pet.getWeightKg()));
+            } else {
+                stmt.setNull(7, Types.DECIMAL);
+            }
+            stmt.setString(8, pet.getDescription());
+            stmt.setString(9, pet.getHealthStatus());
+            stmt.setString(10, pet.getImagePath());
             stmt.setTimestamp(11, new Timestamp(System.currentTimeMillis()));
+            stmt.setTimestamp(12, new Timestamp(System.currentTimeMillis()));
             
             int affectedRows = stmt.executeUpdate();
             
@@ -160,7 +166,7 @@ public class PetDAO implements IPetDAO {
     @Override
     public boolean updatePet(Pet pet) {
         String sql = "UPDATE Pet SET pet_name = ?, species = ?, breed = ?, age = ?, gender = ?, " +
-                    "description = ?, health_status = ?, image_path = ?, updated_at = ? WHERE id = ? AND customer_id = ?";
+                    "weight_kg = ?, description = ?, health_status = ?, image_path = ?, updated_at = ? WHERE id = ? AND customer_id = ?";
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -170,12 +176,17 @@ public class PetDAO implements IPetDAO {
             stmt.setString(3, pet.getBreed());
             stmt.setInt(4, pet.getAge());
             stmt.setString(5, pet.getGender());
-            stmt.setString(6, pet.getDescription());
-            stmt.setString(7, pet.getHealthStatus());
-            stmt.setString(8, pet.getImagePath());
-            stmt.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
-            stmt.setInt(10, pet.getId());
-            stmt.setInt(11, pet.getCustomerId());
+            if (pet.getWeightKg() != null) {
+                stmt.setBigDecimal(6, BigDecimal.valueOf(pet.getWeightKg()));
+            } else {
+                stmt.setNull(6, Types.DECIMAL);
+            }
+            stmt.setString(7, pet.getDescription());
+            stmt.setString(8, pet.getHealthStatus());
+            stmt.setString(9, pet.getImagePath());
+            stmt.setTimestamp(10, new Timestamp(System.currentTimeMillis()));
+            stmt.setInt(11, pet.getId());
+            stmt.setInt(12, pet.getCustomerId());
             
             return stmt.executeUpdate() > 0;
             
@@ -356,6 +367,8 @@ public class PetDAO implements IPetDAO {
         pet.setBreed(rs.getString("breed"));
         pet.setAge(rs.getInt("age"));
         pet.setGender(rs.getString("gender"));
+        BigDecimal weight = rs.getBigDecimal("weight_kg");
+        pet.setWeightKg(weight != null ? weight.doubleValue() : null);
         pet.setDescription(rs.getString("description"));
         pet.setHealthStatus(rs.getString("health_status"));
         pet.setImagePath(rs.getString("image_path"));

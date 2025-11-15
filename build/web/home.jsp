@@ -335,10 +335,10 @@
                         <h3>Trang sức</h3>
                         <p>Làm đẹp cho thú cưng</p>
                     </div>
-                    <div class="category-card" onclick="location.href = 'health-check-booking'">
-                        <div class="category-icon">🩺</div>
-                        <h3>Thăm khám sức khỏe</h3>
-                        <p>Dịch vụ kiểm tra & theo dõi thú cưng</p>
+                    <div class="category-card" onclick="location.href = 'dat-lich-kham.jsp'" style="background: linear-gradient(135deg, #e0f2fe, #f0f9ff); border: 2px solid #0ea5e9;">
+                        <div class="category-icon">❤️</div>
+                        <h3 style="color: #0ea5e9; font-weight: 600;">Quan tâm đến sức khỏe thú cưng?</h3>
+                        <p style="color: #374151; font-size: 14px;">Hãy bấm vào đây để đặt lịch khám</p>
                     </div>
                     <div class="category-card" onclick="location.href = 'spa-service.jsp'">
                         <div class="category-icon">💆</div>

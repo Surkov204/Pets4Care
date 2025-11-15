@@ -492,19 +492,19 @@
                     String statusClass = "";
                     String statusText = "";
                     switch (booking.getStatus()) {
-                        case "completed":
+                        case "Hoàn thành":
                             statusClass = "status-normal";
                             statusText = "Hoàn thành";
                             break;
-                        case "confirmed":
+                        case "Đã xác nhận":
                             statusClass = "status-normal";
                             statusText = "Đã xác nhận";
                             break;
-                        case "pending":
+                        case "Chờ xác nhận":
                             statusClass = "status-warning";
-                            statusText = "Đang chờ";
+                            statusText = "Chờ xác nhận";
                             break;
-                        case "cancelled":
+                        case "Đã hủy":
                             statusClass = "status-warning";
                             statusText = "Đã hủy";
                             break;
@@ -567,17 +567,17 @@
                         String bgClass = "";
                         
                         switch (booking.getStatus()) {
-                            case "pending":
+                            case "Chờ xác nhận":
                                 statusClass = "status-warning";
                                 statusText = "Chờ xác nhận";
                                 bgClass = "bg-yellow-50 border-l-4 border-yellow-400";
                                 break;
-                            case "confirmed":
+                            case "Đã xác nhận":
                                 statusClass = "status-normal";
                                 statusText = "Đã xác nhận";
                                 bgClass = "bg-green-50 border-l-4 border-green-400";
                                 break;
-                            case "cancelled":
+                            case "Đã hủy":
                                 statusClass = "status-warning";
                                 statusText = "Đã hủy";
                                 bgClass = "bg-red-50 border-l-4 border-red-400";

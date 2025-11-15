@@ -130,11 +130,11 @@ public class HealthCheckBookingService {
             booking.setPetId(pet.getId());
             booking.setAppointmentStart(appointmentStart);
             booking.setAppointmentEnd(appointmentEnd);
-            booking.setStatus("pending"); // Changed to pending status
+            booking.setStatus("Chờ xác nhận"); // Status hợp lệ theo database constraint
             booking.setNote(note != null ? note.trim() : "");
             booking.setCreatedAt(new Timestamp(System.currentTimeMillis()));
             booking.setDoctorId(doctorId);
-            logger.info("✓ Booking object created with status: pending");
+            logger.info("✓ Booking object created with status: Chờ xác nhận");
 
             // 7. Lưu booking và chi tiết
             logger.info("Bước 7: Lưu booking vào database...");
@@ -239,7 +239,7 @@ public class HealthCheckBookingService {
         }
         
         String status = booking.getStatus();
-        return "pending".equals(status) || "confirmed".equals(status);
+        return "Chờ xác nhận".equals(status) || "Đã xác nhận".equals(status);
     }
     
     /**

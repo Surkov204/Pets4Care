@@ -15,7 +15,9 @@
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/dao/MedicalRecordDAO.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/WEB-INF/web.xml</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/WEB-INF/classes/payos.properties</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/doctor.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/UpdateOrderStatusServlet.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/doctor/medical-records.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/PayOSWebhookServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/toy/toy-detail.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ConfirmPaymentServlet.java</file>
@@ -43,6 +45,7 @@
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/dao/IStatisticDAO.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ProductDetailServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/service/PayOSService.java</file>
+            <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/web/doctor-detail.jsp</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/HealthCheckBookingServlet.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/dao/StaffDAO.java</file>
             <file>file:/D:/SWP391/Pets4Care_tranhongson/Pets4Care/src/java/controller/ManageToyServlet.java</file>

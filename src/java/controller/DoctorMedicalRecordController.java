@@ -109,8 +109,10 @@ public class DoctorMedicalRecordController extends HttpServlet {
                 // Only include records that are linked to bookings (bookingId > 0)
                 if (record.getBookingId() > 0) {
                     bookingsWithRecords.add(record.getBookingId());
+                    logger.info("Medical record found for booking ID: " + record.getBookingId());
                 }
             }
+            logger.info("Total medical records: " + medicalRecords.size() + ", Bookings with records: " + bookingsWithRecords.size());
 
             // Get all appointments for this doctor (both pending and completed)
             List<Booking> allAppointments = bookingDAO.getBookingsByDoctorAndDateRange(
@@ -128,6 +130,7 @@ public class DoctorMedicalRecordController extends HttpServlet {
                 // First check if this booking already has a medical record
                 if (bookingsWithRecords.contains(appointment.getBookingId())) {
                     // Skip bookings that already have medical records - they appear in the medical records table
+                    logger.info("Skipping booking ID " + appointment.getBookingId() + " - already has medical record");
                     continue;
                 }
 
@@ -187,17 +190,47 @@ public class DoctorMedicalRecordController extends HttpServlet {
             if ("create".equals(action)) {
                 createMedicalRecord(request, doctor);
                 response.sendRedirect(request.getContextPath() + "/doctor/medical-records?success=created");
+                return;
             } else if ("update".equals(action)) {
                 updateMedicalRecord(request, doctor);
                 response.sendRedirect(request.getContextPath() + "/doctor/medical-records?success=updated");
+                return;
             } else {
                 response.sendRedirect(request.getContextPath() + "/doctor/medical-records");
+                return;
             }
             
+        } catch (NumberFormatException e) {
+            logger.severe("Invalid parameter format: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/doctor/medical-records?error=invalid_parameter");
+            return;
+        } catch (IllegalArgumentException e) {
+            logger.severe("Validation error: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/doctor/medical-records?error=" + java.net.URLEncoder.encode(e.getMessage(), "UTF-8"));
+            return;
+        } catch (IllegalAccessException e) {
+            logger.severe("Authorization error: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/doctor/medical-records?error=unauthorized");
+            return;
+        } catch (java.sql.SQLException e) {
+            logger.severe("Database error: " + e.getMessage());
+            logger.severe("SQL State: " + e.getSQLState() + ", Error Code: " + e.getErrorCode());
+            e.printStackTrace();
+            String errorMsg = "Database error occurred";
+            if (e.getErrorCode() == 547) {
+                errorMsg = "Foreign key constraint violation - please check booking, pet, customer, or doctor exists";
+            }
+            response.sendRedirect(request.getContextPath() + "/doctor/medical-records?error=" + java.net.URLEncoder.encode(errorMsg, "UTF-8"));
+            return;
         } catch (Exception e) {
             logger.severe("Error processing medical record: " + e.getMessage());
+            logger.severe("Exception type: " + e.getClass().getName());
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/doctor/medical-records?error=" + e.getMessage());
+            response.sendRedirect(request.getContextPath() + "/doctor/medical-records?error=" + java.net.URLEncoder.encode(e.getMessage() != null ? e.getMessage() : "Unknown error", "UTF-8"));
+            return;
         }
     }
     
@@ -205,60 +238,96 @@ public class DoctorMedicalRecordController extends HttpServlet {
         MedicalRecord record = new MedicalRecord();
 
         String bookingIdStr = request.getParameter("bookingId");
-        if (bookingIdStr != null && !bookingIdStr.isEmpty()) {
-            // Create from existing booking
+        if (bookingIdStr == null || bookingIdStr.isEmpty()) {
+            logger.severe("Cannot create medical record: bookingId parameter is missing");
+            throw new IllegalArgumentException("Booking ID is required to create medical record");
+        }
+        
+        try {
             int bookingId = Integer.parseInt(bookingIdStr);
+            logger.info("Creating medical record for booking ID: " + bookingId);
+            
             Booking booking = bookingDAO.getBookingById(bookingId);
-
-            if (booking == null || booking.getDoctorId() != doctor.getDoctorId()) {
+            if (booking == null) {
+                logger.severe("Booking not found: " + bookingId);
+                throw new IllegalArgumentException("Booking not found: " + bookingId);
+            }
+            
+            if (booking.getDoctorId() != doctor.getDoctorId()) {
+                logger.severe("Unauthorized: Doctor " + doctor.getDoctorId() + " trying to access booking " + bookingId + " (belongs to doctor " + booking.getDoctorId() + ")");
                 throw new IllegalAccessException("Unauthorized access to booking");
             }
 
             record.setBookingId(bookingId);
             record.setPetId(booking.getPetId());
             record.setCustomerId(booking.getCustomerId());
+            
+            logger.info("Medical record setup - Booking ID: " + bookingId + ", Pet ID: " + booking.getPetId() + ", Customer ID: " + booking.getCustomerId());
 
             // Update booking status to completed if not already
             if (!"Hoàn thành".equals(booking.getStatus()) && !"completed".equals(booking.getStatus())) {
-                bookingDAO.updateBookingStatus(bookingId, "Hoàn thành");
+                boolean statusUpdated = bookingDAO.updateBookingStatus(bookingId, "Hoàn thành");
+                logger.info("Updated booking " + bookingId + " status to 'Hoàn thành': " + statusUpdated);
+            } else {
+                logger.info("Booking " + bookingId + " already has status: " + booking.getStatus());
             }
-        } else {
-            // Manual creation - require petId and customerId
-            String petIdStr = request.getParameter("petId");
-            String customerIdStr = request.getParameter("customerId");
-
-            if (petIdStr == null || petIdStr.isEmpty() || customerIdStr == null || customerIdStr.isEmpty()) {
-                throw new IllegalArgumentException("Pet ID and Customer ID are required for manual medical record creation");
-            }
-
-            record.setPetId(Integer.parseInt(petIdStr));
-            record.setCustomerId(Integer.parseInt(customerIdStr));
-            // bookingId remains null for manual records
+        } catch (NumberFormatException e) {
+            logger.severe("Invalid booking ID format: " + bookingIdStr);
+            throw new IllegalArgumentException("Invalid booking ID format: " + bookingIdStr);
         }
 
         record.setDoctorId(doctor.getDoctorId());
         record.setExaminationDate(new Timestamp(System.currentTimeMillis()));
+        
+        logger.info("Medical record before setting fields - Doctor ID: " + doctor.getDoctorId() + ", Examination Date: " + record.getExaminationDate());
 
         setMedicalRecordFields(request, record);
+        
+        logger.info("Medical record fields set. Attempting to create in database...");
 
-        if (!medicalRecordDAO.createMedicalRecord(record)) {
-            throw new Exception("Failed to create medical record");
+        try {
+            if (!medicalRecordDAO.createMedicalRecord(record)) {
+                logger.severe("Failed to create medical record - createMedicalRecord returned false");
+                throw new Exception("Failed to create medical record - database operation returned false");
+            }
+            logger.info("Successfully created medical record ID: " + record.getRecordId() + " for booking ID: " + record.getBookingId());
+        } catch (Exception e) {
+            logger.severe("Exception during medical record creation: " + e.getMessage());
+            logger.severe("Exception type: " + e.getClass().getName());
+            e.printStackTrace();
+            throw e;
         }
     }
     
     private void updateMedicalRecord(HttpServletRequest request, Doctor doctor) throws Exception {
-        int recordId = Integer.parseInt(request.getParameter("recordId"));
-        MedicalRecord record = getMedicalRecordById(recordId);
+        String recordIdStr = request.getParameter("recordId");
+        if (recordIdStr == null || recordIdStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("Record ID is required");
+        }
         
-        if (record == null || record.getDoctorId() != doctor.getDoctorId()) {
+        int recordId;
+        try {
+            recordId = Integer.parseInt(recordIdStr);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid record ID format: " + recordIdStr);
+        }
+        
+        MedicalRecord record = getMedicalRecordById(recordId);
+        if (record == null) {
+            throw new IllegalArgumentException("Medical record not found: " + recordId);
+        }
+        
+        if (record.getDoctorId() != doctor.getDoctorId()) {
             throw new IllegalAccessException("Unauthorized access to medical record");
         }
         
         setMedicalRecordFields(request, record);
         
         if (!medicalRecordDAO.updateMedicalRecord(record)) {
-            throw new Exception("Failed to update medical record");
+            throw new Exception("Failed to update medical record - database operation returned false");
         }
+        
+        logger.info("Successfully updated medical record ID: " + recordId);
     }
     
     private void setMedicalRecordFields(HttpServletRequest request, MedicalRecord record) {
@@ -269,28 +338,54 @@ public class DoctorMedicalRecordController extends HttpServlet {
         record.setNotes(request.getParameter("notes"));
         
         String weightStr = request.getParameter("weight");
-        if (weightStr != null && !weightStr.isEmpty()) {
-            record.setWeight(new BigDecimal(weightStr));
+        if (weightStr != null && !weightStr.trim().isEmpty()) {
+            try {
+                record.setWeight(new BigDecimal(weightStr));
+            } catch (NumberFormatException e) {
+                record.setWeight(null);
+            }
+        } else {
+            record.setWeight(null);
         }
         
         String tempStr = request.getParameter("temperature");
-        if (tempStr != null && !tempStr.isEmpty()) {
-            record.setTemperature(new BigDecimal(tempStr));
+        if (tempStr != null && !tempStr.trim().isEmpty()) {
+            try {
+                record.setTemperature(new BigDecimal(tempStr));
+            } catch (NumberFormatException e) {
+                record.setTemperature(null);
+            }
+        } else {
+            record.setTemperature(null);
         }
         
         String heartRateStr = request.getParameter("heartRate");
-        if (heartRateStr != null && !heartRateStr.isEmpty()) {
-            record.setHeartRate(Integer.parseInt(heartRateStr));
+        if (heartRateStr != null && !heartRateStr.trim().isEmpty()) {
+            try {
+                record.setHeartRate(Integer.parseInt(heartRateStr));
+            } catch (NumberFormatException e) {
+                record.setHeartRate(null);
+            }
+        } else {
+            record.setHeartRate(null);
         }
         
-        record.setBloodPressure(request.getParameter("bloodPressure"));
+        String bloodPressure = request.getParameter("bloodPressure");
+        record.setBloodPressure(bloodPressure != null && !bloodPressure.trim().isEmpty() ? bloodPressure : null);
         
         String followUpDateStr = request.getParameter("followUpDate");
-        if (followUpDateStr != null && !followUpDateStr.isEmpty()) {
-            record.setFollowUpDate(LocalDate.parse(followUpDateStr));
+        if (followUpDateStr != null && !followUpDateStr.trim().isEmpty()) {
+            try {
+                record.setFollowUpDate(LocalDate.parse(followUpDateStr));
+            } catch (Exception e) {
+                record.setFollowUpDate(null);
+            }
+        } else {
+            record.setFollowUpDate(null);
         }
         
-        record.setFollowUpNotes(request.getParameter("followUpNotes"));
+        String followUpNotes = request.getParameter("followUpNotes");
+        record.setFollowUpNotes(followUpNotes != null && !followUpNotes.trim().isEmpty() ? followUpNotes : null);
     }
     
     /**

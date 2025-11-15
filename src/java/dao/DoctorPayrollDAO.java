@@ -27,7 +27,7 @@ public class DoctorPayrollDAO {
     // ✅ Lấy danh sách phiếu lương
     public List<PayrollRecord> getPayrollHistory(int doctorId) {
         List<PayrollRecord> list = new ArrayList<>();
-        String sql = "SELECT * FROM DoctorPayrollRecords WHERE DoctorID = ? ORDER BY CreatedAt DESC";
+        String sql = "SELECT * FROM PayrollRecords WHERE doctor_id = ? ORDER BY CreatedAt DESC";
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, doctorId);
@@ -35,7 +35,7 @@ public class DoctorPayrollDAO {
             while (rs.next()) {
                 PayrollRecord p = new PayrollRecord(
                         rs.getInt("PayrollID"),
-                        rs.getInt("DoctorID"),
+                        rs.getInt("doctor_id"),
                         rs.getDate("PeriodStart"),
                         rs.getDate("PeriodEnd"),
                         rs.getDouble("TotalHours"),
@@ -53,7 +53,7 @@ public class DoctorPayrollDAO {
 
     // ✅ Lấy phiếu lương mới nhất
     public PayrollRecord getLatestPayroll(int doctorId) {
-        String sql = "SELECT TOP 1 * FROM DoctorPayrollRecords WHERE DoctorID = ? ORDER BY CreatedAt DESC";
+        String sql = "SELECT TOP 1 * FROM PayrollRecords WHERE doctor_id = ? ORDER BY CreatedAt DESC";
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, doctorId);
@@ -61,7 +61,7 @@ public class DoctorPayrollDAO {
             if (rs.next()) {
                 return new PayrollRecord(
                         rs.getInt("PayrollID"),
-                        rs.getInt("DoctorID"),
+                        rs.getInt("doctor_id"),
                         rs.getDate("PeriodStart"),
                         rs.getDate("PeriodEnd"),
                         rs.getDouble("TotalHours"),

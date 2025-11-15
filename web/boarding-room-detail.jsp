@@ -3,6 +3,7 @@
 <%@page import="model.BoardingRoom"%>
 <%@page import="model.Pet"%>
 <%@page import="model.Review"%>
+<%@page import="dao.BoardingRoomDAO"%>
 <%@page import="java.util.Map"%>
 <%@page import="java.util.List"%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
@@ -26,12 +27,20 @@
     BoardingRoom room = (BoardingRoom) request.getAttribute("room");
     List<Review> reviews = (List<Review>) request.getAttribute("reviews");
     
+    // Tính số phòng còn lại
+    int availableRooms = 0;
+    if (room != null) {
+        BoardingRoomDAO roomDAO = new BoardingRoomDAO();
+        availableRooms = roomDAO.getAvailableRoomsCountByType(room.getRoomType());
+    }
+    
     // Debug logging
     System.out.println("=== boarding-room-detail.jsp DEBUG ===");
     System.out.println("room attribute: " + (room != null ? "NOT NULL" : "NULL"));
     if (room != null) {
         System.out.println("room ID: " + room.getRoomId());
         System.out.println("room Name: " + room.getRoomName());
+        System.out.println("available rooms: " + availableRooms);
     }
     
     if (room == null) {
@@ -389,9 +398,9 @@
 
                     <!-- Available Rooms -->
                     <div class="flex items-center gap-4">
-                        <div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg">
+                        <div class="<%= availableRooms > 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800" %> px-4 py-2 rounded-lg">
                             <i class="fas fa-door-open mr-2"></i>
-                            <span class="font-semibold">Số phòng còn lại: <%= room.getCapacity() %></span>
+                            <span class="font-semibold">Số phòng còn lại: <%= availableRooms %></span>
                         </div>
                     </div>
 

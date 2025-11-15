@@ -39,7 +39,7 @@ public class DoctorAttendanceDAO {
 
     // 🟢 Lấy bản ghi chấm công gần nhất
     public AttendanceRecord getLatestRecord(int doctorId) {
-        String sql = "SELECT TOP 1 * FROM DoctorAttendanceRecords WHERE DoctorID = ? ORDER BY CheckIn DESC";
+        String sql = "SELECT TOP 1 * FROM AttendanceRecords WHERE doctor_id = ? ORDER BY CheckIn DESC";
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, doctorId);
@@ -47,7 +47,7 @@ public class DoctorAttendanceDAO {
             if (rs.next()) {
                 return new AttendanceRecord(
                         rs.getInt("AttendanceID"),
-                        rs.getInt("DoctorID"),
+                        rs.getInt("doctor_id"),
                         rs.getTimestamp("CheckIn"),
                         rs.getTimestamp("CheckOut"),
                         rs.getDouble("TotalHours"),
@@ -65,7 +65,7 @@ public class DoctorAttendanceDAO {
     // 🟢 Lấy tất cả bản ghi chấm công của doctor
     public List<AttendanceRecord> getAllRecords(int doctorId) {
         List<AttendanceRecord> list = new ArrayList<>();
-        String sql = "SELECT * FROM DoctorAttendanceRecords WHERE DoctorID = ? ORDER BY CheckIn DESC";
+        String sql = "SELECT * FROM AttendanceRecords WHERE doctor_id = ? ORDER BY CheckIn DESC";
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, doctorId);
@@ -73,7 +73,7 @@ public class DoctorAttendanceDAO {
             while (rs.next()) {
                 list.add(new AttendanceRecord(
                         rs.getInt("AttendanceID"),
-                        rs.getInt("DoctorID"),
+                        rs.getInt("doctor_id"),
                         rs.getTimestamp("CheckIn"),
                         rs.getTimestamp("CheckOut"),
                         rs.getDouble("TotalHours"),
@@ -91,8 +91,8 @@ public class DoctorAttendanceDAO {
     // 🟢 Kiểm tra hôm nay đã check-in chưa
     public boolean hasCheckedInToday(int doctorId) {
         String sql = """
-            SELECT COUNT(*) FROM DoctorAttendanceRecords 
-            WHERE DoctorID = ? AND CAST(CheckIn AS DATE) = CAST(GETDATE() AS DATE)
+            SELECT COUNT(*) FROM AttendanceRecords 
+            WHERE doctor_id = ? AND CAST(CheckIn AS DATE) = CAST(GETDATE() AS DATE)
         """;
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {

@@ -42,56 +42,63 @@ public class ShiftRequestDAO {
     public void addRequest(ShiftRequest r) {
         String sql = """
             INSERT INTO ShiftRequests
-            (EmployeeID, ToStaffID, Type, TargetDate, FromDate, ToDate,
+            (staff_id, doctor_id, ToStaffID, Type, TargetDate, FromDate, ToDate,
              FromShiftID, ToShiftID, Reason, Status, ApprovedBy, CreatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())
         """;
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setInt(1, r.getEmployeeID());
+            // Set staff_id or doctor_id (one must be null)
+            if (r.getDoctor_id() > 0) {
+                ps.setNull(1, Types.INTEGER); // staff_id
+                ps.setInt(2, r.getDoctor_id()); // doctor_id
+            } else {
+                ps.setInt(1, r.getStaff_id() > 0 ? r.getStaff_id() : r.getEmployeeID()); // staff_id
+                ps.setNull(2, Types.INTEGER); // doctor_id
+            }
 
             Integer toStaffId = (r.getToStaffID() <= 0) ? null : r.getToStaffID();
             if (toStaffId == null) {
-                ps.setNull(2, Types.INTEGER);
+                ps.setNull(3, Types.INTEGER);
             } else {
-                ps.setInt(2, toStaffId);
+                ps.setInt(3, toStaffId);
             }
 
-            ps.setString(3, r.getType());
+            ps.setString(4, r.getType());
 
             Date fromDate = r.getFromDate();
-            ps.setDate(4, fromDate); // target date = fromDate
-            ps.setDate(5, fromDate);
+            ps.setDate(5, fromDate); // target date = fromDate
+            ps.setDate(6, fromDate);
 
             Date toDate = r.getToDate();
             if (toDate != null) {
-                ps.setDate(6, toDate);
+                ps.setDate(7, toDate);
             } else {
-                ps.setNull(6, Types.DATE);
+                ps.setNull(7, Types.DATE);
             }
 
             Integer fromShiftId = r.getFromShiftID() > 0 ? r.getFromShiftID() : null;
             if (fromShiftId == null) {
-                ps.setNull(7, Types.INTEGER);
+                ps.setNull(8, Types.INTEGER);
             } else {
-                ps.setInt(7, fromShiftId);
+                ps.setInt(8, fromShiftId);
             }
 
             Integer toShiftId = r.getToShiftID() > 0 ? r.getToShiftID() : null;
             if (toShiftId == null) {
-                ps.setNull(8, Types.INTEGER);
+                ps.setNull(9, Types.INTEGER);
             } else {
-                ps.setInt(8, toShiftId);
+                ps.setInt(9, toShiftId);
             }
 
-            ps.setString(9, r.getReason());
-            ps.setString(10, r.getStatus());
+            ps.setString(10, r.getReason());
+            ps.setString(11, r.getStatus());
 
             if (r.getApprovedBy() == null) {
-                ps.setNull(11, Types.INTEGER);
+                ps.setNull(12, Types.INTEGER);
             } else {
-                ps.setObject(11, r.getApprovedBy());
+                ps.setObject(12, r.getApprovedBy());
             }
 
             ps.executeUpdate();
@@ -110,12 +117,12 @@ public class ShiftRequestDAO {
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                return new ShiftRequest(
+                ShiftRequest req = new ShiftRequest(
                         rs.getInt("RequestID"),
-                        rs.getInt("EmployeeID"),
+                        rs.getObject("staff_id") != null ? rs.getInt("staff_id") : (rs.getObject("doctor_id") != null ? rs.getInt("doctor_id") : 0),
                         rs.getInt("ToStaffID"),
                         rs.getString("Type"),
-                        rs.getDate("FromDate"),
+                        rs.getDate("TargetDate"), // Use TargetDate
                         rs.getDate("ToDate"),
                         rs.getInt("FromShiftID"),
                         rs.getInt("ToShiftID"),
@@ -124,6 +131,16 @@ public class ShiftRequestDAO {
                         (Integer) rs.getObject("ApprovedBy"),
                         rs.getTimestamp("CreatedAt")
                 );
+                // Set staff_id or doctor_id
+                if (rs.getObject("staff_id") != null) {
+                    req.setStaff_id(rs.getInt("staff_id"));
+                }
+                if (rs.getObject("doctor_id") != null) {
+                    req.setDoctor_id(rs.getInt("doctor_id"));
+                }
+                // Set FromDate from TargetDate for backward compatibility
+                req.setFromDate(rs.getDate("TargetDate"));
+                return req;
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -141,12 +158,12 @@ public class ShiftRequestDAO {
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                list.add(new ShiftRequest(
+                ShiftRequest req = new ShiftRequest(
                         rs.getInt("RequestID"),
-                        rs.getInt("EmployeeID"),
+                        rs.getObject("staff_id") != null ? rs.getInt("staff_id") : (rs.getObject("doctor_id") != null ? rs.getInt("doctor_id") : 0),
                         rs.getInt("ToStaffID"),
                         rs.getString("Type"),
-                        rs.getDate("FromDate"),
+                        rs.getDate("TargetDate"), // Use TargetDate
                         rs.getDate("ToDate"),
                         rs.getInt("FromShiftID"),
                         rs.getInt("ToShiftID"),
@@ -154,7 +171,17 @@ public class ShiftRequestDAO {
                         rs.getString("Status"),
                         (Integer) rs.getObject("ApprovedBy"),
                         rs.getTimestamp("CreatedAt")
-                ));
+                );
+                // Set staff_id or doctor_id
+                if (rs.getObject("staff_id") != null) {
+                    req.setStaff_id(rs.getInt("staff_id"));
+                }
+                if (rs.getObject("doctor_id") != null) {
+                    req.setDoctor_id(rs.getInt("doctor_id"));
+                }
+                // Set FromDate from TargetDate for backward compatibility
+                req.setFromDate(rs.getDate("TargetDate"));
+                list.add(req);
             }
 
         } catch (SQLException e) {
@@ -203,7 +230,7 @@ public class ShiftRequestDAO {
     // 🔄 SWAP CA CHÍNH XÁC (chỉ đúng ca + ngày)
     public boolean swapShift(int requestId) {
         String sql = """
-        SELECT EmployeeID, ToStaffID, FromDate, ToDate, FromShiftID, ToShiftID
+        SELECT staff_id, doctor_id, ToStaffID, TargetDate, ToDate, FromShiftID, ToShiftID
         FROM ShiftRequests WHERE RequestID = ?
     """;
 
@@ -215,9 +242,10 @@ public class ShiftRequestDAO {
                 return false;
             }
 
-            int empA = rs.getInt("EmployeeID");
+            // Get staff_id or doctor_id (one must be not null)
+            int empA = rs.getObject("staff_id") != null ? rs.getInt("staff_id") : rs.getInt("doctor_id");
             int empB = rs.getInt("ToStaffID");
-            Date fromDate = rs.getDate("FromDate");
+            Date fromDate = rs.getDate("TargetDate"); // Use TargetDate instead of FromDate
             Date toDate = rs.getDate("ToDate");
             int fromShift = rs.getInt("FromShiftID");
             int toShift = rs.getInt("ToShiftID");
@@ -228,11 +256,13 @@ public class ShiftRequestDAO {
                 return false;
             }
 
+            // Check if empA is staff or doctor
+            boolean empAIsDoctor = rs.getObject("doctor_id") != null;
+            
             // ⚠️ 2. Nếu người nhận (A) đã có ca trùng với ca của B thì hủy luôn
-            String checkDuplicate = """
-            SELECT COUNT(*) FROM WorkSchedule 
-            WHERE staff_id = ? AND work_date = ? AND shift_id = ?
-        """;
+            String checkDuplicate = empAIsDoctor 
+                ? "SELECT COUNT(*) FROM WorkSchedule WHERE doctor_id = ? AND work_date = ? AND shift_id = ?"
+                : "SELECT COUNT(*) FROM WorkSchedule WHERE staff_id = ? AND work_date = ? AND shift_id = ?";
             try (PreparedStatement psCheck = con.prepareStatement(checkDuplicate)) {
                 psCheck.setInt(1, empA);
                 psCheck.setDate(2, toDate);
@@ -245,10 +275,7 @@ public class ShiftRequestDAO {
             }
 
             // ⚠️ 3. Kiểm tra xem B có thực sự có ca đó không
-            String checkShift = """
-            SELECT COUNT(*) FROM WorkSchedule 
-            WHERE staff_id = ? AND work_date = ? AND shift_id = ?
-        """;
+            String checkShift = "SELECT COUNT(*) FROM WorkSchedule WHERE staff_id = ? AND work_date = ? AND shift_id = ?";
             try (PreparedStatement psCheck = con.prepareStatement(checkShift)) {
                 psCheck.setInt(1, empB);
                 psCheck.setDate(2, toDate);
@@ -263,19 +290,30 @@ public class ShiftRequestDAO {
             // ✅ Nếu mọi thứ hợp lệ → bắt đầu hoán đổi
             con.setAutoCommit(false);
 
-            String updateA = "UPDATE WorkSchedule SET staff_id = ? WHERE staff_id = ? AND work_date = ? AND shift_id = ?";
+            // Update based on whether empA is doctor or staff
+            // Note: Swap only works between same type (staff-staff or doctor-doctor)
+            // If A is doctor, B must also be doctor (or we need special handling)
+            String updateA = empAIsDoctor 
+                ? "UPDATE WorkSchedule SET doctor_id = NULL, staff_id = ? WHERE doctor_id = ? AND work_date = ? AND shift_id = ?"
+                : "UPDATE WorkSchedule SET staff_id = ? WHERE staff_id = ? AND work_date = ? AND shift_id = ?";
             String updateB = "UPDATE WorkSchedule SET staff_id = ? WHERE staff_id = ? AND work_date = ? AND shift_id = ?";
 
             try (PreparedStatement psA = con.prepareStatement(updateA); PreparedStatement psB = con.prepareStatement(updateB)) {
 
-                // A → B
-                psA.setInt(1, empB);
-                psA.setInt(2, empA);
+                // A → B: If A is doctor, set doctor_id to NULL and staff_id to empB
+                // If A is staff, just update staff_id to empB
+                if (empAIsDoctor) {
+                    psA.setInt(1, empB); // staff_id
+                    psA.setInt(2, empA); // doctor_id (old)
+                } else {
+                    psA.setInt(1, empB); // staff_id (new)
+                    psA.setInt(2, empA); // staff_id (old)
+                }
                 psA.setDate(3, fromDate);
                 psA.setInt(4, fromShift);
                 int rowsA = psA.executeUpdate();
 
-                // B → A
+                // B → A: B is always staff, so just update staff_id
                 psB.setInt(1, empA);
                 psB.setInt(2, empB);
                 psB.setDate(3, toDate);
@@ -306,27 +344,35 @@ public class ShiftRequestDAO {
 
     // 🔁 SWAP CA CHO ADMIN (legacy)
     public boolean swapShiftsForAdmin(int requestId) {
-        String sql = "SELECT EmployeeID, ToStaffID, FromDate, ToDate, FromShiftID, ToShiftID FROM ShiftRequests WHERE RequestID = ?";
+        String sql = "SELECT staff_id, doctor_id, ToStaffID, TargetDate, ToDate, FromShiftID, ToShiftID FROM ShiftRequests WHERE RequestID = ?";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, requestId);
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                int empA = rs.getInt("EmployeeID");
+                int empA = rs.getObject("staff_id") != null ? rs.getInt("staff_id") : rs.getInt("doctor_id");
                 int empB = rs.getInt("ToStaffID");
-                Date dateA = rs.getDate("FromDate");
+                Date dateA = rs.getDate("TargetDate"); // Use TargetDate
                 Date dateB = rs.getDate("ToDate");
                 int shiftA = rs.getInt("FromShiftID");
                 int shiftB = rs.getInt("ToShiftID");
-
-                String updateA = "UPDATE WorkSchedule SET staff_id=? WHERE staff_id=? AND work_date=? AND shift_id=?";
+                
+                boolean empAIsDoctor = rs.getObject("doctor_id") != null;
+                String updateA = empAIsDoctor 
+                    ? "UPDATE WorkSchedule SET doctor_id=NULL, staff_id=? WHERE doctor_id=? AND work_date=? AND shift_id=?"
+                    : "UPDATE WorkSchedule SET staff_id=? WHERE staff_id=? AND work_date=? AND shift_id=?";
                 String updateB = "UPDATE WorkSchedule SET staff_id=? WHERE staff_id=? AND work_date=? AND shift_id=?";
 
                 try (PreparedStatement psA = con.prepareStatement(updateA); PreparedStatement psB = con.prepareStatement(updateB)) {
 
-                    psA.setInt(1, empB);
-                    psA.setInt(2, empA);
+                    if (empAIsDoctor) {
+                        psA.setInt(1, empB); // staff_id
+                        psA.setInt(2, empA); // doctor_id (old)
+                    } else {
+                        psA.setInt(1, empB); // staff_id (new)
+                        psA.setInt(2, empA); // staff_id (old)
+                    }
                     psA.setDate(3, dateA);
                     psA.setInt(4, shiftA);
 
@@ -349,7 +395,7 @@ public class ShiftRequestDAO {
 
     public boolean passShift(int requestId) {
         String sql = """
-        SELECT EmployeeID, ToStaffID, FromDate, FromShiftID
+        SELECT staff_id, doctor_id, ToStaffID, TargetDate, FromShiftID
         FROM ShiftRequests WHERE RequestID = ?
     """;
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -361,16 +407,16 @@ public class ShiftRequestDAO {
                 return false;
             }
 
-            int empA = rs.getInt("EmployeeID"); // người pass ca
+            int empA = rs.getObject("staff_id") != null ? rs.getInt("staff_id") : rs.getInt("doctor_id"); // người pass ca
+            boolean empAIsDoctor = rs.getObject("doctor_id") != null;
             int empB = rs.getInt("ToStaffID");  // người nhận ca
-            Date date = rs.getDate("FromDate");
+            Date date = rs.getDate("TargetDate"); // Use TargetDate
             int shift = rs.getInt("FromShiftID");
 
             // 1️⃣ Kiểm tra người A có ca đó thật không
-            String checkA = """
-            SELECT COUNT(*) FROM WorkSchedule 
-            WHERE staff_id = ? AND work_date = ? AND shift_id = ?
-        """;
+            String checkA = empAIsDoctor
+                ? "SELECT COUNT(*) FROM WorkSchedule WHERE doctor_id = ? AND work_date = ? AND shift_id = ?"
+                : "SELECT COUNT(*) FROM WorkSchedule WHERE staff_id = ? AND work_date = ? AND shift_id = ?";
             try (PreparedStatement psCheck = con.prepareStatement(checkA)) {
                 psCheck.setInt(1, empA);
                 psCheck.setDate(2, date);
@@ -383,10 +429,7 @@ public class ShiftRequestDAO {
             }
 
             // 2️⃣ Kiểm tra B có bị trùng ca không
-            String checkB = """
-            SELECT COUNT(*) FROM WorkSchedule 
-            WHERE staff_id = ? AND work_date = ? AND shift_id = ?
-        """;
+            String checkB = "SELECT COUNT(*) FROM WorkSchedule WHERE staff_id = ? AND work_date = ? AND shift_id = ?";
             try (PreparedStatement psCheck = con.prepareStatement(checkB)) {
                 psCheck.setInt(1, empB);
                 psCheck.setDate(2, date);
@@ -399,11 +442,9 @@ public class ShiftRequestDAO {
             }
 
             // ✅ 3️⃣ Cập nhật WorkSchedule: người A → người B
-            String update = """
-            UPDATE WorkSchedule 
-            SET staff_id = ? 
-            WHERE staff_id = ? AND work_date = ? AND shift_id = ?
-        """;
+            String update = empAIsDoctor
+                ? "UPDATE WorkSchedule SET doctor_id = NULL, staff_id = ? WHERE doctor_id = ? AND work_date = ? AND shift_id = ?"
+                : "UPDATE WorkSchedule SET staff_id = ? WHERE staff_id = ? AND work_date = ? AND shift_id = ?";
             try (PreparedStatement psU = con.prepareStatement(update)) {
                 psU.setInt(1, empB);
                 psU.setInt(2, empA);
@@ -432,15 +473,16 @@ public class ShiftRequestDAO {
 
     public int createPassRequest(int fromStaffId, int toStaffId, int fromShiftId, Date fromDate, String reason) {
         String sql = """
-        INSERT INTO ShiftRequests (EmployeeID, ToStaffID, FromShiftID, ToShiftID, FromDate, ToDate, Type, Reason, Status, CreatedAt)
-        VALUES (?, ?, ?, NULL, ?, NULL, 'Pass', ?, 'Pending', GETDATE())
+        INSERT INTO ShiftRequests (staff_id, doctor_id, ToStaffID, FromShiftID, ToShiftID, TargetDate, FromDate, ToDate, Type, Reason, Status, CreatedAt)
+        VALUES (?, NULL, ?, ?, NULL, ?, ?, NULL, 'Pass', ?, 'Pending', GETDATE())
     """;
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, fromStaffId);
             ps.setInt(2, toStaffId);
             ps.setInt(3, fromShiftId);
-            ps.setDate(4, fromDate);
-            ps.setString(5, reason);
+            ps.setDate(4, fromDate); // TargetDate
+            ps.setDate(5, fromDate); // FromDate
+            ps.setString(6, reason);
             return ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -451,44 +493,51 @@ public class ShiftRequestDAO {
     public void addPassRequest(ShiftRequest r) {
         String sql = """
         INSERT INTO ShiftRequests
-        (EmployeeID, ToStaffID, Type, TargetDate, FromDate, ToDate, FromShiftID, ToShiftID, Reason, Status, ApprovedBy, CreatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())
+        (staff_id, doctor_id, ToStaffID, Type, TargetDate, FromDate, ToDate, FromShiftID, ToShiftID, Reason, Status, ApprovedBy, CreatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())
     """;
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setInt(1, r.getEmployeeID());
+            // Set staff_id or doctor_id (one must be null)
+            if (r.getDoctor_id() > 0) {
+                ps.setNull(1, Types.INTEGER); // staff_id
+                ps.setInt(2, r.getDoctor_id()); // doctor_id
+            } else {
+                ps.setInt(1, r.getStaff_id() > 0 ? r.getStaff_id() : r.getEmployeeID()); // staff_id
+                ps.setNull(2, Types.INTEGER); // doctor_id
+            }
 
             Integer toStaffId = (r.getToStaffID() <= 0) ? null : r.getToStaffID();
             if (toStaffId == null) {
-                ps.setNull(2, Types.INTEGER);
+                ps.setNull(3, Types.INTEGER);
             } else {
-                ps.setInt(2, toStaffId);
+                ps.setInt(3, toStaffId);
             }
 
-            ps.setString(3, r.getType());         // 'DoctorRegister', 'DoctorCancel', 'DoctorPass', etc.
+            ps.setString(4, r.getType());         // 'DoctorRegister', 'DoctorCancel', 'DoctorPass', etc.
 
             Date fromDate = r.getFromDate();
-            ps.setDate(4, fromDate);       // ✅ TargetDate = FromDate
-            ps.setDate(5, fromDate);       // FromDate
+            ps.setDate(5, fromDate);       // ✅ TargetDate = FromDate
+            ps.setDate(6, fromDate);       // FromDate
 
             // For pass requests, ToDate is null
-            ps.setNull(6, Types.DATE);
+            ps.setNull(7, Types.DATE);
 
             Integer fromShiftId = r.getFromShiftID() > 0 ? r.getFromShiftID() : null;
             if (fromShiftId == null) {
-                ps.setNull(7, Types.INTEGER);
+                ps.setNull(8, Types.INTEGER);
             } else {
-                ps.setInt(7, fromShiftId);
+                ps.setInt(8, fromShiftId);
             }
 
             // For pass requests, ToShiftID is null
-            ps.setNull(8, Types.INTEGER);
+            ps.setNull(9, Types.INTEGER);
 
-            ps.setString(9, r.getReason());
-            ps.setString(10, r.getStatus());
+            ps.setString(10, r.getReason());
+            ps.setString(11, r.getStatus());
 
             // ApprovedBy is null initially
-            ps.setNull(11, Types.INTEGER);
+            ps.setNull(12, Types.INTEGER);
 
             ps.executeUpdate();
             System.out.println("[ShiftRequestDAO] ✅ Thêm yêu cầu " + r.getType() + " thành công.");

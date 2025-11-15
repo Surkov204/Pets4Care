@@ -4,7 +4,6 @@ import model.MedicalRecord;
 import utils.DBConnection;
 
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -18,8 +17,9 @@ public class MedicalRecordDAO {
     
     /**
      * Tạo medical record mới
+     * @throws SQLException nếu có lỗi database hoặc constraint violation
      */
-    public boolean createMedicalRecord(MedicalRecord record) {
+    public boolean createMedicalRecord(MedicalRecord record) throws SQLException {
         String sql = "INSERT INTO dbo.MedicalRecord " +
                     "(booking_id, pet_id, doctor_id, customer_id, examination_date, " +
                     "symptoms, diagnosis, treatment, prescription, weight, temperature, " +
@@ -29,10 +29,23 @@ public class MedicalRecordDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
+            // booking_id is NOT NULL in database, so it must have a value
+            // For manual records, we should create a dummy booking or use 0 (but this might cause FK constraint issues)
+            // For now, we'll require booking_id to be > 0
+            if (record.getBookingId() <= 0) {
+                logger.severe("Cannot create medical record: booking_id is required and must be > 0");
+                throw new SQLException("booking_id is required for medical record creation");
+            }
             ps.setInt(1, record.getBookingId());
             ps.setInt(2, record.getPetId());
             ps.setInt(3, record.getDoctorId());
             ps.setInt(4, record.getCustomerId());
+            
+            // Đảm bảo examination_date không NULL
+            if (record.getExaminationDate() == null) {
+                logger.warning("examination_date is null, setting to current timestamp");
+                record.setExaminationDate(new Timestamp(System.currentTimeMillis()));
+            }
             ps.setTimestamp(5, record.getExaminationDate());
             ps.setString(6, record.getSymptoms());
             ps.setString(7, record.getDiagnosis());
@@ -78,14 +91,24 @@ public class MedicalRecordDAO {
                 }
                 logger.info("Created medical record for booking ID: " + record.getBookingId());
                 return true;
+            } else {
+                logger.warning("No rows affected when creating medical record");
+                return false;
             }
             
+        } catch (SQLException e) {
+            logger.severe("SQL Error creating medical record: " + e.getMessage());
+            logger.severe("SQL State: " + e.getSQLState() + ", Error Code: " + e.getErrorCode());
+            if (e.getErrorCode() == 547) {
+                logger.severe("Foreign key constraint violation - check if booking_id, pet_id, customer_id, or doctor_id exists");
+            }
+            e.printStackTrace();
+            throw e; // Re-throw to let controller handle it
         } catch (Exception e) {
             logger.severe("Error creating medical record: " + e.getMessage());
             e.printStackTrace();
+            throw e; // Re-throw to let controller handle it
         }
-        
-        return false;
     }
     
     /**
@@ -157,12 +180,14 @@ public class MedicalRecordDAO {
     public MedicalRecord getByBookingId(int bookingId) {
         String sql = "SELECT mr.*, " +
                     "p.pet_name AS pet_name, p.species AS pet_species, " +
-                    "d.name AS doctor_name, " +
-                    "c.name AS customer_name " +
+                    "d.[name] AS doctor_name, " +
+                    "c.[name] AS customer_name, " +
+                    "b.appointment_start, b.appointment_end, b.[status] AS booking_status, b.note AS booking_note " +
                     "FROM dbo.MedicalRecord mr " +
                     "LEFT JOIN dbo.Pet p ON mr.pet_id = p.id " +
                     "LEFT JOIN dbo.Doctor d ON mr.doctor_id = d.doctor_id " +
                     "LEFT JOIN dbo.Customer c ON mr.customer_id = c.customer_id " +
+                    "LEFT JOIN dbo.Booking b ON mr.booking_id = b.booking_id " +
                     "WHERE mr.booking_id = ?";
         
         try (Connection conn = DBConnection.getConnection();
@@ -191,8 +216,8 @@ public class MedicalRecordDAO {
         List<MedicalRecord> records = new ArrayList<>();
         String sql = "SELECT mr.*, " +
                     "p.pet_name AS pet_name, p.species AS pet_species, " +
-                    "d.name AS doctor_name, " +
-                    "c.name AS customer_name " +
+                    "d.[name] AS doctor_name, " +
+                    "c.[name] AS customer_name " +
                     "FROM dbo.MedicalRecord mr " +
                     "LEFT JOIN dbo.Pet p ON mr.pet_id = p.id " +
                     "LEFT JOIN dbo.Doctor d ON mr.doctor_id = d.doctor_id " +
@@ -225,8 +250,8 @@ public class MedicalRecordDAO {
     public MedicalRecord getByRecordId(int recordId) {
         String sql = "SELECT mr.*, " +
                     "p.pet_name AS pet_name, p.species AS pet_species, " +
-                    "d.name AS doctor_name, " +
-                    "c.name AS customer_name " +
+                    "d.[name] AS doctor_name, " +
+                    "c.[name] AS customer_name " +
                     "FROM dbo.MedicalRecord mr " +
                     "LEFT JOIN dbo.Pet p ON mr.pet_id = p.id " +
                     "LEFT JOIN dbo.Doctor d ON mr.doctor_id = d.doctor_id " +
@@ -253,24 +278,23 @@ public class MedicalRecordDAO {
     }
     
     /**
-     * Lấy tất cả medical records của một doctor
+     * Lấy tất cả medical records của một doctor trong 3 tháng gần đây
      */
     public List<MedicalRecord> getByDoctorId(int doctorId) {
         List<MedicalRecord> records = new ArrayList<>();
+        // Lọc theo 3 tháng gần đây để phù hợp với thông báo trên JSP
         String sql = "SELECT mr.*, " +
                     "p.pet_name AS pet_name, p.species AS pet_species, " +
-                    "d.name AS doctor_name, " +
-                    "c.name AS customer_name, " +
-                    "b.appointment_start, b.appointment_end, b.status AS booking_status, b.note AS booking_note, " +
-                    "b.customer_name AS booking_customer_name, b.customer_phone AS booking_customer_phone, " +
-                    "b.customer_email AS booking_customer_email, b.pet_name AS booking_pet_name, " +
-                    "b.pet_type AS booking_pet_type, b.service_names " +
+                    "d.[name] AS doctor_name, " +
+                    "c.[name] AS customer_name, " +
+                    "b.appointment_start, b.appointment_end, b.[status] AS booking_status, b.note AS booking_note " +
                     "FROM dbo.MedicalRecord mr " +
                     "LEFT JOIN dbo.Pet p ON mr.pet_id = p.id " +
                     "LEFT JOIN dbo.Doctor d ON mr.doctor_id = d.doctor_id " +
                     "LEFT JOIN dbo.Customer c ON mr.customer_id = c.customer_id " +
                     "LEFT JOIN dbo.Booking b ON mr.booking_id = b.booking_id " +
                     "WHERE mr.doctor_id = ? " +
+                    "AND (mr.examination_date IS NULL OR mr.examination_date >= DATEADD(MONTH, -3, GETDATE())) " +
                     "ORDER BY mr.examination_date DESC";
         
         try (Connection conn = DBConnection.getConnection();
@@ -299,7 +323,13 @@ public class MedicalRecordDAO {
         MedicalRecord record = new MedicalRecord();
         
         record.setRecordId(rs.getInt("record_id"));
-        record.setBookingId(rs.getInt("booking_id"));
+        // Handle booking_id - can be NULL for manual records
+        int bookingId = rs.getInt("booking_id");
+        if (rs.wasNull()) {
+            record.setBookingId(0); // Use 0 to indicate no booking
+        } else {
+            record.setBookingId(bookingId);
+        }
         record.setPetId(rs.getInt("pet_id"));
         record.setDoctorId(rs.getInt("doctor_id"));
         record.setCustomerId(rs.getInt("customer_id"));
@@ -328,23 +358,51 @@ public class MedicalRecordDAO {
         record.setCreatedAt(rs.getTimestamp("created_at"));
         record.setUpdatedAt(rs.getTimestamp("updated_at"));
         
-        // Thông tin bổ sung từ JOIN
-        record.setPetName(rs.getString("pet_name"));
-        record.setPetSpecies(rs.getString("pet_species"));
-        record.setDoctorName(rs.getString("doctor_name"));
-        record.setCustomerName(rs.getString("customer_name"));
+        // Thông tin bổ sung từ JOIN - xử lý NULL an toàn
+        String petName = rs.getString("pet_name");
+        record.setPetName(petName); // Có thể là null, nhưng setter sẽ xử lý
+        String petSpecies = rs.getString("pet_species");
+        record.setPetSpecies(petSpecies);
+        String doctorName = rs.getString("doctor_name");
+        record.setDoctorName(doctorName);
+        String customerName = rs.getString("customer_name");
+        record.setCustomerName(customerName);
 
-        // Thông tin booking từ JOIN
-        record.setAppointmentStart(rs.getTimestamp("appointment_start"));
-        record.setAppointmentEnd(rs.getTimestamp("appointment_end"));
-        record.setBookingStatus(rs.getString("booking_status"));
-        record.setBookingNote(rs.getString("booking_note"));
-        record.setBookingCustomerName(rs.getString("booking_customer_name"));
-        record.setBookingCustomerPhone(rs.getString("booking_customer_phone"));
-        record.setBookingCustomerEmail(rs.getString("booking_customer_email"));
-        record.setBookingPetName(rs.getString("booking_pet_name"));
-        record.setBookingPetType(rs.getString("booking_pet_type"));
-        record.setServiceNames(rs.getString("service_names"));
+        // Thông tin booking từ JOIN - xử lý an toàn các cột có thể không tồn tại
+        try {
+            Timestamp appointmentStart = rs.getTimestamp("appointment_start");
+            if (appointmentStart != null) {
+                record.setAppointmentStart(appointmentStart);
+            }
+        } catch (SQLException e) {
+            // Cột không tồn tại trong ResultSet, bỏ qua
+        }
+        try {
+            Timestamp appointmentEnd = rs.getTimestamp("appointment_end");
+            if (appointmentEnd != null) {
+                record.setAppointmentEnd(appointmentEnd);
+            }
+        } catch (SQLException e) {
+            // Cột không tồn tại trong ResultSet, bỏ qua
+        }
+        try {
+            String bookingStatus = rs.getString("booking_status");
+            if (bookingStatus != null) {
+                record.setBookingStatus(bookingStatus);
+            }
+        } catch (SQLException e) {
+            // Cột không tồn tại trong ResultSet, bỏ qua
+        }
+        try {
+            String bookingNote = rs.getString("booking_note");
+            if (bookingNote != null) {
+                record.setBookingNote(bookingNote);
+            }
+        } catch (SQLException e) {
+            // Cột không tồn tại trong ResultSet, bỏ qua
+        }
+        // Các thông tin booking khác (customer_name, pet_name, etc.) đã có từ JOIN với Customer và Pet
+        // Không cần lấy lại từ Booking vì các cột đó không tồn tại trong bảng Booking
 
         return record;
     }

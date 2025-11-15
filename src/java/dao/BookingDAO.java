@@ -871,6 +871,7 @@ if (rows > 0) {
             LEFT JOIN dbo.Staff s ON b.staff_id = s.staff_id
             LEFT JOIN dbo.Doctor d ON b.doctor_id = d.doctor_id
             WHERE b.doctor_id = ? 
+            AND b.appointment_start IS NOT NULL
             AND CAST(b.appointment_start AS date) = ?
             ORDER BY b.appointment_start ASC
             """;
@@ -881,15 +882,27 @@ if (rows > 0) {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             
             ps.setInt(1, doctorId);
-            ps.setDate(2, java.sql.Date.valueOf(date));
+            java.sql.Date sqlDate = java.sql.Date.valueOf(date);
+            ps.setDate(2, sqlDate);
+            
+            logger.info("Querying bookings for doctor ID: " + doctorId + ", date: " + date + " (SQL Date: " + sqlDate + ")");
             
             try (ResultSet rs = ps.executeQuery()) {
+                int count = 0;
                 while (rs.next()) {
-                    bookings.add(mapBookingFromResultSet(rs));
+                    count++;
+                    Booking booking = mapBookingFromResultSet(rs);
+                    bookings.add(booking);
+                    logger.info("Found booking #" + count + ": ID=" + booking.getBookingId() + 
+                               ", Start=" + booking.getAppointmentStart() + 
+                               ", Status=" + booking.getStatus() + 
+                               ", Customer=" + booking.getCustomerName());
                 }
+                logger.info("Total bookings found: " + count);
             }
         } catch (SQLException e) {
             logger.severe("Error getting bookings by doctor and date: " + e.getMessage());
+            logger.severe("SQL State: " + e.getSQLState() + ", Error Code: " + e.getErrorCode());
             e.printStackTrace();
         }
         

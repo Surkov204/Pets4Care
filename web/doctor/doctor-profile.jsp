@@ -343,13 +343,6 @@
                 </div>
             </div>
 
-            <c:if test="${not empty fullDoctorInfo.scheduleNote}">
-                <div class="schedule-note">
-                    <h4><i class="fas fa-calendar"></i> Lịch làm việc</h4>
-                    <p>${fullDoctorInfo.scheduleNote}</p>
-                </div>
-            </c:if>
-
             <div style="display: flex; gap: 15px; align-items: center;">
                 <button class="edit-button" onclick="editProfile()">
                     <i class="fas fa-edit"></i> Chỉnh sửa thông tin

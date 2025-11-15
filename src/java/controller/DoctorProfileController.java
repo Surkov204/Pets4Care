@@ -35,7 +35,15 @@ public class DoctorProfileController extends HttpServlet {
             request.getRequestDispatcher("/doctor/doctor-profile.jsp").forward(request, response);
         } catch (Exception ex) {
             logger.severe("Failed to load doctor profile: " + ex.getMessage());
-            response.sendRedirect(request.getContextPath() + "/doctor/dashboard");
+            ex.printStackTrace();
+            // Không redirect về dashboard, hiển thị lỗi
+            request.setAttribute("error", "Không thể tải thông tin bác sĩ: " + ex.getMessage());
+            request.setAttribute("fullDoctorInfo", doctor);
+            try {
+                request.getRequestDispatcher("/doctor/doctor-profile.jsp").forward(request, response);
+            } catch (Exception e) {
+                response.sendRedirect(request.getContextPath() + "/doctor/dashboard");
+            }
         }
     }
 }

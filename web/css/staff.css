@@ -481,11 +481,12 @@ body {
 }
 .staff-sidebar li a {
     position: relative !important;
-    display: inline-flex !important;
+    display: flex !important;
     align-items: center !important;
     gap: 8px !important;
     width: 100% !important;
     overflow: visible !important; /* Đảm bảo badge không bị cắt */
+    pointer-events: auto !important; /* Đảm bảo link có thể click được */
 }
 /* 🔴 Badge đỏ góc phải */
 .chat-badge {

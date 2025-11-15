@@ -52,7 +52,33 @@ public class DoctorDashboardController extends HttpServlet {
             }
             
             LocalDate today = LocalDate.now();
+            logger.info("Loading dashboard for doctor ID: " + doctorId + ", Today: " + today);
+            
+            // Debug: Check recent bookings for this doctor to see what dates they have
+            LocalDate debugStart = today.minusDays(7);
+            LocalDate debugEnd = today.plusDays(7);
+            List<Booking> recentBookings = bookingDAO.getBookingsByDoctorAndDateRange(doctorId, debugStart, debugEnd);
+            logger.info("Total bookings for doctor " + doctorId + " in range [" + debugStart + " to " + debugEnd + "]: " + recentBookings.size());
+            for (Booking b : recentBookings) {
+                if (b.getAppointmentStart() != null) {
+                    LocalDate bookingDate = b.getAppointmentStart().toLocalDateTime().toLocalDate();
+                    logger.info("Booking ID=" + b.getBookingId() + 
+                               ", Appointment Date=" + bookingDate + 
+                               ", Today=" + today + 
+                               ", Match=" + bookingDate.equals(today) +
+                               ", Status=" + b.getStatus());
+                } else {
+                    logger.warning("Booking ID=" + b.getBookingId() + " has NULL appointment_start");
+                }
+            }
+            
             List<Booking> todayAppointments = bookingDAO.getBookingsByDoctorAndDate(doctorId, today);
+            logger.info("Found " + todayAppointments.size() + " appointments for today");
+            if (!todayAppointments.isEmpty()) {
+                logger.info("First appointment: ID=" + todayAppointments.get(0).getBookingId() + 
+                           ", Start=" + todayAppointments.get(0).getAppointmentStart() + 
+                           ", Status=" + todayAppointments.get(0).getStatus());
+            }
             
             LocalDate nextWeek = today.plusDays(7);
             List<Booking> upcomingAppointments = bookingDAO.getBookingsByDoctorAndDateRange(

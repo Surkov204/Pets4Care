@@ -317,6 +317,41 @@
             </c:if>
         </section>
 
+        <!-- Doctor Information Section -->
+        <section class="recent-section" style="background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h3 style="margin-bottom: 20px; color: #2e7d32; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-user-md"></i> Thông tin Bác sĩ
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">Họ và tên</div>
+                    <div style="font-size: 1.2rem; font-weight: 600; color: #333;">${fullDoctorInfo.name}</div>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3;">
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">Chuyên khoa</div>
+                    <div style="font-size: 1.2rem; font-weight: 600; color: #333;">${fullDoctorInfo.specialization}</div>
+                </div>
+                <c:if test="${not empty fullDoctorInfo.email}">
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;">
+                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">Email</div>
+                        <div style="font-size: 1rem; font-weight: 600; color: #333;">${fullDoctorInfo.email}</div>
+                    </div>
+                </c:if>
+                <c:if test="${not empty fullDoctorInfo.phone}">
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #9C27B0;">
+                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">Số điện thoại</div>
+                        <div style="font-size: 1rem; font-weight: 600; color: #333;">${fullDoctorInfo.phone}</div>
+                    </div>
+                </c:if>
+            </div>
+            <div style="margin-top: 20px; text-align: center;">
+                <a href="${pageContext.request.contextPath}/doctor/profile" 
+                   style="display: inline-block; background: #4CAF50; color: white; padding: 12px 30px; border-radius: 5px; text-decoration: none; font-weight: 600; transition: background 0.3s;">
+                    <i class="fas fa-edit"></i> Chỉnh sửa thông tin
+                </a>
+            </div>
+        </section>
+
         <!-- Attendance & Payroll Section -->
         <section class="attendance-section">
             <!-- Card bên trái: Check-in / Check-out -->
@@ -445,7 +480,10 @@
                                 <tr>
                                     <td>
                                         <c:if test="${not empty appointment.appointmentStart}">
-                                            ${appointment.appointmentStart}
+                                            <fmt:formatDate value="${appointment.appointmentStart}" pattern="HH:mm" type="time"/>
+                                            <c:if test="${not empty appointment.appointmentEnd}">
+                                                - <fmt:formatDate value="${appointment.appointmentEnd}" pattern="HH:mm" type="time"/>
+                                            </c:if>
                                         </c:if>
                                     </td>
                                     <td>${appointment.customerName}</td>

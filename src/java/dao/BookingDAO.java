@@ -533,34 +533,25 @@ public List<Booking> getAllBookings() {
             }
             ps.setTimestamp(10, booking.getCreatedAt());
 
-<<<<<<< HEAD
-                logger.info("Executing INSERT INTO Booking...");
-                int rows = ps.executeUpdate();
-                logger.info("Rows affected: " + rows);
-                
-                if (rows > 0) {
-                    try (ResultSet keys = ps.getGeneratedKeys()) {
-                        if (keys.next()) {
-                            int bookingId = keys.getInt(1);
-                            booking.setBookingId(bookingId);
-                            logger.info("=== addBooking SUCCESS ===");
-                            logger.info("Booking created with ID: " + bookingId);
-                            return true;
-                        } else {
-                            logger.warning("No generated keys returned");
-                        }
-                    }
-                } else {
-                    logger.warning("INSERT executed but no rows affected");
-=======
-            logger.info("BookingDAO.addBooking - About to execute insert with status: " + statusToSet);
-            int rows = ps.executeUpdate();
-            logger.info("BookingDAO.addBooking - Insert executed, rows affected: " + rows);
-            if (rows > 0) {
-                try (ResultSet keys = ps.getGeneratedKeys()) {
-                    if (keys.next()) booking.setBookingId(keys.getInt(1));
->>>>>>> origin/master
-                }
+logger.info("BookingDAO.addBooking - About to execute INSERT INTO Booking with status: " + statusToSet);
+int rows = ps.executeUpdate();
+logger.info("BookingDAO.addBooking - Insert executed, rows affected: " + rows);
+
+if (rows > 0) {
+    try (ResultSet keys = ps.getGeneratedKeys()) {
+        if (keys.next()) {
+            int bookingId = keys.getInt(1);
+            booking.setBookingId(bookingId);
+            logger.info("=== addBooking SUCCESS ===");
+            logger.info("Booking created with ID: " + bookingId);
+            return true;
+        } else {
+            logger.warning("No generated keys returned");
+        }
+    }
+} else {
+    logger.warning("INSERT executed but no rows affected");
+}
             }
         } catch (SQLException e) {
             logger.severe("=== addBooking SQL EXCEPTION ===");

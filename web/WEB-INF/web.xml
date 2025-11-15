@@ -128,7 +128,6 @@
         <url-pattern>/logingoogle</url-pattern>
     </servlet-mapping>
 
-    <!-- Boarding -->
     <servlet>
         <servlet-name>BoardingRoomServlet</servlet-name>
         <servlet-class>controller.BoardingRoomServlet</servlet-class>
@@ -145,14 +144,14 @@
     <servlet-mapping>
         <servlet-name>BoardingRoomSimpleServlet</servlet-name>
         <url-pattern>/boarding-room-simple</url-pattern>
-    </servlet-mapping>
+    </servlet-mapping><!--
 
 
-    <servlet>
+-->    <servlet>
         <servlet-name>HomeController</servlet-name>
         <servlet-class>controller.HomeController</servlet-class>
-    </servlet>
-    <servlet-mapping>
+    </servlet><!--
+-->    <servlet-mapping>
         <servlet-name>HomeController</servlet-name>
         <url-pattern>/home</url-pattern>
     </servlet-mapping>

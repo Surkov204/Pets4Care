@@ -231,9 +231,12 @@
                     <li><a href="${pageContext.request.contextPath}/staff/dashboard.jsp">
                             <i class="fas fa-home"></i> Dashboard
                         </a></li>
-                    <li><a href="${pageContext.request.contextPath}/staff/viewOrder"><i class="fas fa-receipt"></i> View Orders</a></li>
+<!--                    <li><a href="${pageContext.request.contextPath}/staff/viewOrder"><i class="fas fa-receipt"></i> View Orders</a></li>-->
                     <li><a href="${pageContext.request.contextPath}/staff/mySchedule"><i class="fas fa-calendar-alt"></i> Work Schedule</a>
-                    <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-user"></i> Customer Profile</a></li>
+<!--                    <li><a href="${pageContext.request.contextPath}/staff/customer-list"><i class="fas fa-user"></i> Customer Profile</a></li>-->
+                    <li><a href="${pageContext.request.contextPath}/staff/boarding-management">
+                            <i class="fas fa-hotel"></i> Boarding Management
+                        </a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/services-booking"><i class="fas fa-list"></i> Services Booking</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/chatCustomer" class="active"><i class="fas fa-comments"></i> Chat with Customer</a></li>
                     <li><a href="${pageContext.request.contextPath}/staff/products"><i class="fas fa-box"></i> View Product</a></li>

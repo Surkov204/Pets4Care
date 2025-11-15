@@ -894,4 +894,37 @@ public class WorkScheduleDAO {
         }
         return list;
     }
+    
+    public WorkSchedule getTodayShift(int staffId) {
+        String sql = """
+        SELECT TOP 1 *
+        FROM WorkSchedule
+        WHERE StaffID = ?
+          AND WorkDate = CAST(GETDATE() AS DATE)
+        ORDER BY StartTime
+    """;
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, staffId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                WorkSchedule ws = new WorkSchedule();
+                ws.setScheduleId(rs.getInt("ScheduleID"));
+                ws.setStaffId(rs.getInt("StaffID"));
+                ws.setShiftId(rs.getInt("ShiftID"));
+                ws.setWorkDate(rs.getDate("WorkDate"));
+                ws.setStartTime(rs.getTime("StartTime"));
+                ws.setEndTime(rs.getTime("EndTime"));
+                ws.setStatus(rs.getString("Status"));
+                return ws;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("[WorkScheduleDAO] ❌ Error in getTodayShift: " + e.getMessage());
+        }
+
+        return null;
+    }
 }

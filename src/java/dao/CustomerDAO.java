@@ -49,13 +49,12 @@ public class CustomerDAO implements ICustomerDAO {
     @Override
     public List<Customer> searchCustomers(String keyword) {
         List<Customer> list = new ArrayList<>();
-        String sql = "SELECT * FROM Customer WHERE name LIKE ? OR email LIKE ?";
+        String sql = "SELECT * FROM Customer WHERE name LIKE ?";
 
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
             String kw = "%" + keyword + "%";
             ps.setString(1, kw);
-            ps.setString(2, kw);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -189,8 +188,22 @@ public class CustomerDAO implements ICustomerDAO {
          PreparedStatement ps = conn.prepareStatement(sql)) {
         ps.setString(1, status);
         ps.setInt(2, customerId);
-        ps.executeUpdate();
+        int rowsUpdated = ps.executeUpdate();
+        System.out.println("CustomerDAO.updateStatus - Customer ID: " + customerId + ", New Status: " + status + ", Rows Updated: " + rowsUpdated);
+        
+        // Verify update
+        if (rowsUpdated > 0) {
+            PreparedStatement verifyPs = conn.prepareStatement("SELECT status FROM Customer WHERE customer_id = ?");
+            verifyPs.setInt(1, customerId);
+            java.sql.ResultSet rs = verifyPs.executeQuery();
+            if (rs.next()) {
+                String actualStatus = rs.getString("status");
+                System.out.println("CustomerDAO.updateStatus - Verified Status: " + actualStatus);
+            }
+            verifyPs.close();
+        }
     } catch (Exception e) {
+        System.err.println("CustomerDAO.updateStatus - Error: " + e.getMessage());
         e.printStackTrace();
     }
 }

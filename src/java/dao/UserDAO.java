@@ -95,10 +95,11 @@ public class UserDAO {
             }
 
             ps = con.prepareStatement(
-                    "INSERT INTO Customer (name, email, google_id) VALUES (?, ?, ?)");
+                    "INSERT INTO Customer (name, email, google_id, status) VALUES (?, ?, ?, ?)");
             ps.setNString(1, user.getName());
             ps.setString(2, user.getEmail());
             ps.setString(3, user.getId());
+            ps.setString(4, "active"); // Set status = "active" mặc định cho tài khoản Google mới
             ps.executeUpdate();
 
             return findOrCreateByGoogle(user);

@@ -78,6 +78,14 @@ public class LoginServlet extends HttpServlet {
             // Nếu không phải Staff/Doctor/Admin, thử đăng nhập Customer
             Customer customer = userService.loginCustomer(email.trim(), password.trim());
             if (customer != null) {
+                // Kiểm tra lại status trước khi cho đăng nhập
+                String status = customer.getStatus();
+                if (status == null || !"active".equals(status)) {
+                    logger.warning("Login blocked: Account is not active. Email: " + email + ", Status: " + status);
+                    request.setAttribute("error", "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+                    request.getRequestDispatcher("login.jsp").forward(request, response);
+                    return;
+                }
                 handleCustomerLogin(request, response, customer, email, password, rememberMe);
                 return;
             }

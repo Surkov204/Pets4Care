@@ -262,7 +262,7 @@
         <% } %>
 
         <div class="info-note">
-            <p>💡 <strong>Lưu ý:</strong> Các trường có dấu <span style="color: #ef4444;">*</span> là bắt buộc. Email và Google ID không thể thay đổi.</p>
+            <p>💡 <strong>Lưu ý:</strong> Các trường có dấu <span style="color: #ef4444;">*</span> là bắt buộc. Email không thể thay đổi.</p>
         </div>
 
         <form action="edit-customer" method="post" onsubmit="return validateForm()">
@@ -300,12 +300,6 @@
             <div class="form-group">
                 <label>🏠 Địa chỉ <span class="required">*</span></label>
                 <textarea name="address" required><%= customer.getAddressCustomer() != null ? customer.getAddressCustomer() : "" %></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>🔐 Google ID</label>
-                <input type="text" value="<%= customer.getGoogleId() != null ? customer.getGoogleId() : "Không có" %>" disabled style="background: #f3f4f6; cursor: not-allowed;">
-                <small style="color: var(--text-light); font-size: 0.85rem;">Google ID không thể thay đổi</small>
             </div>
 
             <div class="form-actions">

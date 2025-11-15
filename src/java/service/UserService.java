@@ -13,6 +13,13 @@ public class UserService implements IUserService {
     public Customer loginCustomer(String email, String password) {
         Customer customer = userDao.findByEmail(email);
         if (customer != null) {
+            // Kiểm tra status - chỉ cho phép đăng nhập nếu status = "active"
+            String status = customer.getStatus();
+            if (status == null || !"active".equals(status)) {
+                System.err.println("Login blocked: Account is not active. Status: " + status);
+                return null;
+            }
+            
             String stored = customer.getPassword();
 
             try {

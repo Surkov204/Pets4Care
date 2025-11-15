@@ -21,13 +21,13 @@ public class PayOSController extends HttpServlet {
     private final PayOSService payOSService = new PayOSService();
     
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         System.out.println("🚀 PayOSController.doGet() called");
         String pathInfo = request.getPathInfo();
         System.out.println("📝 PathInfo: " + pathInfo);
-        
+
         if ("/create-payment".equals(pathInfo)) {
             System.out.println("✅ Handling create-payment");
             handleCreatePayment(request, response);
@@ -59,8 +59,19 @@ public class PayOSController extends HttpServlet {
     /**
      * Tạo link thanh toán PayOS
      */
-    private void handleCreatePayment(HttpServletRequest request, HttpServletResponse response) 
+    private void handleCreatePayment(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
+        // Check if this is an AJAX request
+        String requestedWith = request.getHeader("X-Requested-With");
+        boolean isAjax = "XMLHttpRequest".equals(requestedWith) || "true".equals(request.getParameter("ajax"));
+
+        if (isAjax) {
+            handleCreatePaymentAjax(request, response);
+            return;
+        }
+
+        // Original handleCreatePayment logic continues...
         
         try {
             int orderId = Integer.parseInt(request.getParameter("orderId"));
@@ -430,7 +441,94 @@ public class PayOSController extends HttpServlet {
             }
         }
     }
-    
+
+    /**
+     * Tạo link thanh toán PayOS cho AJAX request (trả về JSON)
+     */
+    private void handleCreatePaymentAjax(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        try {
+            int orderId = Integer.parseInt(request.getParameter("orderId"));
+            String type = request.getParameter("type");
+
+            System.out.println("====== PayOS Create Payment AJAX ======");
+            System.out.println("Order ID: " + orderId);
+            System.out.println("Type: " + type);
+
+            double amount = 0;
+            String description = "";
+            String returnUrl = "";
+            String cancelUrl = "";
+            String paymentUrl = null;
+
+            if ("service".equalsIgnoreCase(type)) {
+                // Xử lý service booking
+                System.out.println("Processing service payment for order ID: " + orderId);
+
+                // Lấy amount từ request parameter (được gửi từ payment-qr.jsp)
+                String amountParam = request.getParameter("amount");
+                if (amountParam != null && !amountParam.trim().isEmpty()) {
+                    try {
+                        amount = Double.parseDouble(amountParam);
+                        System.out.println("Amount from request parameter: " + amount);
+                    } catch (NumberFormatException e) {
+                        System.err.println("Invalid amount parameter: " + amountParam);
+                        response.getWriter().write("{\"success\":false,\"message\":\"Invalid amount\"}");
+                        return;
+                    }
+                } else {
+                    response.getWriter().write("{\"success\":false,\"message\":\"Amount not provided\"}");
+                    return;
+                }
+
+                if (amount <= 0) {
+                    response.getWriter().write("{\"success\":false,\"message\":\"Invalid payment amount\"}");
+                    return;
+                }
+
+                // Giới hạn description <= 25 ký tự cho PayOS
+                description = "Thanh toan Spa #" + orderId;
+                if (description.length() > 25) {
+                    description = "Spa #" + orderId;
+                }
+
+                String baseUrl = buildBaseUrl(request);
+                returnUrl = baseUrl + "/payos/return?orderId=" + orderId + "&type=service";
+                cancelUrl = baseUrl + "/payos/cancel?orderId=" + orderId + "&type=service";
+
+            } else {
+                response.getWriter().write("{\"success\":false,\"message\":\"Invalid payment type\"}");
+                return;
+            }
+
+            // Tạo payment link
+            System.out.println("Creating PayOS payment link...");
+            System.out.println("Amount: " + amount);
+            System.out.println("Description: " + description);
+            System.out.println("Return URL: " + returnUrl);
+            System.out.println("Cancel URL: " + cancelUrl);
+
+            paymentUrl = payOSService.createPaymentLink(orderId, amount, description, returnUrl, cancelUrl);
+
+            if (paymentUrl != null && !paymentUrl.trim().isEmpty()) {
+                System.out.println("✅ Payment URL created: " + paymentUrl);
+                response.getWriter().write("{\"success\":true,\"url\":\"" + paymentUrl + "\",\"orderId\":" + orderId + "}");
+            } else {
+                System.err.println("❌ PayOS API call failed - Payment URL is NULL");
+                response.getWriter().write("{\"success\":false,\"message\":\"Failed to create payment link\"}");
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ EXCEPTION in handleCreatePaymentAjax: " + e.getMessage());
+            e.printStackTrace();
+            response.getWriter().write("{\"success\":false,\"message\":\"" + e.getMessage() + "\"}");
+        }
+    }
+
     /**
      * Xử lý khi khách hàng quay lại sau thanh toán thành công
      */
@@ -446,50 +544,10 @@ public class PayOSController extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/order/invoice.jsp?bookingId=" + orderId + "&type=boarding&method=PayOS");
                 return;
             } else if ("service".equalsIgnoreCase(type)) {
-                // Service: Verify payment status từ PayOS và cập nhật nếu đã thanh toán
-                System.out.println("🔍 Verifying payment status for service booking orderId: " + orderId);
-                
-                // Lấy PayOS orderCode từ database (có thể lưu trong note hoặc dùng order_id trực tiếp)
-                int payosOrderCode = orderId; // Có thể cần query từ database để lấy PayOS orderCode thật
-                
-                try (java.sql.Connection conn = utils.DBConnection.getConnection();
-                     java.sql.PreparedStatement ps = conn.prepareStatement(
-                         "SELECT order_id, note FROM dbo.Booking WHERE order_id = ? OR booking_id = ?")) {
-                    ps.setInt(1, orderId);
-                    ps.setInt(2, orderId);
-                    try (java.sql.ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) {
-                            // Ưu tiên dùng order_id làm PayOS orderCode
-                            int dbOrderId = rs.getInt("order_id");
-                            if (dbOrderId > 0) {
-                                payosOrderCode = dbOrderId;
-                            }
-                            // Hoặc parse từ note nếu có
-                            String note = rs.getString("note");
-                            if (note != null && note.contains("PayOS OrderCode:")) {
-                                try {
-                                    String codeStr = note.substring(note.indexOf("PayOS OrderCode:") + "PayOS OrderCode:".length()).trim().split(" ")[0];
-                                    payosOrderCode = Integer.parseInt(codeStr);
-                                } catch (Exception e) {
-                                    // Ignore parsing error
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // Verify payment status từ PayOS
-                String payosStatus = payOSService.getPaymentStatusFromPayOS(payosOrderCode);
-                if ("PAID".equalsIgnoreCase(payosStatus)) {
-                    // Nếu đã thanh toán, cập nhật status trong database
-                    System.out.println("✅ Payment verified as PAID, updating booking status...");
-                    payOSService.updateServiceBookingPaymentStatus(payosOrderCode, "Đã thanh toán");
-                }
-                
-                // Service: chuyển nguyên query tới invoice (kèm method)
-                String qs = request.getQueryString();
-                String sep = (qs != null && qs.contains("method=")) ? "" : "&method=PayOS";
-                response.sendRedirect(request.getContextPath() + "/order/invoice.jsp?" + (qs != null ? qs : ("orderId=" + orderId + "&type=service")) + sep);
+                // Service: Chuyển đến trang lịch sử booking của customer
+                // PaymentStatusServlet sẽ xử lý việc tạo booking nếu thanh toán thành công
+                System.out.println("🔍 Redirecting to booking history for service orderId: " + orderId);
+                response.sendRedirect(request.getContextPath() + "/customer/booking?action=history&success=payment_completed");
                 return;
             }
             
@@ -554,9 +612,8 @@ public class PayOSController extends HttpServlet {
                     e.printStackTrace();
                 }
                 
-                String qs = request.getQueryString();
-                String sep = (qs != null && qs.contains("method=")) ? "" : "&method=PayOS";
-                response.sendRedirect(request.getContextPath() + "/order/invoice-cancelled.jsp?" + (qs != null ? qs : ("orderId=" + orderId + "&type=service")) + sep);
+                // Service: chuyển đến trang lịch sử booking của customer
+                response.sendRedirect(request.getContextPath() + "/customer/booking?action=history&error=payment_cancelled");
             } else if ("boarding".equalsIgnoreCase(type)) {
                 response.sendRedirect(request.getContextPath() + "/order/invoice-cancelled.jsp?bookingId=" + orderId + "&type=boarding&method=PayOS");
             } else {

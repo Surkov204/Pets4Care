@@ -8,26 +8,30 @@ public class PayrollRecord {
     private int staffID;
     private Date periodStart;
     private Date periodEnd;
-    private double totalHours;
-    private double hourlyRate;
-    private double totalSalary;
+
+    private Integer actualShifts;     // NEW
+    private Double baseSalary;        // NEW
+
+    private Double totalSalary;
     private Timestamp createdAt;
 
     public PayrollRecord() {}
 
     public PayrollRecord(int payrollID, int staffID, Date periodStart, Date periodEnd,
-                         double totalHours, double hourlyRate, double totalSalary, Timestamp createdAt) {
+                         Integer actualShifts, Double baseSalary, Double totalSalary, Timestamp createdAt) {
+
         this.payrollID = payrollID;
         this.staffID = staffID;
         this.periodStart = periodStart;
         this.periodEnd = periodEnd;
-        this.totalHours = totalHours;
-        this.hourlyRate = hourlyRate;
+
+        this.actualShifts = actualShifts;   // FIX
+        this.baseSalary = baseSalary;       // FIX
+
         this.totalSalary = totalSalary;
         this.createdAt = createdAt;
     }
 
-    // Getters & Setters
     public int getPayrollID() { return payrollID; }
     public void setPayrollID(int payrollID) { this.payrollID = payrollID; }
 
@@ -40,14 +44,14 @@ public class PayrollRecord {
     public Date getPeriodEnd() { return periodEnd; }
     public void setPeriodEnd(Date periodEnd) { this.periodEnd = periodEnd; }
 
-    public double getTotalHours() { return totalHours; }
-    public void setTotalHours(double totalHours) { this.totalHours = totalHours; }
+    public Integer getActualShifts() { return actualShifts; }
+    public void setActualShifts(Integer actualShifts) { this.actualShifts = actualShifts; }
 
-    public double getHourlyRate() { return hourlyRate; }
-    public void setHourlyRate(double hourlyRate) { this.hourlyRate = hourlyRate; }
+    public Double getBaseSalary() { return baseSalary; }
+    public void setBaseSalary(Double baseSalary) { this.baseSalary = baseSalary; }
 
-    public double getTotalSalary() { return totalSalary; }
-    public void setTotalSalary(double totalSalary) { this.totalSalary = totalSalary; }
+    public Double getTotalSalary() { return totalSalary; }
+    public void setTotalSalary(Double totalSalary) { this.totalSalary = totalSalary; }
 
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }

@@ -287,7 +287,12 @@
                                     <td>${appointment.petType}</td>
                                     <td>${appointment.serviceNames}</td>
                                     <td>
-                                        <span class="status status-${appointment.status}">${appointment.status}</span>
+                                        <span class="status <c:choose>
+                                            <c:when test="${appointment.status == 'Hoàn thành' || appointment.status == 'completed'}">status-completed</c:when>
+                                            <c:when test="${appointment.status == 'Đã xác nhận' || appointment.status == 'confirmed'}">status-confirmed</c:when>
+                                            <c:when test="${appointment.status == 'pending' || appointment.status == 'Chưa thanh toán'}">status-pending</c:when>
+                                            <c:otherwise>status-cancelled</c:otherwise>
+                                        </c:choose>">${appointment.status}</span>
                                     </td>
                                     <td>
                                         <c:if test="${not empty appointment.note}">
@@ -302,20 +307,12 @@
                                             <a href="${pageContext.request.contextPath}/doctor/appointment-detail?id=${appointment.bookingId}" class="btn-small">
                                                 <i class="fas fa-eye"></i> Chi tiết
                                             </a>
-                                            <c:if test="${appointment.status == 'pending'}">
-                                                <a href="${pageContext.request.contextPath}/update-appointment-status?bookingId=${appointment.bookingId}&status=confirmed" class="btn-small">
-                                                    <i class="fas fa-check"></i> Xác nhận
-                                                </a>
-                                            </c:if>
-                                            <c:if test="${appointment.status == 'confirmed'}">
-                                                <a href="${pageContext.request.contextPath}/update-appointment-status?bookingId=${appointment.bookingId}&status=completed" class="btn-small">
-                                                    <i class="fas fa-check-circle"></i> Hoàn thành
-                                                </a>
-                                            </c:if>
-                                            <c:if test="${appointment.status != 'cancelled' && appointment.status != 'completed'}">
-                                                <a href="${pageContext.request.contextPath}/update-appointment-status?bookingId=${appointment.bookingId}&status=cancelled" class="btn-small btn-danger">
-                                                    <i class="fas fa-times"></i> Hủy
-                                                </a>
+                                            <c:if test="${appointment.status == 'completed' || appointment.status == 'Hoàn thành'}">
+                                                <c:if test="${not empty medicalRecordsMap[appointment.bookingId]}">
+                                                    <a href="${pageContext.request.contextPath}/doctor/medical-record-detail?id=${medicalRecordsMap[appointment.bookingId].recordId}" class="btn-small" style="background: #2196F3;">
+                                                        <i class="fas fa-file-medical"></i> Xem hồ sơ
+                                                    </a>
+                                                </c:if>
                                             </c:if>
                                         </div>
                                     </td>
@@ -334,18 +331,20 @@
             </c:choose>
         </div>
 
+
+
         <!-- Statistics -->
         <div class="date-selector">
             <h3><i class="fas fa-chart-bar"></i> Thống kê ngày ${selectedDateDisplay}</h3>
             <div style="display: flex; gap: 20px; margin-top: 15px;">
                 <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; flex: 1;">
-                    <strong>Tổng số cuộc hẹn:</strong> ${fn:length(appointments)}
+                    <strong>Tổng số cuộc hẹn:</strong> ${fn:length(allAppointments)}
                 </div>
                 <div style="background: #fff3e0; padding: 15px; border-radius: 5px; flex: 1;">
-                    <strong>Chờ xác nhận:</strong> 
+                    <strong>Chờ xác nhận:</strong>
                     <c:set var="pendingCount" value="0" />
-                    <c:forEach var="appointment" items="${appointments}">
-                        <c:if test="${appointment.status == 'pending'}">
+                    <c:forEach var="appointment" items="${allAppointments}">
+                        <c:if test="${appointment.status == 'pending' || appointment.status == 'Chờ xác nhận'}">
                             <c:set var="pendingCount" value="${pendingCount + 1}" />
                         </c:if>
                     </c:forEach>
@@ -354,8 +353,8 @@
                 <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; flex: 1;">
                     <strong>Đã xác nhận:</strong>
                     <c:set var="confirmedCount" value="0" />
-                    <c:forEach var="appointment" items="${appointments}">
-                        <c:if test="${appointment.status == 'confirmed'}">
+                    <c:forEach var="appointment" items="${allAppointments}">
+                        <c:if test="${appointment.status == 'confirmed' || appointment.status == 'Đã xác nhận'}">
                             <c:set var="confirmedCount" value="${confirmedCount + 1}" />
                         </c:if>
                     </c:forEach>
@@ -439,11 +438,16 @@ function toggleDropdown() {
 document.addEventListener('click', function(event) {
     const dropdown = document.getElementById('dropdownMenu');
     const avatar = document.querySelector('.avatar');
-    
+
     if (!avatar.contains(event.target)) {
         dropdown.classList.remove('show');
     }
 });
+
+// Confirm medical record creation
+function confirmCreateRecord(petName) {
+    return confirm('Bạn có chắc chắn muốn tạo hồ sơ y tế cho thú cưng "' + petName + '"?\n\nHồ sơ y tế sẽ được tạo với thông tin từ lịch hẹn và bạn có thể chỉnh sửa chi tiết sau.');
+}
 </script>
 
 </body>

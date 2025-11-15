@@ -11,9 +11,9 @@
 
     if (cart != null) {
         for (CartItem item : cart.values()) {
-            if (item != null && item.getToy() != null) {
+            if (item != null && item.getProduct() != null) {
                 cartCount += item.getQuantity();
-                cartTotal += item.getQuantity() * item.getToy().getPrice();
+                cartTotal += item.getQuantity() * item.getProduct().getPrice();
             }
         }
     }
@@ -22,7 +22,8 @@
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
-        <title>Kết quả tìm kiếm - Petcity</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>🔍 Kết quả tìm kiếm - Petcity</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
@@ -130,13 +131,13 @@
         <nav>
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
+                <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
+                <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
+                <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
-                <li><a href="search?categoryId=1">ĐẶT LỊCH KHÁM</a></li>
-                <li><a href="search?categoryId=2">HỒ SƠ BÁC SĨ</a></li>
-                <li><a href="search?categoryId=3">DỊCH VỤ SPA</a></li>
                 <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
                 <li><a href="meo-vat.jsp">MẸO VẶT</a></li>
-                <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
+                <li><a href="<%= request.getContextPath()%>/home">LIÊN HỆ</a></li>
             </ul>
         </nav>
 
@@ -192,24 +193,24 @@
                         </c:when>
                         <c:otherwise>
                             <div class="toys-grid">
-                                <c:forEach var="toy" items="${searchResults}">
+                                <c:forEach var="product" items="${searchResults}">
                                     <div class="toy-item">
-                                        <a href="toydetailservlet?id=${toy.toyId}">
-                                            <img src="images/toy_${toy.toyId}.jpg" alt="${toy.name}" onerror="this.src='images/default.jpg'" />
-                                            <p class="toy-name">${toy.name}</p>
+                                        <a href="toydetailservlet?id=${product.productId}">
+                                            <img src="images/toy_${product.productId}.jpg" alt="${product.name}" onerror="this.src='images/default.jpg'" />
+                                            <p class="toy-name">${product.name}</p>
                                         </a>
-                                        <p class="toy-price">${toy.price}₫</p>
-                                        <p class="toy-stock">Kho: ${toy.stockQuantity}</p>
+                                        <p class="toy-price">${product.price}₫</p>
+                                        <p class="toy-stock">Kho: ${product.stockQuantity}</p>
 
                                         <c:choose>
-                                            <c:when test="${toy.stockQuantity == 0}">
+                                            <c:when test="${product.stockQuantity == 0}">
                                                 <span class="bg-red-100 text-red-700 text-sm font-bold px-3 py-1 rounded-full border border-red-400 inline-block animate-pulse">
                                                     ❌ HẾT HÀNG
                                                 </span>
                                             </c:when>
 
                                             <c:otherwise>
-                                                <button class="btn-add-cart" onclick="addToCart(this, ${toy.toyId}, ${toy.price})">Thêm vào giỏ</button>
+                                                <button class="btn-add-cart" onclick="addToCart(this, ${product.productId}, ${product.price})">Thêm vào giỏ</button>
                                             </c:otherwise>
                                         </c:choose>
                                     </div>
@@ -251,10 +252,10 @@
 
         <div class="toast" id="toast"></div>
         <script>
-            function addToCart(button, toyId, price) {
+            function addToCart(button, productId, price) {
                 const params = new URLSearchParams();
                 params.append('action', 'add');
-                params.append('id', toyId);
+                params.append('id', productId);
                 params.append('quantity', '1');
 
                 fetch('<%= request.getContextPath()%>/cartservlet', {

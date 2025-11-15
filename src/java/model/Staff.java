@@ -1,15 +1,27 @@
 package model;
 
 public class Staff {
+
     private int staffId;
     private String name;
     private String email;
     private String phone;
     private String password;
     private String position; // vị trí công việc
+    private String scheduleNote; // ghi chú lịch làm việc
+    private String avatar;
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
 
     // Constructors
-    public Staff() {}
+    public Staff() {
+    }
 
     public Staff(int staffId, String name, String email, String phone, String password, String position) {
         this.staffId = staffId;
@@ -69,13 +81,21 @@ public class Staff {
         this.position = position;
     }
 
+    public String getScheduleNote() {
+        return scheduleNote;
+    }
+
+    public void setScheduleNote(String scheduleNote) {
+        this.scheduleNote = scheduleNote;
+    }
+
     @Override
     public String toString() {
-        return "Staff{" +
-                "staffId=" + staffId +
-                ", name='" + name + '\'' +
-                ", email='" + email + '\'' +
-                ", position='" + position + '\'' +
-                '}';
+        return "Staff{"
+                + "staffId=" + staffId
+                + ", name='" + name + '\''
+                + ", email='" + email + '\''
+                + ", position='" + position + '\''
+                + '}';
     }
 }

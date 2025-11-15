@@ -11,9 +11,9 @@
 
     if (cart != null) {
         for (CartItem item : cart.values()) {
-            if (item != null && item.getToy() != null) {
+            if (item != null && item.getProduct() != null) {
                 cartCount += item.getQuantity();
-                cartTotal += item.getQuantity() * item.getToy().getPrice();
+                cartTotal += item.getQuantity() * item.getProduct().getPrice();
             }
         }
     }
@@ -43,7 +43,7 @@
                     opacity: 1;
                 }
             }
-            
+
             @keyframes slideOutRight {
                 from {
                     transform: translateX(0);
@@ -54,7 +54,7 @@
                     opacity: 0;
                 }
             }
-            
+
             .slideshow {
                 position: relative;
                 width: 800px;
@@ -128,11 +128,11 @@
             if (loginSuccess != null) {
         %>
         <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: linear-gradient(135deg, #38a169, #48bb78); color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 300px; animation: slideInRight 0.5s ease-out;">
-            <i class="fas fa-check-circle"></i> <%= loginSuccess %>
+            <i class="fas fa-check-circle"></i> <%= loginSuccess%>
         </div>
         <script>
             // Tự động ẩn thông báo sau 3 giây
-            setTimeout(function() {
+            setTimeout(function () {
                 const notification = document.querySelector('div[style*="position: fixed"]');
                 if (notification) {
                     notification.style.animation = 'slideOutRight 0.5s ease-out';
@@ -145,7 +145,7 @@
                 session.removeAttribute("loginSuccess");
             }
         %>
-        
+
         <!-- Top Bar -->
         <div class="top-bar">
             <div class="left">
@@ -180,7 +180,7 @@
                 <div>
                     <% if (currentUser == null) { %>
                     <a href="login.jsp" class="text-sm hover:underline">👤 Đăng Ký | Đăng Nhập</a>
-                    <% } else { %>
+                    <% } else {%>
                     <div class="relative inline-block text-left">
                         <button type="button" id="userToggleBtn"
                                 class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-3 py-1 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
@@ -208,7 +208,7 @@
                             </div>
                         </div>
                     </div>
-                    <% } %>
+                    <% }%>
                 </div>
                 <div class="cart-fixed">
                     <a href="<%= request.getContextPath()%>/cart/cart.jsp">
@@ -221,42 +221,42 @@
             </div>
         </header>
 
-                    <style>
-  .cart-fixed {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background-color: #fff;
-    padding: 8px 14px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    z-index: 1000;
-    font-weight: 600;
-    color: #333;
-  }
+        <style>
+            .cart-fixed {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background-color: #fff;
+                padding: 8px 14px;
+                border-radius: 8px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                z-index: 1000;
+                font-weight: 600;
+                color: #333;
+            }
 
-  .cart-fixed a {
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
+            .cart-fixed a {
+                text-decoration: none;
+                color: inherit;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
 
-  .cart-fixed i {
-    color: #f97316; /* Cam pastel */
-  }
+            .cart-fixed i {
+                color: #f97316; /* Cam pastel */
+            }
 
-  /* Responsive nhỏ hơn */
-  @media (max-width: 768px) {
-    .cart-fixed {
-      top: unset;
-      bottom: 20px;
-      right: 10px;
-      padding: 10px 12px;
-    }
-  }
-</style>
+            /* Responsive nhỏ hơn */
+            @media (max-width: 768px) {
+                .cart-fixed {
+                    top: unset;
+                    bottom: 20px;
+                    right: 10px;
+                    padding: 10px 12px;
+                }
+            }
+        </style>
 
 
         <!-- Navigation -->
@@ -264,12 +264,11 @@
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
                 <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
-                <li><a href="dat-lich-kham.jsp">ĐẶT LỊCH KHÁM</a></li>
                 <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
                 <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
                 <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
-                <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
+                <li><a href="contact.jsp">LIÊN HỆ</a></li>
             </ul>
         </nav>
 
@@ -331,22 +330,17 @@
                         <h3>Chuồng & Nhà</h3>
                         <p>Không gian sống thoải mái</p>
                     </div>
-                    <div class="category-card" onclick="location.href = 'search?categoryId=9'">
-                        <div class="category-icon">💊</div>
-                        <h3>Sức khỏe</h3>
-                        <p>Chăm sóc và bảo vệ sức khỏe</p>
-                    </div>
                     <div class="category-card" onclick="location.href = 'search?categoryId=8'">
                         <div class="category-icon">💎</div>
                         <h3>Trang sức</h3>
                         <p>Làm đẹp cho thú cưng</p>
                     </div>
-                    <div class="category-card" onclick="location.href = 'search?categoryId=13'">
+                    <div class="category-card" onclick="location.href = 'health-check-booking'">
                         <div class="category-icon">🩺</div>
                         <h3>Thăm khám sức khỏe</h3>
                         <p>Dịch vụ kiểm tra & theo dõi thú cưng</p>
                     </div>
-                    <div class="category-card" onclick="location.href = 'search?categoryId=14'">
+                    <div class="category-card" onclick="location.href = 'spa-service.jsp'">
                         <div class="category-icon">💆</div>
                         <h3>Spa</h3>
                         <p>Chăm sóc & làm đẹp toàn diện</p>
@@ -392,25 +386,25 @@
                 <section class="toys">
                     <h2>🌟 Sản phẩm nổi bật</h2>
                     <div class="toys-grid">
-                        <c:forEach var="toy" items="${toys}">
+                        <c:forEach var="product" items="${products}">
                             <div class="toy-item">
                                 <div class="toy-badge">✨ Mới</div>
-                                <a href="<c:url value='/toydetailservlet'/>?id=${toy.toyId}">
-                                    <img src="images/toy_${toy.toyId}.jpg" alt="${toy.name}" onerror="this.src='images/default.jpg'" />
-                                    <p class="toy-name">${toy.name}</p>
+                                <a href="<c:url value='/toydetailservlet'/>?id=${product.productId}">
+                                    <img src="images/toy_${product.productId}.jpg" alt="${product.name}" onerror="this.src='images/default.jpg'" />
+                                    <p class="toy-name">${product.name}</p>
                                 </a>
-                                <p class="toy-price">${toy.price}₫</p>
-                                <p class="toy-stock">📦 Kho: ${toy.stockQuantity}</p>
+                                <p class="toy-price">${product.price}₫</p>
+                                <p class="toy-stock">📦 Kho: ${product.stockQuantity}</p>
 
                                 <c:choose>
-                                    <c:when test="${toy.stockQuantity == 0}">
+                                    <c:when test="${product.stockQuantity == 0}">
                                         <span class="bg-red-100 text-red-700 text-sm font-bold px-3 py-1 rounded-full border border-red-400 inline-block animate-pulse">
                                             ❌ HẾT HÀNG
                                         </span>
                                     </c:when>
 
                                     <c:otherwise>
-                                        <button class="btn-add-cart" onclick="addToCart(this, ${toy.toyId}, ${toy.price})">
+                                        <button class="btn-add-cart" onclick="addToCart(this, ${product.productId}, ${product.price})">
                                             Thêm vào giỏ
                                         </button>
                                     </c:otherwise>
@@ -498,12 +492,12 @@
 
         <!-- Scripts -->
         <script>
-            function addToCart(button, toyId, price) {
-                console.log("Adding to cart - ToyID:", toyId, "Price:", price);
+            function addToCart(button, productId, price) {
+                console.log("Adding to cart - ProductID:", productId, "Price:", price);
 
                 const params = new URLSearchParams();
                 params.append('action', 'add');
-                params.append('id', toyId);
+                params.append('id', productId);
                 params.append('quantity', '1');
 
                 fetch("<%=request.getContextPath()%>/cartservlet", {
@@ -606,6 +600,7 @@
             }
         </script>
 
-        <jsp:include page="chatbox.jsp"/>
+        <jsp:include page="customer-chat.jsp" />
+        <jsp:include page="chatbot.jsp" />
     </body>
 </html>

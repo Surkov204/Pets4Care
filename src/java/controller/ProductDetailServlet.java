@@ -14,11 +14,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import model.Review;
 import model.Supplier;
-import model.Toy;
-import model.ToyCategory;
+import model.Product;
+import model.ProductCategory;
 import service.SupplierService;
-import service.ToyCategoryService;
-import service.ToyService;
+import service.ProductCategoryService;
+import service.ProductService;
 
 /**
  *
@@ -26,9 +26,9 @@ import service.ToyService;
  */
 @WebServlet(name = "ProductDetailServlet", urlPatterns = {"/product-detail"})
 public class ProductDetailServlet extends HttpServlet {
-    private ToyService toyService = new ToyService();
+    private ProductService toyService = new ProductService();
     private SupplierService supplierService = new SupplierService();
-    private ToyCategoryService categoryService = new ToyCategoryService();
+    private ProductCategoryService categoryService = new ProductCategoryService();
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -71,9 +71,9 @@ public class ProductDetailServlet extends HttpServlet {
     if (idParam != null) {
         try {
             int toyId = Integer.parseInt(idParam);
-            Toy toy = toyService.getToyById(toyId);
-            List<Review> reviews = toyService.getToyReviews(toyId);
-            ToyCategory category = categoryService.getCategoryById(toy.getCategoryId());
+            Product toy = toyService.getProductById(toyId);
+            List<Review> reviews = toyService.getProductReviews(toyId);
+            ProductCategory category = categoryService.getCategoryById(toy.getCategoryId());
             Supplier supplier = supplierService.getSupplierById(toy.getSupplierId());
 
             request.setAttribute("toy", toy);

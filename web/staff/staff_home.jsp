@@ -11,9 +11,9 @@
 
     if (cart != null) {
         for (CartItem item : cart.values()) {
-            if (item != null && item.getToy() != null) {
+            if (item != null && item.getProduct() != null) {
                 cartCount += item.getQuantity();
-                cartTotal += item.getQuantity() * item.getToy().getPrice();
+                cartTotal += item.getQuantity() * item.getProduct().getPrice();
             }
         }
     }
@@ -25,6 +25,7 @@
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Petcity - Thế giới đồ chơi & phụ kiện cho thú cưng</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
@@ -287,13 +288,13 @@
         <nav>
             <ul>
                 <li><a href="<%= request.getContextPath()%>/staff-home">TRANG CHỦ</a></li>
+                <li><a href="<%= request.getContextPath()%>/spa-service.jsp">DỊCH VỤ</a></li>
+                <li><a href="<%= request.getContextPath()%>/search?categoryId=2">SẢN PHẨM</a></li>
+                <li><a href="<%= request.getContextPath()%>/doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="<%= request.getContextPath()%>/gioi-thieu.jsp">GIỚI THIỆU</a></li>
-                <li><a href="<%= request.getContextPath()%>/search?categoryId=1">ĐẶT LỊCH KHÁM</a></li>
-                <li><a href="<%= request.getContextPath()%>/search?categoryId=2">HỒ SƠ BÁC SĨ</a></li>
-                <li><a href="<%= request.getContextPath()%>/search?categoryId=3">DỊCH VỤ SPA</a></li>
                 <li><a href="<%= request.getContextPath()%>/tin-tuc.jsp">TIN TỨC</a></li>
                 <li><a href="<%= request.getContextPath()%>/meo-vat.jsp">MẸO VẶT</a></li>
-                <li><a href="<%= request.getContextPath()%>/lien-he.jsp">LIÊN HỆ</a></li>
+                <li><a href="<%= request.getContextPath()%>/home">LIÊN HỆ</a></li>
             </ul>
         </nav>
 
@@ -416,25 +417,25 @@
                 <section class="toys">
                     <h2>🌟 Sản phẩm nổi bật</h2>
                     <div class="toys-grid">
-                        <c:forEach var="toy" items="${toys}">
+                        <c:forEach var="product" items="${products}">
                             <div class="toy-item">
                                 <div class="toy-badge">✨ Mới</div>
-                                <a href="<c:url value='/toydetailservlet'/>?id=${toy.toyId}">
-                                    <img src="<%= request.getContextPath()%>/images/toy_${toy.toyId}.jpg" alt="${toy.name}" onerror="this.src='<%= request.getContextPath()%>/images/default.jpg'" />
-                                    <p class="toy-name">${toy.name}</p>
+                                <a href="<c:url value='/toydetailservlet'/>?id=${product.productId}">
+                                    <img src="<%= request.getContextPath()%>/images/toy_${product.productId}.jpg" alt="${product.name}" onerror="this.src='<%= request.getContextPath()%>/images/default.jpg'" />
+                                    <p class="toy-name">${product.name}</p>
                                 </a>
-                                <p class="toy-price">${toy.price}₫</p>
-                                <p class="toy-stock">📦 Kho: ${toy.stockQuantity}</p>
+                                <p class="toy-price">${product.price}₫</p>
+                                <p class="toy-stock">📦 Kho: ${product.stockQuantity}</p>
 
                                 <c:choose>
-                                    <c:when test="${toy.stockQuantity == 0}">
+                                    <c:when test="${product.stockQuantity == 0}">
                                         <span class="bg-red-100 text-red-700 text-sm font-bold px-3 py-1 rounded-full border border-red-400 inline-block animate-pulse">
                                             ❌ HẾT HÀNG
                                         </span>
                                     </c:when>
 
                                     <c:otherwise>
-                                        <button class="btn-add-cart" onclick="addToCart(this, ${toy.toyId}, ${toy.price})">
+                                        <button class="btn-add-cart" onclick="addToCart(this, ${product.productId}, ${product.price})">
                                             Thêm vào giỏ
                                         </button>
                                     </c:otherwise>
@@ -522,12 +523,12 @@
 
         <!-- Scripts -->
         <script>
-            function addToCart(button, toyId, price) {
-                console.log("Adding to cart - ToyID:", toyId, "Price:", price);
+            function addToCart(button, productId, price) {
+                console.log("Adding to cart - ProductID:", productId, "Price:", price);
 
                 const params = new URLSearchParams();
                 params.append('action', 'add');
-                params.append('id', toyId);
+                params.append('id', productId);
                 params.append('quantity', '1');
 
                 fetch("<%=request.getContextPath()%>/cartservlet", {

@@ -3,6 +3,7 @@ package model;
 import java.sql.Timestamp;
 
 public class Customer {
+
     private int customerId;
     private String name;
     private String phone;
@@ -15,7 +16,17 @@ public class Customer {
     private Timestamp resetTokenExpiry;
 
     // Constructor mặc định
-    public Customer() {}
+    public Customer() {
+    }
+    private String role;
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
 
     // Constructor đầy đủ
     public Customer(int customerId, String name, String phone, String email, String password, String googleId, String addressCustomer, String status) {
@@ -109,5 +120,5 @@ public class Customer {
     public void setResetTokenExpiry(Timestamp resetTokenExpiry) {
         this.resetTokenExpiry = resetTokenExpiry;
     }
-    
+
 }

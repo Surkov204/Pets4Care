@@ -12,10 +12,10 @@ import jakarta.servlet.http.HttpSession;
 
 import model.Customer;
 import model.Review;
-import model.Toy;
-import service.IToyService;
+import model.Product;
+import service.IProductService;
 import service.IReviewService;
-import service.ToyService;
+import service.ProductService;
 import service.ReviewService;
 
 
@@ -24,7 +24,7 @@ public class ToyDetailServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private final IToyService toyService = new ToyService();
+    private final IProductService toyService = new ProductService();
     private final IReviewService reviewService = new ReviewService();
 
     // Phương thức GET để hiển thị chi tiết sản phẩm
@@ -48,7 +48,7 @@ public class ToyDetailServlet extends HttpServlet {
             return;
         }
 
-        Toy toy = toyService.getToyById(toyId); // Lấy sản phẩm theo toyId
+        Product toy = toyService.getProductById(toyId); // Lấy sản phẩm theo toyId
         System.out.println("Toy found: " + (toy != null ? toy.getName() : "null"));
         if (toy == null) {
             request.setAttribute("error", "Sản phẩm không tồn tại!"); // Nếu không tìm thấy sản phẩm
@@ -65,8 +65,8 @@ public class ToyDetailServlet extends HttpServlet {
         }
 
         double avgRating = toyService.getAverageRating(toyId); // Lấy đánh giá trung bình
-        List<Review> reviews = reviewService.listByToy(toyId, 10); // Lấy danh sách đánh giá
-        List<Toy> similar = toyService.getSimilarToys(toy.getCategoryId(), toyId, 6); // Lấy sản phẩm tương tự
+        List<Review> reviews = reviewService.listByProduct(toyId, 10); // Lấy danh sách đánh giá
+        List<Product> similar = toyService.getSimilarProducts(toy.getCategoryId(), toyId, 6); // Lấy sản phẩm tương tự
 
         request.setAttribute("toy", toy);
         request.setAttribute("avgRating", avgRating);
@@ -98,7 +98,7 @@ public class ToyDetailServlet extends HttpServlet {
                 boolean canReview = reviewService.hasPurchasedAndCompleted(currentUser.getCustomerId(), toyId); // Kiểm tra đã mua sản phẩm
                 if (canReview) {
                     Review review = new Review();
-                    review.setToyId(toyId);
+                    review.setProductId(toyId);
                     review.setCustomerId(currentUser.getCustomerId());
                     review.setRating(rating);
                     review.setComment(comment);
@@ -111,10 +111,10 @@ public class ToyDetailServlet extends HttpServlet {
             }
 
             // Lấy lại dữ liệu chi tiết sản phẩm sau khi gửi đánh giá
-            Toy toy = toyService.getToyById(toyId);
+            Product toy = toyService.getProductById(toyId);
             double avgRating = toyService.getAverageRating(toyId);
-            List<Review> reviews = reviewService.listByToy(toyId, 10);
-            List<Toy> similar = toyService.getSimilarToys(toy.getCategoryId(), toyId, 6);
+            List<Review> reviews = reviewService.listByProduct(toyId, 10);
+            List<Product> similar = toyService.getSimilarProducts(toy.getCategoryId(), toyId, 6);
             boolean canReview = currentUser != null && reviewService.hasPurchasedAndCompleted(currentUser.getCustomerId(), toyId);
 
             request.setAttribute("toy", toy);

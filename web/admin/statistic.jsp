@@ -35,6 +35,7 @@
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Thống kê doanh thu | Admin</title>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdn.tailwindcss.com"></script>
@@ -52,26 +53,26 @@
                     </a>
                 </li>
                 <li>
-                    <a href="SupplierServlet?action=list"
+                    <a href="suppliers?action=list"
                        class="block px-3 py-2 rounded-md text-blue-600 hover:bg-orange-50 hover:text-orange-700 transition font-medium">
                         🏢 Nhà cung cấp
                     </a>
                 </li>
                 <li>
-                    <a href="manage-customer"
-                       class="block px-3 py-2 rounded-md text-blue-600 hover:bg-orange-50 hover:text-orange-700 transition font-semibold">
+                    <a href="${pageContext.request.contextPath}/admin/customer"
+                       class="block px-3 py-2 rounded-md text-blue-600 hover:bg-orange-50 hover:text-orange-700 transition font-medium">
                         👤 Khách hàng
                     </a>
                 </li>
                 <li>
-                    <a href="manage-order"
+                    <a href="manage-staff"
                        class="block px-3 py-2 rounded-md text-blue-600 hover:bg-orange-50 hover:text-orange-700 transition font-medium">
-                        📦 Đơn hàng
+                        👔 Nhân viên
                     </a>
                 </li>
                 <li>
                     <a href="statistics?type=day"
-                       class="block px-3 py-2 rounded-md text-blue-600 hover:bg-orange-50 hover:text-orange-700 transition font-medium">
+                       class="block px-3 py-2 rounded-md text-blue-600 hover:bg-orange-50 hover:text-orange-700 transition font-semibold">
                         📈 Thống kê
                     </a>
                 </li>

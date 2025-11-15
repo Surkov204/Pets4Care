@@ -11,8 +11,8 @@ public class ReviewService implements IReviewService {
     private final IReviewDAO dao = new ReviewDAO();
 
     @Override
-    public List<Review> listByToy(int toyId, int limit) {
-        return dao.listByToy(toyId, limit);
+    public List<Review> listByProduct(int productId, int limit) {
+        return dao.listByProduct(productId, limit);
     }
 
     @Override
@@ -21,9 +21,43 @@ public class ReviewService implements IReviewService {
     }
     
     @Override
-    public boolean hasPurchasedAndCompleted(int customerId, int toyId) {
-        return dao.hasPurchasedAndCompleted(customerId, toyId);
+    public boolean hasPurchasedAndCompleted(int customerId, int productId) {
+        return dao.hasPurchasedAndCompleted(customerId, productId);
     }
 
+    @Override
+    public List<Review> listByService(int serviceId, int limit) {
+        return dao.listByService(serviceId, limit);
+    }
+
+    @Override
+    public boolean hasCompletedBooking(int customerId, int serviceId, int bookingId) {
+        return dao.hasCompletedBooking(customerId, serviceId, bookingId);
+    }
+
+    @Override
+    public Review getReviewByBooking(int bookingId, int serviceId, int customerId) {
+        return dao.getReviewByBooking(bookingId, serviceId, customerId);
+    }
+
+    @Override
+    public boolean hasPurchasedService(int customerId, int serviceId) {
+        return dao.hasPurchasedService(customerId, serviceId);
+    }
+
+    @Override
+    public boolean update(Review r) {
+        return dao.update(r);
+    }
+
+    @Override
+    public boolean delete(int reviewId) {
+        return dao.delete(reviewId);
+    }
+
+    @Override
+    public Review getReviewById(int reviewId) {
+        return dao.getReviewById(reviewId);
+    }
     
 }

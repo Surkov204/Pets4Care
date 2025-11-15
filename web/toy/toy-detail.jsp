@@ -1,40 +1,40 @@
-<%@page import="dao.ToyDAO"%>
+<%@page import="dao.ProductDAO"%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="model.Customer" %>
 <%@ page import="model.CartItem" %>
-<%@ page import="model.Toy" %>
+<%@ page import="model.Product" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
 <%
     Customer currentUser = (Customer) session.getAttribute("currentUser");
-    
+
     boolean canReview = true; // Đã đăng nhập thì luôn true
-    // Lấy toyId từ URL, kiểm tra cả tham số "toyId" và "id"
-    String toyIdStr = request.getParameter("toyId");
-    if (toyIdStr == null || toyIdStr.isEmpty()) {
-        toyIdStr = request.getParameter("id"); // Nếu toyId không có, thử lấy "id"
+    // Lấy productId từ URL, kiểm tra cả tham số "productId" và "id"
+    String productIdStr = request.getParameter("productId");
+    if (productIdStr == null || productIdStr.isEmpty()) {
+        productIdStr = request.getParameter("id"); // Nếu productId không có, thử lấy "id"
     }
 
-    // Nếu cả toyId và id đều không có, redirect về trang chủ
-    if (toyIdStr == null || toyIdStr.isEmpty()) {
+    // Nếu cả productId và id đều không có, redirect về trang chủ
+    if (productIdStr == null || productIdStr.isEmpty()) {
         response.sendRedirect("home.jsp");
         return;
     }
 
-    // Chuyển đổi toyId từ String sang int
-    int toyId = Integer.parseInt(toyIdStr);
+    // Chuyển đổi productId từ String sang int
+    int productId = Integer.parseInt(productIdStr);
 
     // Lấy sản phẩm từ database
-    Toy toy = new ToyDAO().getToyById(toyId);
-    if (toy == null) {
+    Product product = new ProductDAO().getProductById(productId);
+    if (product == null) {
         response.sendRedirect("home.jsp"); // Nếu không tìm thấy sản phẩm, redirect về trang chủ
         return;
     }
 
     // Lấy thông tin về đánh giá và sản phẩm tương tự
-    Double avgRating = new ToyDAO().getAverageRating(toyId);
-    java.util.List reviews = new ToyDAO().getReviewsByToyId(toyId);
-    java.util.List similar = new ToyDAO().getSimilarToys(toy.getCategoryId(), toyId, 4); // 4 sản phẩm tương tự
+    Double avgRating = new ProductDAO().getAverageRating(productId);
+    java.util.List reviews = new ProductDAO().getReviewsByProductId(productId);
+    java.util.List similar = new ProductDAO().getSimilarProducts(product.getCategoryId(), productId, 4); // 4 sản phẩm tương tự
 
     // Tính toán giỏ hàng
     java.util.Map<Integer, CartItem> cart = (java.util.Map<Integer, CartItem>) session.getAttribute("cart");
@@ -43,20 +43,26 @@
     if (cart != null) {
         for (CartItem item : cart.values()) {
             cartCount += item.getQuantity();
-            cartTotal += item.getQuantity() * item.getToy().getPrice();
+            cartTotal += item.getQuantity() * item.getProduct().getPrice();
         }
     }
+
+
 %>
 
 <!DOCTYPE html>
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
-        <title><%= toy.getName()%> | Petcity</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title><%= product.getName()%> | Petcity</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link rel="stylesheet" href="<%= request.getContextPath()%>/css/homeStyle.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     </head>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <body>
 
         <!-- HEADER -->
@@ -79,7 +85,7 @@
                     <div class="logo-subtext">thành phố thú cưng</div>
                 </div>
             </a> 
-            <form class="search-form" method="get" action="<%= request.getContextPath() %>/search">
+            <form class="search-form" method="get" action="<%= request.getContextPath()%>/search">
                 <input type="text" name="keyword" placeholder="Tìm kiếm...">
                 <button type="submit"><i class="fas fa-search"></i></button>
             </form>
@@ -122,13 +128,12 @@
         <nav>
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
-                <li><a href="<%= request.getContextPath()%>/gioi-thieu.jsp">GIỚI THIỆU</a></li>
-                <li><a href="<%= request.getContextPath()%>/search?categoryId=1">SHOP CÚN CƯNG</a></li>
-                <li><a href="<%= request.getContextPath()%>/search?categoryId=2">SHOP MÈO CƯNG</a></li>
-                <li><a href="<%= request.getContextPath()%>/search?categoryId=3">SHOP VẬT NUÔI KHÁC</a></li>
-                <li><a href="<%= request.getContextPath()%>/tin-tuc.jsp">TIN TỨC</a></li>
-                <li><a href="<%= request.getContextPath()%>/meo-vat.jsp">MẸO VẶT</a></li>
-                <li><a href="<%= request.getContextPath()%>/lien-he.jsp">LIÊN HỆ</a></li>
+                <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
+                <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
+                <li><a href="doctor.jsp">BÁC SĨ</a></li>
+                <li><a href="gioi-thieu.jsp">GIỚI THIỆU</a></li>
+                <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
+                <li><a href="<%= request.getContextPath()%>/home">LIÊN HỆ</a></li>
             </ul>
         </nav>
 
@@ -139,12 +144,12 @@
                 <!-- Chi tiết sản phẩm -->
                 <div class="flex flex-col lg:flex-row gap-8 bg-white p-6 rounded-xl shadow">
                     <div class="w-full lg:w-[40%]">
-                        <img src="<%= request.getContextPath()%>/images/toy_<%= toy.getToyId()%>.jpg"
+                        <img src="<%= request.getContextPath()%>/images/toy_<%= product.getProductId()%>.jpg"
                              onerror="this.src='<%= request.getContextPath()%>/images/default.jpg'" class="w-full h-[380px] object-contain border rounded-lg"
-                             alt="<%= toy.getName()%>" />
+                             alt="<%= product.getName()%>" />
                     </div>
                     <div class="flex-1 space-y-4">
-                        <h1 class="text-xl font-semibold text-slate-800"><%= toy.getName()%></h1>
+                        <h1 class="text-xl font-semibold text-slate-800"><%= product.getName()%></h1>
                         <div class="flex items-center gap-1">
                             <%
                                 int full = avgRating != null ? avgRating.intValue() : 0;
@@ -157,21 +162,22 @@
                                 (<%= avgRating != null ? String.format("%.2f", avgRating) : "Chưa có đánh giá"%>/5)
                             </span>
                         </div>
-                        <p class="text-red-600 text-2xl font-bold"><%= String.format("%,.0f", toy.getPrice())%>₫</p>
-                        <p class="text-gray-600 text-sm">Kho: <%= toy.getStockQuantity()%> sản phẩm</p>
-                        <p class="text-gray-700 text-base"><%= toy.getDescription()%></p>
+                        <p class="text-red-600 text-2xl font-bold"><%= String.format("%,.0f", product.getPrice())%>₫</p>
+                        <p class="text-gray-600 text-sm">Kho: <%= product.getStockQuantity()%> sản phẩm</p>
+                        <p class="text-gray-700 text-base"><%= product.getDescription()%></p>
 
                         <div class="flex items-center gap-3">
                             <label for="qty" class="text-sm font-medium">Số lượng:</label>
-                            <input id="qty" type="number" value="1" min="1" max="<%= toy.getStockQuantity()%>"
-                                   class="w-20 border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-400" <% if (toy.getStockQuantity() == 0) { %>disabled<% } %>/>
+                            <input id="qty" type="number" value="1" min="1" max="<%= product.getStockQuantity()%>"
+                                   class="w-20 border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-400" <% if (product.getStockQuantity() == 0) { %>disabled<% } %>/>
                         </div>
 
-                        <div class="mt-4">
-                            <% if (toy.getStockQuantity() == 0) { %>
+                        <div class="mt-4 space-x-2">
+                            <% if (product.getStockQuantity() == 0) { %>
                             <span class="text-red-500 font-semibold">Hết hàng</span>
                             <% } else {%>
-                            <button class="btn-add-cart" onclick="addToCart(<%= toy.getToyId()%>, <%= toy.getPrice()%>, true)">🛒 Thêm vào giỏ</button>
+                            <button class="btn-add-cart" onclick="addToCart(<%= product.getProductId()%>, <%= product.getPrice()%>, true)">🛒 Thêm vào giỏ</button>
+                            <button class="btn-add-cart" style="background: var(--primary);" onclick="openBuyNow()">⚡ Mua ngay</button>
                             <% }%>
                         </div>
                     </div>
@@ -184,7 +190,7 @@
                     <c:choose>
                         <c:when test="${not empty sessionScope.currentUser and canReview}">
                             <form method="post" action="toydetailservlet" class="space-y-4">
-                                <input type="hidden" name="toyId" value="${toy.toyId}" />
+                                <input type="hidden" name="productId" value="${product.productId}" />
                                 <label class="block text-sm">Số sao:</label>
                                 <select name="rating" class="border rounded p-2">
                                     <c:forEach var="i" begin="1" end="5">
@@ -235,14 +241,14 @@
                 <section class="space-y-4">
                     <h2 class="text-lg font-semibold">Sản phẩm tương tự</h2>
                     <div class="toys-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        <c:forEach var="t" items="${similar}">
+                        <c:forEach var="product" items="${similar}">
                             <div class="border p-3 rounded hover:shadow">
-                                <a href="toydetailservlet?id=${t.toyId}">
-                                    <img src="images/toy_${t.toyId}.jpg" onerror="this.src='images/default.jpg'" class="h-32 w-full object-contain" />
-                                    <p class="toy-name font-semibold mt-2">${t.name}</p>
+                                <a href="toydetailservlet?id=${product.productId}">
+                                    <img src="images/toy_${product.productId}.jpg" onerror="this.src='images/default.jpg'" class="h-32 w-full object-contain" />
+                                    <p class="toy-name font-semibold mt-2">${product.name}</p>
                                 </a>
-                                <p class="toy-price text-red-600">${t.price}₫</p>
-                                <button class="btn-add-cart mt-2 w-full bg-blue-500 text-white py-1 rounded" onclick="addToCart(${t.toyId}, ${t.price})">🛒 Thêm vào giỏ</button>
+                                <p class="toy-price text-red-600">${product.price}₫</p>
+                                <button class="btn-add-cart mt-2 w-full bg-blue-500 text-white py-1 rounded" onclick="addToCart(${product.productId}, ${product.price})">🛒 Thêm vào giỏ</button>
                             </div>
                         </c:forEach>
                     </div>
@@ -250,6 +256,69 @@
                 </section>
 
             </main>
+        </div>
+
+        <!-- Buy Now Modal -->
+        <div id="buy-now-modal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-lg w-96 p-5" style="border-radius: var(--border-radius);">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-semibold">Mua ngay</h3>
+                    <button onclick="closeBuyNow()" class="text-red-500 text-xl">✖</button>
+                </div>
+                <!-- Popup chọn vị trí trong Mua ngay -->
+                <div id="buy-map-popup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+                    <div class="bg-white rounded shadow-lg w-11/12 md:w-3/4 h-96 relative flex flex-col">
+                        <button onclick="closeBuyMap()" class="absolute top-2 right-2 text-red-500 text-lg">✖</button>
+                        <div id="buy-map" class="w-full flex-1 rounded"></div>
+                        <div class="p-3 border-t text-right">
+                            <button onclick="confirmBuyLocation()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+                                ✅ Xác nhận vị trí
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" action="<%= request.getContextPath()%>/buynowservlet" class="space-y-4">
+                    <input type="hidden" name="productId" value="<%= product.getProductId()%>"/>
+                    <div class="flex items-center gap-3">
+                        <label for="buy-now-qty" class="text-sm font-medium">Số lượng:</label>
+                        <input id="buy-now-qty" name="quantity" type="number" value="1" min="1" max="<%= product.getStockQuantity()%>" class="w-24 border rounded px-2 py-1 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">Phương thức thanh toán:</label>
+                        <select name="payment_method" required class="w-full border rounded px-3 py-2">
+                            <option value="">-- Chọn phương thức --</option>
+                            <option value="Tiền mặt">💵 Tiền mặt khi nhận hàng</option>
+                            <option value="PayOS">💳 Thanh toán online (PayOS)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">Địa chỉ nhận hàng:</label>
+                        <input type="text" id="buy_address" name="shipping_address" required 
+                               class="w-full border rounded px-3 py-2 mb-2"
+                               placeholder="Số nhà, đường, phường/xã..."
+                               value="<%= currentUser != null ? currentUser.getAddressCustomer() : ""%>"/>
+
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="openBuyMap()" 
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
+                                🗺️ Chọn vị trí trên bản đồ
+                            </button>
+                            <span id="buy-map-status" class="text-sm text-green-600 hidden">📍 Đã chọn vị trí</span>
+                        </div>
+
+                        <!-- ẩn tọa độ -->
+                        <input type="hidden" name="latitude" id="buy_latitude" />
+                        <input type="hidden" name="longitude" id="buy_longitude" />
+                    </div>
+
+                    <div class="flex gap-2 pt-1">
+                        <button type="button" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded w-1/2" onclick="closeBuyNow()">Hủy</button>
+                        <button type="submit" class="btn-add-cart w-1/2">🛍️ Đặt hàng</button>
+                    </div>
+                    <p class="text-xs text-gray-500">Đơn hàng sẽ chỉ bao gồm sản phẩm này.</p>
+                </form>
+            </div>
         </div>
 
         <!-- Toast -->
@@ -274,7 +343,7 @@
                     },
                     body: new URLSearchParams({
                         action: "add", // Đảm bảo action là "add"
-                        id: id, // Truyền toyId
+                        id: id, // Truyền productId
                         quantity: qty   // Truyền số lượng
                     })
                 })
@@ -327,6 +396,118 @@
                     }
                 });
             });
+
+            function openBuyNow() {
+                const modal = document.getElementById('buy-now-modal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+            }
+
+            function closeBuyNow() {
+                const modal = document.getElementById('buy-now-modal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            }
+
+            function confirmBuyNow(productId) {
+                const qtyInput = document.getElementById('buy-now-qty');
+                let qty = parseInt(qtyInput && qtyInput.value ? qtyInput.value : '1');
+                if (isNaN(qty) || qty <= 0)
+                    qty = 1;
+
+                fetch("<%=request.getContextPath()%>/cartservlet", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                    body: new URLSearchParams({action: 'add', id: productId, quantity: qty})
+                }).then(res => {
+                    if (!res.ok)
+                        throw new Error('Không thể thêm vào giỏ');
+                    // Chuyển tới giỏ để chọn phương thức thanh toán (Tiền mặt hoặc PayOS)
+                    window.location.href = '<%= request.getContextPath()%>/cart/cart.jsp#checkout';
+                }).catch(err => {
+                    showToast('⚠️ ' + err.message);
+                });
+            }
+
+            let buyMap, buyMarker, buyLat, buyLng;
+
+            function openBuyMap() {
+                const popup = document.getElementById('buy-map-popup');
+                popup.classList.remove('hidden');
+
+                setTimeout(() => {
+                    if (!buyMap) {
+                        buyMap = L.map('buy-map');
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; OpenStreetMap contributors'
+                        }).addTo(buyMap);
+
+                        // Khi click chọn vị trí
+                        buyMap.on('click', function (e) {
+                            buyLat = e.latlng.lat;
+                            buyLng = e.latlng.lng;
+                            if (buyMarker)
+                                buyMap.removeLayer(buyMarker);
+                            buyMarker = L.marker([buyLat, buyLng]).addTo(buyMap);
+
+                            fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + buyLat + '&lon=' + buyLng)
+                                    .then(r => r.json())
+                                    .then(d => {
+                                        if (d && d.display_name) {
+                                            document.getElementById('buy_address').value = d.display_name;
+                                            document.getElementById('buy-map-status').classList.remove('hidden');
+                                        }
+                                    })
+                                    .catch(() => alert('Không truy vấn được địa chỉ.'));
+                        });
+                    }
+
+                    // Nếu có địa chỉ sẵn thì tìm tọa độ
+                    const addr = document.getElementById('buy_address').value;
+                    if (addr && addr.trim().length > 5) {
+                        fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(addr))
+                                .then(r => r.json())
+                                .then(results => {
+                                    if (results && results.length > 0) {
+                                        const {lat, lon} = results[0];
+                                        buyLat = parseFloat(lat);
+                                        buyLng = parseFloat(lon);
+                                        buyMap.setView([buyLat, buyLng], 16);
+                                        if (buyMarker)
+                                            buyMap.removeLayer(buyMarker);
+                                        buyMarker = L.marker([buyLat, buyLng]).addTo(buyMap);
+                                    } else {
+                                        buyMap.setView([21.0285, 105.8542], 13);
+                                    }
+                                });
+                    } else {
+                        buyMap.setView([21.0285, 105.8542], 13);
+                    }
+
+                    // Refresh map size sau khi popup hiển thị
+                    setTimeout(() => buyMap.invalidateSize(), 300);
+                }, 400);
+            }
+
+            function closeBuyMap() {
+                document.getElementById('buy-map-popup').classList.add('hidden');
+            }
+
+            function confirmBuyLocation() {
+                if (buyLat && buyLng) {
+                    document.getElementById('buy_latitude').value = buyLat;
+                    document.getElementById('buy_longitude').value = buyLng;
+                    document.getElementById('buy-map-status').classList.remove('hidden');
+                    closeBuyMap();
+                } else {
+                    alert('📍 Vui lòng chọn vị trí trên bản đồ trước khi xác nhận.');
+                }
+            }
+
         </script>
         <jsp:include page="../chatbox.jsp"/>
     </body>

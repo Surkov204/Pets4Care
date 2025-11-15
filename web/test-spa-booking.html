@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Spa Booking Form</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .debug-info {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-6">🧪 Test Spa Booking Form</h1>
+        
+        <!-- Debug Info -->
+        <div class="debug-info">
+            <h3>Debug Info:</h3>
+            <div id="debug-output"></div>
+        </div>
+        
+        <!-- Test Form -->
+        <form id="testForm" class="space-y-4">
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Ngày hẹn:</label>
+                <input type="date" name="appointmentDate" id="appointmentDate" required
+                       class="w-full border rounded px-4 py-2" />
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Giờ hẹn:</label>
+                <div class="flex space-x-2">
+                    <select name="appointmentHour" id="appointmentHour" required class="flex-1 border rounded px-3 py-2">
+                        <option value="">Giờ</option>
+                        <option value="08">08</option>
+                        <option value="09">09</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                    </select>
+                    <select name="appointmentMinute" id="appointmentMinute" required class="flex-1 border rounded px-3 py-2">
+                        <option value="">Phút</option>
+                        <option value="00">00</option>
+                        <option value="15">15</option>
+                        <option value="30">30</option>
+                        <option value="45">45</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Phương thức thanh toán:</label>
+                <div class="space-y-2">
+                    <label class="flex items-center">
+                        <input type="radio" name="payment_method" value="COD" class="mr-2" />
+                        COD (Thanh toán khi nhận)
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="payment_method" value="PayOS" class="mr-2" />
+                        PayOS (QR Code)
+                    </label>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2">Ghi chú:</label>
+                <textarea name="note" rows="3" class="w-full border rounded px-4 py-2" 
+                          placeholder="Nhập ghi chú cho lịch hẹn..."></textarea>
+            </div>
+            
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700">
+                🧪 Test Submit
+            </button>
+        </form>
+        
+        <!-- Test Results -->
+        <div id="test-results" class="mt-6 p-4 bg-gray-50 rounded-lg" style="display: none;">
+            <h3 class="font-bold mb-2">Test Results:</h3>
+            <div id="results-content"></div>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const debugOutput = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            debugOutput.innerHTML += `[${timestamp}] ${message}<br>`;
+            console.log(message);
+        }
+        
+        function showResults(content) {
+            document.getElementById('test-results').style.display = 'block';
+            document.getElementById('results-content').innerHTML = content;
+        }
+        
+        // Set default date to tomorrow
+        document.addEventListener('DOMContentLoaded', function() {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('appointmentDate').value = tomorrow.toISOString().split('T')[0];
+            log('✅ Page loaded, default date set to tomorrow');
+        });
+        
+        // Test validation function
+        function testValidateAppointmentForm() {
+            log('🔍 Starting validation test...');
+            
+            const appointmentDate = document.querySelector('input[name="appointmentDate"]').value;
+            const appointmentHour = document.querySelector('select[name="appointmentHour"]').value;
+            const appointmentMinute = document.querySelector('select[name="appointmentMinute"]').value;
+            const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+            
+            log(`📅 Appointment Date: ${appointmentDate}`);
+            log(`⏰ Appointment Hour: ${appointmentHour}`);
+            log(`⏰ Appointment Minute: ${appointmentMinute}`);
+            log(`💳 Payment Method: ${paymentMethod ? paymentMethod.value : 'Not selected'}`);
+            
+            if (!appointmentDate || !appointmentHour || !appointmentMinute) {
+                log('❌ Missing appointment details');
+                return false;
+            }
+            
+            if (!paymentMethod) {
+                log('❌ No payment method selected');
+                return false;
+            }
+            
+            // Check if appointment is in the past
+            const appointmentTime = appointmentHour + ':' + appointmentMinute;
+            const appointmentDateTime = new Date(appointmentDate + ' ' + appointmentTime);
+            const now = new Date();
+            
+            log(`🕐 Appointment DateTime: ${appointmentDateTime}`);
+            log(`🕐 Current DateTime: ${now}`);
+            log(`🕐 Is appointment in future: ${appointmentDateTime > now}`);
+            
+            if (appointmentDateTime <= now) {
+                log('❌ Appointment is in the past');
+                return false;
+            }
+            
+            // Show confirmation dialog
+            const confirmMessage = 'Xác nhận đặt lịch Spa:\\n' +
+                '📅 Ngày: ' + appointmentDate + '\\n' +
+                '⏰ Giờ: ' + appointmentTime + '\\n' +
+                '💳 Thanh toán: ' + (paymentMethod.value === 'PayOS' ? 'PayOS (QR Code)' : 'COD') + '\\n\\n' +
+                'Bạn có chắc chắn muốn tiếp tục?';
+            
+            log('✅ Validation passed, showing confirmation dialog');
+            log(`📝 Confirm message: ${confirmMessage}`);
+            
+            const confirmed = confirm(confirmMessage);
+            log(`👤 User confirmed: ${confirmed}`);
+            
+            if (confirmed) {
+                log('🚀 Form will be submitted');
+            } else {
+                log('❌ User cancelled, form will not be submitted');
+            }
+            
+            return confirmed;
+        }
+        
+        // Form submit handler
+        document.getElementById('testForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            log('📝 Form submit event triggered');
+            
+            const isValid = testValidateAppointmentForm();
+            
+            if (isValid) {
+                showResults(`
+                    <div class="text-green-600 font-bold">✅ Validation PASSED</div>
+                    <div class="mt-2">Form would be submitted successfully!</div>
+                    <div class="mt-2 text-sm text-gray-600">
+                        <strong>Form Data:</strong><br>
+                        Date: ${document.querySelector('input[name="appointmentDate"]').value}<br>
+                        Time: ${document.querySelector('select[name="appointmentHour"]').value}:${document.querySelector('select[name="appointmentMinute"]').value}<br>
+                        Payment: ${document.querySelector('input[name="payment_method"]:checked')?.value || 'None'}<br>
+                        Note: ${document.querySelector('textarea[name="note"]').value}
+                    </div>
+                `);
+            } else {
+                showResults(`
+                    <div class="text-red-600 font-bold">❌ Validation FAILED</div>
+                    <div class="mt-2">Form would not be submitted.</div>
+                `);
+            }
+        });
+        
+        // Test with different scenarios
+        function testScenario(scenario) {
+            log(`🧪 Testing scenario: ${scenario}`);
+            
+            switch(scenario) {
+                case 'valid':
+                    document.getElementById('appointmentDate').value = '2025-01-15';
+                    document.getElementById('appointmentHour').value = '10';
+                    document.getElementById('appointmentMinute').value = '30';
+                    document.querySelector('input[name="payment_method"][value="COD"]').checked = true;
+                    break;
+                case 'past':
+                    document.getElementById('appointmentDate').value = '2020-01-01';
+                    document.getElementById('appointmentHour').value = '10';
+                    document.getElementById('appointmentMinute').value = '30';
+                    document.querySelector('input[name="payment_method"][value="COD"]').checked = true;
+                    break;
+                case 'missing':
+                    document.getElementById('appointmentDate').value = '';
+                    document.getElementById('appointmentHour').value = '';
+                    document.getElementById('appointmentMinute').value = '';
+                    break;
+            }
+            
+            const isValid = testValidateAppointmentForm();
+            log(`🧪 Scenario ${scenario} result: ${isValid ? 'PASS' : 'FAIL'}`);
+        }
+        
+        // Add test buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const testButtons = document.createElement('div');
+            testButtons.className = 'mt-4 space-x-2';
+            testButtons.innerHTML = `
+                <button onclick="testScenario('valid')" class="px-4 py-2 bg-green-500 text-white rounded">Test Valid</button>
+                <button onclick="testScenario('past')" class="px-4 py-2 bg-red-500 text-white rounded">Test Past Date</button>
+                <button onclick="testScenario('missing')" class="px-4 py-2 bg-yellow-500 text-white rounded">Test Missing Data</button>
+                <button onclick="document.getElementById('debug-output').innerHTML=''" class="px-4 py-2 bg-gray-500 text-white rounded">Clear Log</button>
+            `;
+            document.querySelector('.max-w-2xl').appendChild(testButtons);
+        });
+    </script>
+</body>
+</html>

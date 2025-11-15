@@ -1,7 +1,6 @@
 package controller;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import model.Customer;
 import model.GoogleUser;
@@ -11,7 +10,6 @@ import java.io.IOException;
 import service.IUserService;
 import utils.*;
 
-@WebServlet(name = "GoogleLoginServlet", urlPatterns = {"/logingoogle"})
 public class GoogleLoginServlet extends HttpServlet {
 
 	private final IUserService userService = new UserService();
@@ -39,6 +37,18 @@ public class GoogleLoginServlet extends HttpServlet {
 		GoogleUser googleUser = GoogleUtils.getUserInfo(accessToken);
 
 		Customer customer = userService.loginWithGoogle(googleUser);
+		
+		if (customer == null) {
+			response.sendRedirect("login.jsp?error=Đăng nhập thất bại");
+			return;
+		}
+
+		// Kiểm tra status - chỉ cho phép đăng nhập nếu status = "active"
+		String status = customer.getStatus();
+		if (status == null || !"active".equals(status)) {
+			response.sendRedirect("login.jsp?error=Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+			return;
+		}
 
 		// Lưu session và chuyển về home
 		HttpSession session = request.getSession();

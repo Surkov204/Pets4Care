@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="java.util.*, model.CartItem, model.Customer" %>
+<%@ page import="java.util.*, model.CartItem, model.Customer, dao.UserDAO, model.Order" %>
 <%@ page session="true" %>
 <html lang="vi">
     <head>
@@ -18,7 +18,7 @@
             }
             .quantity-input {
                 transition: all 0.3s ease;
-            }
+            } 
             .quantity-input:focus {
                 border-color: var(--primary) !important;
                 box-shadow: 0 0 0 3px rgba(111, 213, 221, 0.2) !important;
@@ -110,35 +110,53 @@
             <div class="text-center py-20 bg-gray-50 rounded">
                 <div class="text-5xl mb-4">🛒</div>
                 <p class="text-lg text-gray-600 mb-4">Giỏ hàng trống</p>
-                <a href="<%= request.getContextPath()%>/home" class="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600 transition">🎾 Tiếp tục mua sắm</a>
+                <div class="space-x-4">
+                    <a href="<%= request.getContextPath()%>/home" class="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600 transition">🎾 Tiếp tục mua sắm</a>
+                    <%
+                        // Hiển thị nút xem lịch sử đơn hàng nếu user đã đăng nhập
+                        if (currentUser != null) {
+                    %>
+                    <a href="<%= request.getContextPath()%>/order/order-history.jsp"
+                       class="inline-block px-6 py-3 rounded font-semibold transition-all duration-300"
+                       style="background: var(--card-bg-alt); color: var(--text); border: 2px solid rgba(111, 213, 221, 0.3); border-radius: var(--border-radius-small); text-decoration: none; font-family: 'Quicksand', sans-serif;"
+                       onmouseover="this.style.background = 'rgba(111, 213, 221, 0.1)'; this.style.transform = 'translateY(-2px)'"
+                       onmouseout="this.style.background = 'var(--card-bg-alt)'; this.style.transform = 'translateY(0)'">
+                        📦 Xem lịch sử đơn hàng
+                    </a>
+                    <% } %>
+                </div>
             </div>
             <% } else { %>
             <div class="space-y-6">
                 <% for (CartItem item : cart.values()) {
-                        double subtotal = item.getQuantity() * item.getToy().getPrice();
+                        double subtotal = item.getQuantity() * item.getProduct().getPrice();
                         total += subtotal;
-                        int toyId = item.getToy().getToyId();
+                        int productId = item.getProduct().getProductId();
                 %>
-                <div class="flex items-center justify-between border-b pb-4" id="row-<%= toyId%>">
+                <div class="flex items-center justify-between border-b pb-4" id="row-<%= productId%>">
                     <div class="flex items-center space-x-4">
-                        <img src="<%= request.getContextPath() + "/images/toy_" + toyId + ".jpg"%>" class="w-24 h-24 object-cover rounded shadow">
+                        <img src="<%= request.getContextPath() + "/images/toy_" + productId + ".jpg"%>" class="w-24 h-24 object-cover rounded shadow">
                         <div>
-                            <div class="font-semibold text-lg"><%= item.getToy().getName()%></div>
-                            <div class="text-sm text-gray-500">Mã SP: <%= toyId%></div>
-                            <div class="text-xs text-green-600">📦 Còn <%= item.getToy().getStockQuantity()%> sản phẩm</div>
+                            <div class="font-semibold text-lg"><%= item.getProduct().getName()%></div>
+                            <div class="text-sm text-gray-500">Mã SP: <%= productId%></div>
+                            <div class="text-xs text-green-600">📦 Còn <%= item.getProduct().getStockQuantity()%> sản phẩm</div>
                         </div>
                     </div>
-                    <div class="w-20 text-right font-semibold text-blue-600"><%= String.format("%.0f", item.getToy().getPrice())%>₫</div>
-                    <input type="number" min="1" max="<%= item.getToy().getStockQuantity()%>" value="<%= item.getQuantity()%>" 
-                           data-toy-id="<%= toyId%>" class="quantity-input w-16 text-center border rounded py-1 px-2">
-                    <div class="w-24 text-right font-bold text-green-600" id="item-total-<%= toyId%>"><%= String.format("%.0f", subtotal)%>₫</div>
-                    <button onclick="removeItem(<%= toyId%>)" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                    <div class="w-20 text-right font-semibold text-blue-600"><%= String.format("%.0f", item.getProduct().getPrice())%>₫</div>
+                    <input type="number" min="1" max="<%= item.getProduct().getStockQuantity()%>" value="<%= item.getQuantity()%>" 
+                           data-product-id="<%= productId%>" class="quantity-input w-16 text-center border rounded py-1 px-2">
+                    <div class="w-24 text-right font-bold text-green-600" id="item-total-<%= productId%>"><%= String.format("%.0f", subtotal)%>₫</div>
+                    <button onclick="removeItem(<%= productId%>)" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
                 </div>
                 <% }%>
 
                 <div class="flex justify-between items-center border-t pt-4">
 
                     <div class="mt-6 text-center space-x-4">
+                        <%
+                            // Hiển thị link lịch sử đơn hàng nếu người dùng đã đăng nhập
+                            if (currentUser != null) {
+                        %>
                         <a href="<%= request.getContextPath()%>/order/order-history.jsp"
                            class="inline-block px-6 py-3 rounded font-semibold transition-all duration-300"
                            style="background: var(--card-bg-alt); color: var(--text); border: 2px solid rgba(111, 213, 221, 0.3); border-radius: var(--border-radius-small); text-decoration: none; font-family: 'Quicksand', sans-serif;"
@@ -146,7 +164,9 @@
                            onmouseout="this.style.background = 'var(--card-bg-alt)'; this.style.transform = 'translateY(0)'">
                             📦 Xem lịch sử đơn hàng
                         </a>
-
+                        <% 
+                            }
+                        %>
                         <a href="<%= request.getContextPath()%>/home" 
                            class="inline-block px-6 py-3 rounded font-semibold transition-all duration-300"
                            style="background: linear-gradient(135deg, var(--accent), var(--accent-pink)); color: white; border-radius: var(--border-radius-small); box-shadow: var(--shadow-button); text-decoration: none; font-family: 'Quicksand', sans-serif;"
@@ -163,16 +183,16 @@
                 </div>
 
                 <% if (currentUser != null) {%>
-                <form action="<%= request.getContextPath()%>/orderservlet" method="post" class="mt-6 space-y-4">
+                <form id="checkout" action="<%= request.getContextPath()%>/orderservlet" method="post" class="mt-6 space-y-4">
                     <label class="block text-gray-700 font-semibold">Phương thức thanh toán:</label>
                     <select name="payment_method" required class="w-full border rounded px-4 py-2">
                         <option value="">-- Chọn phương thức --</option>
                         <option value="Tiền mặt">💵 Tiền mặt khi nhận hàng</option>
-                        <option value="Chuyển khoản">🏦 Chuyển khoản ngân hàng</option>
+                        <option value="PayOS">💳 Thanh toán online (PayOS)</option>
                     </select>
                     <label class="block text-gray-700 font-semibold mt-4">Địa chỉ nhận hàng:</label>
-                    <input type="text" name="shipping_address" placeholder="Số nhà, đường, phường/xã..." required
-                           class="w-full border rounded px-4 py-2 mb-3" />
+                    <input type="text" name="shipping_address" id="shipping_address" placeholder="Số nhà, đường, phường/xã..." required
+                           class="w-full border rounded px-4 py-2 mb-3" value="<%= (currentUser!=null && currentUser.getAddressCustomer()!=null) ? currentUser.getAddressCustomer() : "" %>" />
 
                     <!-- Trường ẩn để lưu toạ độ nếu chọn từ bản đồ -->
                     <input type="hidden" name="latitude" id="latitude" />
@@ -253,7 +273,25 @@
                             iconAnchor: [13, 41]
                         })
                     }).addTo(map);
+
+                    // Reverse geocode to fill address (avoid JSP EL by not using template literals)
+                    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + selectedLat + '&lon=' + selectedLng)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data && data.display_name) {
+                                $('#shipping_address').val(data.display_name);
+                                $('#map-status').removeClass('hidden');
+                            } else {
+                                alert('Không tìm được địa chỉ tại vị trí đã chọn.');
+                            }
+                        })
+                        .catch(() => alert('Không truy vấn được địa chỉ. Vui lòng thử lại.'));
                 });
+            }
+            // If address already filled, geocode and show marker at that location
+            const addr = $('#shipping_address').val();
+            if (addr && addr.trim().length > 5) {
+                geocodeAddress(addr, true);
             }
         }
 
@@ -271,18 +309,42 @@
         function closeMapPopup() {
             $('#map-popup').addClass('hidden');
         }
+
+    // Forward geocoding from address to coordinates
+    function geocodeAddress(address, centerOnly = false) {
+        fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(address))
+            .then(r => r.json())
+            .then(results => {
+                if (results && results.length > 0) {
+                    const { lat, lon, display_name } = results[0];
+                    selectedLat = parseFloat(lat);
+                    selectedLng = parseFloat(lon);
+                    if (map) {
+                        map.setView([selectedLat, selectedLng], 16);
+                        if (marker) map.removeLayer(marker);
+                        marker = L.marker([selectedLat, selectedLng]).addTo(map);
+                    }
+                    if (!centerOnly) {
+                        $('#shipping_address').val(display_name);
+                    }
+                } else {
+                    alert('Không tìm thấy vị trí cho địa chỉ đã nhập.');
+                }
+            })
+            .catch(() => alert('Không truy vấn được vị trí.'));
+    }
     </script>
 
 
 
         <script>
-            function removeItem(toyId) {
+            function removeItem(productId) {
                 if (confirm('🗑️ Bạn có chắc chắn muốn xóa sản phẩm này?')) {
                     $.post('<%= request.getContextPath()%>/cartservlet', {
                         action: 'remove',
-                        id: toyId
+                        id: productId
                     }, function () {
-                        $('#row-' + toyId).fadeOut(300, function () {
+                        $('#row-' + productId).fadeOut(300, function () {
                             $(this).remove();
                             updateCartTotal();
                         });
@@ -302,16 +364,16 @@
                 const debounceTimers = {};
                 $('.quantity-input').on('input', function () {
                     const $input = $(this);
-                    const toyId = $input.data('toy-id');
+                    const productId = $input.data('product-id');
                     const quantity = $input.val();
-                    clearTimeout(debounceTimers[toyId]);
-                    debounceTimers[toyId] = setTimeout(() => {
+                    clearTimeout(debounceTimers[productId]);
+                    debounceTimers[productId] = setTimeout(() => {
                         $.ajax({
                             url: '<%= request.getContextPath()%>/cartservlet',
                             type: 'POST',
                             data: {
                                 action: 'update',
-                                toyId: toyId,
+                                productId: productId,
                                 quantity: quantity
                             },
                             dataType: 'json',
@@ -320,7 +382,7 @@
                                     alert(res.error);
                                     location.reload();
                                 } else {
-                                    $('#item-total-' + toyId).text(res['item_' + toyId] + '₫');
+                                    $('#item-total-' + productId).text(res['item_' + productId] + '₫');
                                     $('#cart-total').text(res.total + '₫');
                                 }
                             }

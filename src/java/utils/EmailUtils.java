@@ -1,13 +1,17 @@
 package utils;
 
 import dao.OrderDAO;
-import dao.ToyDAO;
+import dao.ProductDAO;
+import dao.PetServiceDAO;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import java.util.List;
 import java.util.Properties;
+import java.math.BigDecimal;
 import model.Order;
 import model.OrderDetail;
+import model.Booking;
+import model.BookingServiceItem;
 
 public class EmailUtils {
 
@@ -37,7 +41,7 @@ public class EmailUtils {
     public static void sendOrderConfirmation(String recipientEmail, int orderId) {
         try {
             OrderDAO orderDAO = new OrderDAO();
-            ToyDAO toyDAO = new ToyDAO();
+            ProductDAO productDAO = new ProductDAO();
             Order order = orderDAO.getOrderById(orderId);
             List<OrderDetail> details = orderDAO.getOrderDetailsByOrderId(orderId);
 
@@ -58,9 +62,9 @@ public class EmailUtils {
                     .append("</thead><tbody>");
 
             for (OrderDetail d : details) {
-                String toyName = toyDAO.getToyNameById(d.getToyId());
+                String productName = productDAO.getProductNameById(d.getProductId());
                 content.append("<tr>")
-                        .append("<td>").append(toyName).append("</td>")
+                        .append("<td>").append(productName).append("</td>")
                         .append("<td>").append(d.getQuantity()).append("</td>")
                         .append("<td>").append(String.format("%.2f", d.getUnitPrice())).append(" đ</td>")
                         .append("</tr>");
@@ -164,5 +168,74 @@ public class EmailUtils {
                 + "<hr style='border:none; border-top:1px solid #e1e1e1; margin:20px 0;'>"
                 + "<p style='color:#888; font-size:12px;'>Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.</p>"
                 + "</div>";
+    }
+
+    // ====================== GỬI EMAIL BIÊN LAI HOÀN TIỀN SPA ======================
+    public static void sendRefundInvoice(String recipientEmail, String customerName, int bookingId, 
+                                        Booking booking, List<BookingServiceItem> bookingServices, BigDecimal totalAmount) {
+        try {
+            PetServiceDAO petServiceDAO = new PetServiceDAO();
+            
+            // Nội dung email HTML
+            StringBuilder content = new StringBuilder();
+            content.append("<div style='font-family:Arial,sans-serif; max-width:600px; margin:auto; border:2px solid #E74C3C; border-radius:8px; padding:20px;'>")
+                    .append("<h2 style='color:#E74C3C;'>💰 BIÊN LAI HOÀN TIỀN - ĐẶT LỊCH SPA</h2>")
+                    .append("<p>Xin chào <strong>").append(customerName != null ? customerName : "Khách hàng").append("</strong>,</p>")
+                    .append("<p>Chúng tôi xác nhận đã nhận được yêu cầu hủy đặt lịch Spa của bạn.</p>")
+                    .append("<hr>")
+                    .append("<h3 style='color:#2E8B57;'>📋 Thông tin booking:</h3>")
+                    .append("<p><strong>Mã booking:</strong> #").append(bookingId).append("</p>")
+                    .append("<p><strong>Ngày đặt lịch:</strong> ").append(booking.getAppointmentStart() != null ? booking.getAppointmentStart() : "N/A").append("</p>")
+                    .append("<p><strong>Trạng thái:</strong> <span style='color:#E74C3C; font-weight:bold;'>Yêu cầu hoàn tiền</span></p>")
+                    .append("<hr>")
+                    .append("<h3 style='color:#2E8B57;'>🧾 Chi tiết dịch vụ đã hủy:</h3>")
+                    .append("<table border='1' cellpadding='10' cellspacing='0' style='border-collapse:collapse; width:100%;'>")
+                    .append("<thead style='background-color:#f2f2f2;'>")
+                    .append("<tr><th>Tên dịch vụ</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th></tr>")
+                    .append("</thead><tbody>");
+
+            for (BookingServiceItem bs : bookingServices) {
+                String serviceName = petServiceDAO.getServiceById(bs.getServiceId()) != null 
+                    ? petServiceDAO.getServiceById(bs.getServiceId()).getName() 
+                    : "Dịch vụ #" + bs.getServiceId();
+                BigDecimal itemTotal = bs.getPrice().multiply(BigDecimal.valueOf(bs.getQuantity()));
+                
+                content.append("<tr>")
+                        .append("<td>").append(serviceName).append("</td>")
+                        .append("<td>").append(bs.getQuantity()).append("</td>")
+                        .append("<td>").append(String.format("%.0f", bs.getPrice().doubleValue())).append(" ₫</td>")
+                        .append("<td><strong>").append(String.format("%.0f", itemTotal.doubleValue())).append(" ₫</strong></td>")
+                        .append("</tr>");
+            }
+
+            content.append("</tbody></table>")
+                    .append("<p style='margin-top:16px; font-size:18px; text-align:right;'><strong style='color:#E74C3C;'>💰 Tổng tiền hoàn lại: ")
+                    .append(String.format("%.0f", totalAmount.doubleValue())).append(" ₫</strong></p>")
+                    .append("<hr>")
+                    .append("<p style='background-color:#FFF3CD; padding:15px; border-left:4px solid #FFC107; border-radius:4px;'>")
+                    .append("<strong>📌 Lưu ý:</strong><br>")
+                    .append("• Bạn có thể lên cửa hàng để nhận lại tiền.<br>")
+                    .append("• Vui lòng mang theo biên lai này (có thể in ra hoặc hiển thị trên điện thoại).<br>")
+                    .append("• Thời gian hoàn tiền: Trong vòng 7 ngày làm việc.")
+                    .append("</p>")
+                    .append("<hr>")
+                    .append("<p style='color:gray; font-size:13px;'>Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ hotline: <strong>0912 345 678</strong></p>")
+                    .append("</div>");
+
+            // Gửi email
+            Message message = new MimeMessage(getMailSession());
+            message.setFrom(new InternetAddress(SENDER_EMAIL, "Pets4Care", "UTF-8"));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipientEmail));
+            String subject = MimeUtility.encodeText("💰 Biên lai hoàn tiền - Booking #" + bookingId, "UTF-8", "B");
+            message.setSubject(subject);
+            message.setContent(content.toString(), "text/html; charset=UTF-8");
+
+            Transport.send(message);
+            System.out.println("✅ Đã gửi email biên lai hoàn tiền đến: " + recipientEmail);
+
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi gửi email biên lai hoàn tiền: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

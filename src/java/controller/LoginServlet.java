@@ -1,7 +1,6 @@
 package controller;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,19 +9,21 @@ import jakarta.servlet.http.Cookie;
 import model.Customer;
 import model.Staff;
 import model.Admin;
+import model.Doctor;
 import service.UserService;
 import dao.StaffDAO;
 import dao.AdminDAO;
+import dao.DoctorDAO;
 
 import java.io.IOException;
 import java.util.logging.Logger;
 
-@WebServlet("/login")
 public class LoginServlet extends HttpServlet {
 
     private UserService userService = new UserService();
     private StaffDAO staffDAO = new StaffDAO();
     private AdminDAO adminDAO = new AdminDAO();
+    private DoctorDAO doctorDAO = new DoctorDAO();
     private static final Logger logger = Logger.getLogger(LoginServlet.class.getName());
 
     @Override
@@ -48,26 +49,44 @@ public class LoginServlet extends HttpServlet {
             if (isStaffAuthenticated) {
                 Staff staff = staffDAO.findByEmail(email.trim());
                 if (staff != null) {
-                    handleStaffLogin(request, response, staff, email, rememberMe);
+                    handleStaffLogin(request, response, staff, email, password, rememberMe);
                     return;
                 }
             }
 
-            // Không phải Staff → kiểm tra Admin (bảng admin)
+            // Không phải Staff → kiểm tra Doctor (bảng Doctor)
+            boolean isDoctorAuthenticated = doctorDAO.authenticateDoctor(email.trim(), password.trim());
+            if (isDoctorAuthenticated) {
+                Doctor doctor = doctorDAO.findByEmail(email.trim());
+                if (doctor != null) {
+                    handleDoctorLogin(request, response, doctor, email, password, rememberMe);
+                    return;
+                }
+            }
+
+            // Không phải Doctor → kiểm tra Admin (bảng admin)
             Admin admin = adminDAO.loginByEmail(email.trim(), password.trim());
             if (admin == null) {
                 // fallback: cho phép dùng username trong trường email (nếu admin nhập username)
                 admin = adminDAO.login(email.trim(), password.trim());
             }
             if (admin != null) {
-                handleAdminLogin(request, response, admin, email, rememberMe);
+                handleAdminLogin(request, response, admin, email, password, rememberMe);
                 return;
             }
 
-            // Nếu không phải Staff/Admin, thử đăng nhập Customer
+            // Nếu không phải Staff/Doctor/Admin, thử đăng nhập Customer
             Customer customer = userService.loginCustomer(email.trim(), password.trim());
             if (customer != null) {
-                handleCustomerLogin(request, response, customer, email, rememberMe);
+                // Kiểm tra lại status trước khi cho đăng nhập
+                String status = customer.getStatus();
+                if (status == null || !"active".equals(status)) {
+                    logger.warning("Login blocked: Account is not active. Email: " + email + ", Status: " + status);
+                    request.setAttribute("error", "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+                    request.getRequestDispatcher("login.jsp").forward(request, response);
+                    return;
+                }
+                handleCustomerLogin(request, response, customer, email, password, rememberMe);
                 return;
             }
 
@@ -85,7 +104,7 @@ public class LoginServlet extends HttpServlet {
     }
 
     private void handleAdminLogin(HttpServletRequest request, HttpServletResponse response,
-                                  Admin admin, String email, String rememberMe)
+                                  Admin admin, String email, String password, String rememberMe)
             throws IOException {
 
         HttpSession session = request.getSession();
@@ -97,32 +116,45 @@ public class LoginServlet extends HttpServlet {
 
         logger.info("Admin login successful: " + admin.getName() + " (" + admin.getUsername() + ")");
 
-        handleRememberMe(response, email, rememberMe);
+        handleRememberMe(response, email, password, rememberMe);
 
         response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp");
     }
 
-    private void handleCustomerLogin(HttpServletRequest request, HttpServletResponse response, 
-                                   Customer customer, String email, String rememberMe) 
-                                   throws IOException {
-        
+    private void handleCustomerLogin(HttpServletRequest request, HttpServletResponse response,
+            Customer customer, String email, String password, String rememberMe)
+            throws IOException {
         HttpSession session = request.getSession();
         session.setAttribute("currentUser", customer);
-        session.setAttribute("role", "customer");
         session.setAttribute("userId", customer.getCustomerId());
         session.setAttribute("userName", customer.getName());
+        session.setAttribute("role", customer.getRole() != null ? customer.getRole().toLowerCase() : "customer");
 
-        logger.info("Customer login successful: " + customer.getName());
+        // ✅ Ghi nhớ đăng nhập trước khi chuyển trang
+        handleRememberMe(response, email, password, rememberMe);
 
-        // Xử lý Remember Me
-        handleRememberMe(response, email, rememberMe);
+        logger.info("Customer login successful: " + customer.getName() + " (" + customer.getRole() + ")");
 
-        // Chuyển về trang chủ cho customer
-        response.sendRedirect(request.getContextPath() + "/home");
+        // ✅ Điều hướng theo quyền thực tế
+        String role = customer.getRole() != null ? customer.getRole().toLowerCase() : "customer";
+        switch (role) {
+            case "staff":
+                response.sendRedirect(request.getContextPath() + "/staff/dashboard.jsp");
+                break;
+            case "doctor":
+                response.sendRedirect(request.getContextPath() + "/doctor/dashboard");
+                break;
+            case "admin":
+                response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp");
+                break;
+            default:
+                response.sendRedirect(request.getContextPath() + "/home");
+                break;
+        }
     }
 
     private void handleStaffLogin(HttpServletRequest request, HttpServletResponse response, 
-                                Staff staff, String email, String rememberMe) 
+                                Staff staff, String email, String password, String rememberMe) 
                                 throws IOException {
         
         HttpSession session = request.getSession();
@@ -137,15 +169,31 @@ public class LoginServlet extends HttpServlet {
         logger.info("Staff login successful: " + staff.getName() + " (" + staff.getPosition() + ")");
 
         // Xử lý Remember Me
-        handleRememberMe(response, email, rememberMe);
+        handleRememberMe(response, email, password, rememberMe);
 
-        // Chuyển hướng dựa trên role/position
-        if (isAdminRole) {
-            response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp");
-            return;
-        }
-        String redirectUrl = determineStaffRedirectUrl(staff.getPosition());
-        response.sendRedirect(request.getContextPath() + "/" + redirectUrl);
+        // Chuyển hướng đến trang viewOrder cho tất cả staff
+        response.sendRedirect(request.getContextPath() + "/staff/dashboard.jsp");
+    }
+
+    private void handleDoctorLogin(HttpServletRequest request, HttpServletResponse response, 
+                                 Doctor doctor, String email, String password, String rememberMe) 
+                                 throws IOException {
+        
+        HttpSession session = request.getSession();
+        session.setAttribute("doctor", doctor);
+        session.setAttribute("role", "doctor");
+        session.setAttribute("doctorId", doctor.getDoctorId());
+        session.setAttribute("doctorName", doctor.getName());
+        session.setAttribute("doctorEmail", doctor.getEmail());
+        session.setAttribute("doctorSpecialization", doctor.getSpecialization());
+
+        logger.info("Doctor login successful: " + doctor.getName() + " (" + doctor.getSpecialization() + ")");
+
+        // Xử lý Remember Me
+        handleRememberMe(response, email, password, rememberMe);
+
+        // Chuyển hướng đến trang doctor dashboard
+        response.sendRedirect(request.getContextPath() + "/doctor/dashboard");
     }
 
     private String determineStaffRedirectUrl(String position) {
@@ -158,13 +206,13 @@ public class LoginServlet extends HttpServlet {
                 return "staff/dashboard.jsp";
             case "doctor":
             case "bác sĩ thú y":
-                return "staff/bookings";
+                return "doctor/dashboard";
             default:
                 return "staff/bookings";
         }
     }
 
-    private void handleRememberMe(HttpServletResponse response, String email, String rememberMe) {
+    private void handleRememberMe(HttpServletResponse response, String email, String password, String rememberMe) {
         // Luôn lưu email để tiện lợi
         Cookie emailCookie = new Cookie("remembered_email", email);
         emailCookie.setMaxAge(30 * 24 * 60 * 60); // 30 ngày
@@ -173,8 +221,8 @@ public class LoginServlet extends HttpServlet {
 
         // Xử lý Remember Me - chỉ lưu password khi được check
         if ("on".equals(rememberMe)) {
-            // Tạo cookie cho password (30 ngày)
-            Cookie passwordCookie = new Cookie("remembered_password", "");
+            // Tạo cookie cho password (30 ngày) - khôi phục hành vi trước đây
+            Cookie passwordCookie = new Cookie("remembered_password", password);
             passwordCookie.setMaxAge(30 * 24 * 60 * 60); // 30 ngày
             passwordCookie.setPath("/");
             response.addCookie(passwordCookie);

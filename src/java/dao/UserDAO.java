@@ -8,7 +8,7 @@ import model.CartItem;
 import model.Customer;
 import model.GoogleUser;
 import model.Order;
-import model.Toy;
+import model.Product;
 import utils.DBConnection;
 import utils.PasswordUtil;
 
@@ -95,10 +95,11 @@ public class UserDAO {
             }
 
             ps = con.prepareStatement(
-                    "INSERT INTO Customer (name, email, google_id) VALUES (?, ?, ?)");
+                    "INSERT INTO Customer (name, email, google_id, status) VALUES (?, ?, ?, ?)");
             ps.setNString(1, user.getName());
             ps.setString(2, user.getEmail());
             ps.setString(3, user.getId());
+            ps.setString(4, "active"); // Set status = "active" mặc định cho tài khoản Google mới
             ps.executeUpdate();
 
             return findOrCreateByGoogle(user);
@@ -138,8 +139,8 @@ public class UserDAO {
     public List<CartItem> getOrderDetails(int orderId) {
         List<CartItem> items = new ArrayList<>();
 
-        String sql = "SELECT od.toy_id, od.quantity, od.unit_price, t.name, t.description "
-                + "FROM Order_Detail od JOIN Toy t ON od.toy_id = t.toy_id "
+        String sql = "SELECT od.product_id, od.quantity, od.unit_price, p.name, p.description "
+                + "FROM Order_Detail od JOIN Products p ON od.product_id = p.product_id "
                 + "WHERE od.order_id = ?";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -148,13 +149,13 @@ public class UserDAO {
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                Toy toy = new Toy();
-                toy.setToyId(rs.getInt("toy_id"));
-                toy.setName(rs.getString("name"));
-                toy.setDescription(rs.getString("description"));
-                toy.setPrice(rs.getDouble("unit_price"));
+                Product product = new Product();
+                product.setProductId(rs.getInt("product_id"));
+                product.setName(rs.getString("name"));
+                product.setDescription(rs.getString("description"));
+                product.setPrice(rs.getDouble("unit_price"));
 
-                CartItem item = new CartItem(toy, rs.getInt("quantity"));
+                CartItem item = new CartItem(product, rs.getInt("quantity"));
                 items.add(item);
             }
 
@@ -248,6 +249,7 @@ public class UserDAO {
         customer.setPhone(rs.getString("phone"));
         customer.setStatus(rs.getString("status"));
         customer.setGoogleId(rs.getString("google_id"));
+        customer.setRole(rs.getString("role"));
         return customer;
     }
 
@@ -350,4 +352,15 @@ public class UserDAO {
         return 0;
     }
 
+    public boolean updateRole(int customerId, String role) {
+        String sql = "UPDATE Customer SET role = ? WHERE customer_id = ?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, role);
+            ps.setInt(2, customerId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
 }

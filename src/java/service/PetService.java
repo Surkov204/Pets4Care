@@ -92,7 +92,6 @@ public class PetService implements IPetService {
         return petDAO.searchPetsByName(keyword.trim());
     }
     
-    @Override
     public List<Pet> getPetsBySpecies(String species) {
         // Validate species
         if (species == null || species.trim().isEmpty()) {
@@ -109,12 +108,10 @@ public class PetService implements IPetService {
         return petDAO.countPetsBySpecies(species.trim());
     }
     
-    @Override
     public Map<String, Integer> getPetStatistics() {
         return petDAO.getPetStatistics();
     }
     
-    @Override
     public boolean validatePetInfo(Pet pet) {
         System.out.println("=== DEBUG VALIDATION ===");
         if (pet == null) {
@@ -123,7 +120,7 @@ public class PetService implements IPetService {
         }
         
         // Validate pet name
-        if (pet.getPetName() == null || pet.getPetName().trim().length() < 2) {
+        if (pet.getPetName() == null || pet.getPetName().trim().isEmpty()) {
             System.out.println("Invalid pet name: " + pet.getPetName());
             return false;
         }
@@ -135,7 +132,7 @@ public class PetService implements IPetService {
         }
         
         // Validate breed
-        if (pet.getBreed() == null || pet.getBreed().trim().length() < 2) {
+        if (pet.getBreed() == null || pet.getBreed().trim().isEmpty()) {
             System.out.println("Invalid breed: " + pet.getBreed());
             return false;
         }
@@ -162,7 +159,6 @@ public class PetService implements IPetService {
         return true;
     }
     
-    @Override
     public List<Pet> getPetsByPage(int offset, int limit) {
         // Validate parameters
         if (offset < 0 || limit <= 0) {
@@ -177,7 +173,6 @@ public class PetService implements IPetService {
         return allPets.subList(start, end);
     }
     
-    @Override
     public int countAllPets() {
         return getAllPets().size();
     }

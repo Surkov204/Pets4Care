@@ -4,6 +4,7 @@ import model.Booking;
 import utils.DBConnection;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.*;
 
 public class BookingDAO implements IBookingDAO {
@@ -90,7 +91,7 @@ public List<Booking> getAllBookings() {
         String sql =
             "SELECT b.*, " +
             "       c.name  AS customer_name, c.phone AS customer_phone, c.email AS customer_email, " +
-            "       p.name  AS pet_name,      p.species AS pet_type, " +
+            "       p.pet_name  AS pet_name,      p.species AS pet_type, " +
             "       s.name  AS staff_name, " +
             "       d.name  AS doctor_name, " +
             "       (SELECT STRING_AGG(ps.name, ', ') " +
@@ -126,6 +127,41 @@ public List<Booking> getAllBookings() {
     }
 
     // =========================
+    // AVAILABILITY CHECK (SPA)
+    // =========================
+    /**
+     * Kiểm tra khung giờ có bị trùng với bất kỳ booking Spa nào đang active hay không
+     * Logic overlap: NOT (end <= existing_start OR start >= existing_end)
+     */
+    public boolean isSpaTimeSlotAvailable(java.sql.Timestamp start, java.sql.Timestamp end) {
+        final String sql =
+            "SELECT COUNT(*) AS cnt\n" +
+            "FROM dbo.Booking b\n" +
+            "JOIN dbo.Booking_Service bs ON bs.booking_id = b.booking_id\n" +
+            "JOIN dbo.PetService ps ON ps.service_id = bs.service_id\n" +
+            "WHERE ps.service_type = 'spa'\n" +
+            "  AND b.status IN (N'Đã thanh toán', N'Chờ xác nhận', N'Đã xác nhận', 'pending', 'confirmed')\n" +
+            "  AND NOT (b.appointment_end <= ? OR b.appointment_start >= ?)";
+
+        try (java.sql.Connection conn = DBConnection.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTimestamp(1, start);
+            ps.setTimestamp(2, end);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int cnt = rs.getInt("cnt");
+                    return cnt == 0;
+                }
+            }
+        } catch (java.sql.SQLException e) {
+            logger.severe("Error checking spa time slot availability: " + e.getMessage());
+            e.printStackTrace();
+        }
+        // Nếu lỗi, trả về true để không chặn luồng đặt (an toàn mềm)
+        return true;
+    }
+
+    // =========================
     // GET BY CUSTOMER
     // =========================
     @Override
@@ -134,20 +170,20 @@ public List<Booking> getAllBookings() {
         String sql =
             "SELECT b.*, " +
             "       c.name  AS customer_name, c.phone AS customer_phone, c.email AS customer_email, " +
-            "       p.name  AS pet_name,      p.species AS pet_type, " +
+            "       p.pet_name  AS pet_name,      p.species AS pet_type, " +
             "       s.name  AS staff_name, " +
             "       d.name  AS doctor_name, " +
             "       (SELECT STRING_AGG(sv.name, ', ') " +
-            "          FROM dbo.BookingService bs " +
-            "          JOIN dbo.Service sv ON sv.service_id = bs.service_id " +
+            "          FROM dbo.Booking_Service bs " +
+            "          JOIN dbo.PetService sv ON sv.service_id = bs.service_id " +
             "         WHERE bs.booking_id = b.booking_id) AS service_names " +
             "FROM dbo.Booking b " +
             "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
-            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.pet_id " +
+            "LEFT JOIN dbo.PET      p ON b.pet_id      = p.id " +
             "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
             "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
             "WHERE b.customer_id = ? " +
-            "ORDER BY b.appointment_start DESC";
+            "ORDER BY b.created_at DESC, b.appointment_start DESC";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -167,6 +203,47 @@ public List<Booking> getAllBookings() {
     }
 
     // =========================
+    // GET BY PET ID
+    // =========================
+    @Override
+    public List<Booking> getBookingsByPetId(int petId) {
+        List<Booking> bookings = new ArrayList<>();
+        String sql =
+            "SELECT b.*, " +
+            "       c.name  AS customer_name, c.phone AS customer_phone, c.email AS customer_email, " +
+            "       p.pet_name  AS pet_name,      p.species AS pet_type, " +
+            "       s.name  AS staff_name, " +
+            "       d.name  AS doctor_name, " +
+            "       (SELECT STRING_AGG(sv.name, ', ') " +
+            "          FROM dbo.Booking_Service bs " +
+            "          JOIN dbo.PetService sv ON sv.service_id = bs.service_id " +
+            "         WHERE bs.booking_id = b.booking_id) AS service_names " +
+            "FROM dbo.Booking b " +
+            "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
+            "LEFT JOIN dbo.PET      p ON b.pet_id      = p.id " +
+            "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
+            "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
+            "WHERE b.pet_id = ? " +
+            "ORDER BY b.appointment_start DESC";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, petId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Booking bk = mapBookingFromResultSet(rs);
+                    bk.setServiceNames(rs.getString("service_names"));
+                    bookings.add(bk);
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error getting bookings by pet ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return bookings;
+    }
+
+    // =========================
     // GET BY STAFF
     // =========================
     @Override
@@ -179,12 +256,12 @@ public List<Booking> getAllBookings() {
             "       s.name  AS staff_name, " +
             "       d.name  AS doctor_name, " +
             "       (SELECT STRING_AGG(sv.name, ', ') " +
-            "          FROM dbo.BookingService bs " +
-            "          JOIN dbo.Service sv ON sv.service_id = bs.service_id " +
+            "          FROM dbo.Booking_Service bs " +
+            "          JOIN dbo.PetService sv ON sv.service_id = bs.service_id " +
             "         WHERE bs.booking_id = b.booking_id) AS service_names " +
             "FROM dbo.Booking b " +
             "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
-            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.pet_id " +
+            "LEFT JOIN dbo.PET      p ON b.pet_id      = p.id " +
             "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
             "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
             "WHERE b.staff_id = ? " +
@@ -395,9 +472,21 @@ public List<Booking> getAllBookings() {
             ps.setTimestamp(4, booking.getAppointmentEnd());
             ps.setString(5, booking.getStatus());
             ps.setString(6, booking.getNote());
-            ps.setInt(7, booking.getDoctorId());
-            ps.setInt(8, booking.getStaffId());
-            ps.setInt(9, booking.getOrderId());
+            if (booking.getDoctorId() > 0) {
+                ps.setInt(7, booking.getDoctorId());
+            } else {
+                ps.setNull(7, java.sql.Types.INTEGER);
+            }
+            if (booking.getStaffId() > 0) {
+                ps.setInt(8, booking.getStaffId());
+            } else {
+                ps.setNull(8, java.sql.Types.INTEGER);
+            }
+            if (booking.getOrderId() > 0) {
+                ps.setInt(9, booking.getOrderId());
+            } else {
+                ps.setNull(9, java.sql.Types.INTEGER);
+            }
             ps.setTimestamp(10, booking.getCreatedAt());
 
             int rows = ps.executeUpdate();
@@ -455,11 +544,82 @@ public List<Booking> getAllBookings() {
         String sql = "UPDATE dbo.Booking SET status = ? WHERE booking_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            // Log trước khi update
+            logger.info("=== UPDATE BOOKING STATUS ===");
+            logger.info("Booking ID: " + bookingId);
+            logger.info("New Status: '" + status + "'");
+            logger.info("Status length: " + status.length());
+            
+            // Kiểm tra booking có tồn tại không
+            String checkSql = "SELECT booking_id, status FROM dbo.Booking WHERE booking_id = ?";
+            try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+                checkPs.setInt(1, bookingId);
+                try (ResultSet rs = checkPs.executeQuery()) {
+                    if (rs.next()) {
+                        String currentStatus = rs.getString("status");
+                        logger.info("Current status in DB: '" + currentStatus + "'");
+                    } else {
+                        logger.severe("Booking ID " + bookingId + " does not exist in database!");
+                        return false;
+                    }
+                }
+            }
+            
+            // Thực hiện update
             ps.setString(1, status);
             ps.setInt(2, bookingId);
-            return ps.executeUpdate() > 0;
+            int rowsAffected = ps.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                logger.info("✅ Successfully updated booking ID " + bookingId + " status to: '" + status + "'");
+                logger.info("Rows affected: " + rowsAffected);
+                
+                // Verify update
+                try (PreparedStatement verifyPs = conn.prepareStatement(checkSql)) {
+                    verifyPs.setInt(1, bookingId);
+                    try (ResultSet rs = verifyPs.executeQuery()) {
+                        if (rs.next()) {
+                            String updatedStatus = rs.getString("status");
+                            logger.info("Verified status after update: '" + updatedStatus + "'");
+                            if (!status.equals(updatedStatus)) {
+                                logger.warning("⚠️ Status mismatch! Expected: '" + status + "', Got: '" + updatedStatus + "'");
+                            }
+                        }
+                    }
+                }
+                return true;
+            } else {
+                logger.warning("⚠️ No rows affected when updating booking ID " + bookingId + " status to: '" + status + "'");
+                logger.warning("This usually means the booking_id does not exist or the status is already set to this value");
+                return false;
+            }
         } catch (SQLException e) {
-            logger.severe("Error updating booking status: " + e.getMessage());
+            logger.severe("❌ SQL Error updating booking status");
+            logger.severe("Booking ID: " + bookingId + ", Status: '" + status + "'");
+            logger.severe("SQL Error Code: " + e.getErrorCode() + ", SQL State: " + e.getSQLState());
+            logger.severe("Error Message: " + e.getMessage());
+            
+            // Kiểm tra nếu là lỗi constraint violation
+            if (e.getErrorCode() == 547 || e.getSQLState().startsWith("23")) {
+                logger.severe("🚫 CONSTRAINT VIOLATION DETECTED!");
+                logger.severe("Status '" + status + "' is NOT allowed by constraint CK_Booking_Status_Allowed");
+                logger.severe("Please run fix_booking_constraint.sql to update the constraint");
+                logger.severe("Allowed statuses should be:");
+                logger.severe("  - Chờ xác nhận");
+                logger.severe("  - Đã xác nhận");
+                logger.severe("  - Đã thanh toán");
+                logger.severe("  - Đã hủy");
+                logger.severe("  - Yêu cầu hoàn tiền");
+                logger.severe("  - Hoàn thành");
+                logger.severe("  - Chưa thanh toán");
+            }
+            e.printStackTrace();
+        } catch (Exception e) {
+            logger.severe("❌ Unexpected error updating booking status");
+            logger.severe("Booking ID: " + bookingId + ", Status: '" + status + "'");
+            logger.severe("Error Type: " + e.getClass().getName());
+            logger.severe("Error Message: " + e.getMessage());
             e.printStackTrace();
         }
         return false;
@@ -589,5 +749,180 @@ public List<Booking> getAllBookings() {
 
     return booking;
 }
+
+    // =========================
+    // AUTO CANCEL EXPIRED DEPOSIT BOOKINGS
+    // =========================
+    public int autoCancelExpiredDepositBookings() {
+        String sql = """
+            UPDATE b 
+            SET b.status = 'cancelled'
+            FROM dbo.Booking b
+            INNER JOIN dbo.[Order] o ON b.order_id = o.order_id
+            WHERE b.status IN ('pending', 'confirmed')
+            AND o.payment_status = 'paid'
+            AND b.appointment_start < GETDATE()
+            """;
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            int rowsAffected = ps.executeUpdate();
+            if (rowsAffected > 0) {
+                logger.info("Auto-cancelled " + rowsAffected + " expired deposit bookings");
+            }
+            return rowsAffected;
+            
+        } catch (SQLException e) {
+            logger.severe("Error auto-cancelling expired deposit bookings: " + e.getMessage());
+            e.printStackTrace();
+            return 0;
+        }
+    }
+    
+    // =========================
+    // DOCTOR SPECIFIC METHODS
+    // =========================
+    
+    /**
+     * Lấy lịch hẹn của doctor theo ngày cụ thể
+     */
+    public List<Booking> getBookingsByDoctorAndDate(int doctorId, LocalDate date) {
+        String sql = """
+            SELECT b.*, 
+                   c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email,
+                   p.pet_name AS pet_name, p.species AS pet_type,
+                   s.name AS staff_name,
+                   d.name AS doctor_name,
+                   (SELECT STRING_AGG(ps.name, ', ')
+                      FROM dbo.Booking_Service bs
+                      JOIN dbo.PetService ps ON ps.service_id = bs.service_id
+                      WHERE bs.booking_id = b.booking_id) AS service_names
+            FROM dbo.Booking b
+            LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id
+            LEFT JOIN dbo.Pet p ON b.pet_id = p.id
+            LEFT JOIN dbo.Staff s ON b.staff_id = s.staff_id
+            LEFT JOIN dbo.Doctor d ON b.doctor_id = d.doctor_id
+            WHERE b.doctor_id = ? 
+            AND CAST(b.appointment_start AS date) = ?
+            ORDER BY b.appointment_start ASC
+            """;
+        
+        List<Booking> bookings = new ArrayList<>();
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, doctorId);
+            ps.setDate(2, java.sql.Date.valueOf(date));
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    bookings.add(mapBookingFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error getting bookings by doctor and date: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return bookings;
+    }
+    
+    /**
+     * Lấy lịch hẹn của doctor trong khoảng thời gian
+     */
+    public List<Booking> getBookingsByDoctorAndDateRange(int doctorId, LocalDate startDate, LocalDate endDate) {
+        String sql = """
+            SELECT b.*, 
+                   c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email,
+                   p.pet_name AS pet_name, p.species AS pet_type,
+                   s.name AS staff_name,
+                   d.name AS doctor_name,
+                   (SELECT STRING_AGG(ps.name, ', ')
+                      FROM dbo.Booking_Service bs
+                      JOIN dbo.PetService ps ON ps.service_id = bs.service_id
+                      WHERE bs.booking_id = b.booking_id) AS service_names
+            FROM dbo.Booking b
+            LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id
+            LEFT JOIN dbo.Pet p ON b.pet_id = p.id
+            LEFT JOIN dbo.Staff s ON b.staff_id = s.staff_id
+            LEFT JOIN dbo.Doctor d ON b.doctor_id = d.doctor_id
+            WHERE b.doctor_id = ? 
+            AND CAST(b.appointment_start AS date) BETWEEN ? AND ?
+            ORDER BY b.appointment_start ASC
+            """;
+        
+        List<Booking> bookings = new ArrayList<>();
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, doctorId);
+            ps.setDate(2, java.sql.Date.valueOf(startDate));
+            ps.setDate(3, java.sql.Date.valueOf(endDate));
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    bookings.add(mapBookingFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error getting bookings by doctor and date range: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return bookings;
+    }
+    
+    /**
+     * Thêm ghi chú cho lịch hẹn
+     */
+    public boolean updateBookingNote(int bookingId, String note) {
+        String sql = "UPDATE dbo.Booking SET note = ? WHERE booking_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setString(1, note);
+            ps.setInt(2, bookingId);
+            
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            logger.severe("Error updating booking note: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Cập nhật appointment_start và note của booking
+     */
+    public boolean updateBooking(int bookingId, Timestamp appointmentStart, String note) {
+        String sql = "UPDATE dbo.Booking SET appointment_start = ?, note = ? WHERE booking_id = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setTimestamp(1, appointmentStart);
+            ps.setString(2, note);
+            ps.setInt(3, bookingId);
+            
+            int rowsUpdated = ps.executeUpdate();
+            return rowsUpdated > 0;
+            
+        } catch (Exception e) {
+            logger.severe("Exception khi cập nhật booking ID " + bookingId + ": " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public List<Booking> getAllBookingsForStaffView() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
 }
 

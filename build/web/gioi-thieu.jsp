@@ -11,9 +11,9 @@
 
     if (cart != null) {
         for (CartItem item : cart.values()) {
-            if (item != null && item.getToy() != null) {
+            if (item != null && item.getProduct() != null) {
                 cartCount += item.getQuantity();
-                cartTotal += item.getQuantity() * item.getToy().getPrice();
+                cartTotal += item.getQuantity() * item.getProduct().getPrice();
             }
         }
     }
@@ -22,6 +22,7 @@
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>🐾 Giới thiệu - Petcity</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
@@ -98,12 +99,11 @@
             <ul>
                 <li><a href="<%= request.getContextPath()%>/home">TRANG CHỦ</a></li>
                 <li><a href="spa-service.jsp">DỊCH VỤ</a></li>
-                <li><a href="dat-lich-kham.jsp">ĐẶT LỊCH KHÁM</a></li>
                 <li><a href="search?categoryId=2">SẢN PHẨM</a></li>
                 <li><a href="doctor.jsp">BÁC SĨ</a></li>
                 <li><a href="gioi-thieu.jsp" style="background: rgba(255, 255, 255, 0.2);">GIỚI THIỆU</a></li>
                 <li><a href="tin-tuc.jsp">TIN TỨC</a></li>
-                <li><a href="lien-he.jsp">LIÊN HỆ</a></li>
+                <li><a href="<%= request.getContextPath()%>/home">LIÊN HỆ</a></li>
             </ul>
         </nav>
 

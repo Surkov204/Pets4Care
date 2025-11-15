@@ -31,15 +31,36 @@ public class PetInfoServlet extends HttpServlet {
                 return;
             }
             
-            // Lấy thông tin pet của customer
+            String action = request.getParameter("action");
+            String petIdParam = request.getParameter("petId");
+            
+            // Nếu có action=edit và petId, load pet để edit
+            if ("edit".equals(action) && petIdParam != null && !petIdParam.trim().isEmpty()) {
+                try {
+                    int petId = Integer.parseInt(petIdParam);
+                    dao.PetDAO petDAO = new dao.PetDAO();
+                    Pet petToEdit = petDAO.getPetByIdAndCustomerId(petId, customer.getCustomerId());
+                    
+                    if (petToEdit != null) {
+                        request.setAttribute("petToEdit", petToEdit);
+                    } else {
+                        request.getSession().setAttribute("errorMessage", "Không tìm thấy thú cưng để chỉnh sửa!");
+                    }
+                } catch (NumberFormatException e) {
+                    request.getSession().setAttribute("errorMessage", "ID thú cưng không hợp lệ!");
+                }
+            }
+            
+            // Lấy danh sách pets của customer (1 customer có thể có nhiều pets)
             System.out.println("=== DEBUG PET INFO SERVLET ===");
             System.out.println("Customer ID: " + customer.getCustomerId());
-            Pet pet = petService.getPetByCustomerId(customer.getCustomerId());
-            System.out.println("Pet loaded: " + (pet != null ? pet.getPetName() : "null"));
+            dao.PetDAO petDAO = new dao.PetDAO();
+            java.util.List<Pet> pets = petDAO.getPetsByCustomerId(customer.getCustomerId());
+            System.out.println("Pets loaded: " + (pets != null ? pets.size() : 0));
             
-            // Set pet vào request để JSP có thể hiển thị
-            request.setAttribute("pet", pet);
-            request.setAttribute("hasPet", pet != null);
+            // Set danh sách pets vào request để JSP có thể hiển thị
+            request.setAttribute("pets", pets != null ? pets : new java.util.ArrayList<>());
+            request.setAttribute("petsCount", pets != null ? pets.size() : 0);
             
             // Lấy message từ session (nếu có)
             String successMessage = (String) request.getSession().getAttribute("successMessage");
@@ -68,7 +89,48 @@ public class PetInfoServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Redirect POST requests to GET
-        doGet(request, response);
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
+        
+        try {
+            // Lấy customer từ session
+            Customer customer = (Customer) request.getSession().getAttribute("currentUser");
+            if (customer == null) {
+                response.sendRedirect(request.getContextPath() + "/login.jsp");
+                return;
+            }
+            
+            String action = request.getParameter("action");
+            
+            if ("delete".equals(action)) {
+                // Xóa pet
+                String petIdStr = request.getParameter("petId");
+                if (petIdStr != null && !petIdStr.trim().isEmpty()) {
+                    try {
+                        int petId = Integer.parseInt(petIdStr);
+                        dao.PetDAO petDAO = new dao.PetDAO();
+                        boolean success = petDAO.deletePetById(petId, customer.getCustomerId());
+                        
+                        if (success) {
+                            request.getSession().setAttribute("successMessage", "Xóa thú cưng thành công!");
+                        } else {
+                            request.getSession().setAttribute("errorMessage", "Không thể xóa thú cưng. Có thể thú cưng không tồn tại hoặc không thuộc về bạn.");
+                        }
+                    } catch (NumberFormatException e) {
+                        request.getSession().setAttribute("errorMessage", "ID thú cưng không hợp lệ!");
+                    }
+                } else {
+                    request.getSession().setAttribute("errorMessage", "ID thú cưng không được để trống!");
+                }
+            }
+            
+            // Redirect về GET để hiển thị lại danh sách
+            response.sendRedirect(request.getContextPath() + "/petinfoservlet");
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.getSession().setAttribute("errorMessage", "Có lỗi xảy ra khi xóa thú cưng!");
+            response.sendRedirect(request.getContextPath() + "/petinfoservlet");
+        }
     }
 }

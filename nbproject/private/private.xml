@@ -3,38 +3,6 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-<<<<<<< HEAD
-            <file>file:/D:/Projects/Pets4Care/web/admin/dashboard.jsp</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/utils/DBConnection.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/PetInfoServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/StaffCustomerServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/StaffLogoutServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/web/WEB-INF/web.xml</file>
-            <file>file:/D:/Projects/Pets4Care/web/resetpassword.jsp</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/service/UserService.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/StaffHomeServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/utils/GoogleUtils.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/utils/EmailUtils.java</file>
-            <file>file:/D:/Projects/Pets4Care/web/staff/chatCustomer.jsp</file>
-            <file>file:/D:/Projects/Pets4Care/web/searchResult.jsp</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/utils/GoogleConstants.java</file>
-            <file>file:/D:/Projects/Pets4Care/nbproject/build-impl.xml~</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/BuyNowServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/web/css/staff.css</file>
-            <file>file:/D:/Projects/Pets4Care/web/spa-cart.jsp</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/CartServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/dao/ProductDAO.java</file>
-            <file>file:/D:/Projects/Pets4Care/web/chatbox.jsp</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/StaffLoginServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/service/SupplierService.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/dao/UserDAO.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/LoginServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/dao/BookingDAO.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/dao/StaffDAO.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/model/Staff.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/controller/SearchServlet.java</file>
-            <file>file:/D:/Projects/Pets4Care/src/java/dao/MedicalRecordDAO.java</file>
-=======
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/Order.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/CartItem.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/Supplier.java</file>
@@ -292,7 +260,6 @@
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/MedicalRecord.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/Doctor.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/DoctorPayrollDAO.java</file>
->>>>>>> origin/master
         </group>
     </open-files>
 </project-private>

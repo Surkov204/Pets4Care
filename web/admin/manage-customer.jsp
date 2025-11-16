@@ -393,8 +393,8 @@
             </div>
 
             <!-- Form tìm kiếm và lọc -->
-            <form method="get" action="customer" class="search-form">
-                <input type="text" name="keyword" placeholder="Tìm theo tên hoặc email..." value="<%= keyword%>">
+            <form method="get" action="manage-customer" class="search-form">
+                <input type="text" name="keyword" placeholder="Tìm theo tên..." value="<%= keyword%>">
                 <select name="status">
                     <option value="all" <%= "all".equals(statusFilter) ? "selected" : ""%>>-- Tất cả trạng thái --</option>
                     <option value="active" <%= "active".equals(statusFilter) ? "selected" : ""%>>Đang hoạt động</option>
@@ -411,7 +411,6 @@
                             <th style="width: 60px;">ID</th>
                             <th>Tên</th>
                             <th>Email</th>
-                            <th style="width: 150px;">Google ID</th>
                             <th style="width: 120px;">SĐT</th>
                             <th>Địa chỉ</th>
                             <th style="width: 120px;" class="text-center">Đơn gần nhất</th>
@@ -429,9 +428,6 @@
                             <td><%= c.getCustomerId()%></td>
                             <td><strong><%= c.getName()%></strong></td>
                             <td><%= c.getEmail()%></td>
-                            <td class="text-truncate" title="<%= c.getGoogleId() != null ? c.getGoogleId() : "-"%>">
-                                <%= c.getGoogleId() != null ? c.getGoogleId() : "-"%>
-                            </td>
                             <td><%= c.getPhone()%></td>
                             <td class="text-truncate" title="<%= c.getAddressCustomer()%>">
                                 <%= c.getAddressCustomer()%>
@@ -462,7 +458,7 @@
                                 <form action="manage-customer" method="post" style="margin: 0;" onsubmit="return confirm('Bạn có chắc muốn <%= c.getStatus() != null && c.getStatus().equals("active") ? "khóa" : "mở khóa"%> tài khoản này?')">
                                     <input type="hidden" name="action" value="toggle-status" />
                                     <input type="hidden" name="customerId" value="<%= c.getCustomerId()%>" />
-                                    <input type="hidden" name="currentStatus" value="<%= c.getStatus()%>" />
+                                    <input type="hidden" name="currentStatus" value="<%= c.getStatus() != null ? c.getStatus() : ""%>" />
                                     <% if (c.getStatus() != null && c.getStatus().equals("active")) { %>
                                     <button type="submit" class="btn-action btn-lock">🔒 Khóa</button>
                                     <% } else { %>
@@ -474,7 +470,7 @@
                         <% }
                         } else { %>
                         <tr>
-                            <td colspan="10" class="empty-state">Không tìm thấy khách hàng nào.</td>
+                            <td colspan="9" class="empty-state">Không tìm thấy khách hàng nào.</td>
                         </tr>
                         <% }%>
                     </tbody>

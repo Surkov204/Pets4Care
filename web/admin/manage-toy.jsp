@@ -283,7 +283,7 @@
 
             <!-- Form tìm kiếm và lọc -->
             <form method="get" action="toys" class="search-form">
-                <input type="text" name="keyword" placeholder="Tìm theo tên hoặc ID" value="${param.keyword}">
+                <input type="text" name="keyword" placeholder="Tìm theo tên sản phẩm" value="${param.keyword}">
                 <select name="category">
                     <option value="">-- Tất cả danh mục --</option>
                     <c:forEach var="cat" items="${categories}">

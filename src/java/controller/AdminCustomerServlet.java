@@ -70,13 +70,23 @@ public class AdminCustomerServlet extends HttpServlet {
             int customerId = Integer.parseInt(request.getParameter("customerId"));
             String currentStatus = request.getParameter("currentStatus");
 
-            // Đảo trạng thái
-            String newStatus = "active".equals(currentStatus) ? "inactive" : "active";
+            // Đảo trạng thái - xử lý cả trường hợp null hoặc chuỗi "null"
+            String newStatus;
+            if (currentStatus != null && !currentStatus.trim().isEmpty() && "active".equalsIgnoreCase(currentStatus.trim())) {
+                newStatus = "inactive";
+            } else {
+                // Nếu status là null, "null", "inactive" hoặc bất kỳ giá trị nào khác -> set thành "active"
+                newStatus = "active";
+            }
+            
+            System.out.println("Toggle status - Customer ID: " + customerId + ", Current: " + currentStatus + ", New: " + newStatus);
             customerDAO.updateStatus(customerId, newStatus);
+            System.out.println("Status updated successfully to: " + newStatus);
         }
 
         // Redirect về trang quản lý
         response.sendRedirect("manage-customer");
     }
 }
+
 

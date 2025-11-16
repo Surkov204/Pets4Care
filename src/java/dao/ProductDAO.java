@@ -110,14 +110,13 @@ public class ProductDAO implements IProductDAO {
                     "FROM Products p " +
                     "LEFT JOIN ProductCategory pc ON p.category_id = pc.category_id " +
                     "LEFT JOIN Supplier s ON p.supplier_id = s.supplier_id " +
-                    "WHERE p.name LIKE ? OR p.description LIKE ?";
+                    "WHERE p.name LIKE ?";
 
         try (Connection con = DBConnection.getConnection(); 
              PreparedStatement ps = con.prepareStatement(sql)) {
             
             String searchPattern = "%" + keyword + "%";
             ps.setString(1, searchPattern);
-            ps.setString(2, searchPattern);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

@@ -668,10 +668,56 @@ public class SpaBookingServlet extends HttpServlet {
             
             // Đã xóa tất cả validation thời gian - cho phép đặt bất kỳ giờ nào, nhiều khách có thể đặt cùng giờ
 
+            // Tính tổng tiền từ giỏ hàng
+            BigDecimal totalAmount = BigDecimal.ZERO;
+            for (Map.Entry<Integer, Integer> entry : spaCart.entrySet()) {
+                int serviceId = entry.getKey();
+                int quantity = entry.getValue();
+                PetServiceModel service = spaBookingService.getSpaServiceById(serviceId);
+                if (service != null) {
+                    totalAmount = totalAmount.add(service.getPrice().multiply(BigDecimal.valueOf(quantity)));
+                }
+            }
+
             // Tạo booking
             boolean success = spaBookingService.createSpaBookingFromCart(customer, spaCart, appointmentStart, note);
             
             if (success) {
+                // Lấy booking_id vừa tạo để tạo payment record
+                try {
+                    // Tìm booking mới nhất của customer với appointment_start tương ứng
+                    List<Booking> recentBookings = spaBookingService.getSpaBookingsByCustomerId(customer.getCustomerId());
+                    Booking newBooking = null;
+                    for (Booking b : recentBookings) {
+                        if (b.getAppointmentStart() != null && 
+                            Math.abs(b.getAppointmentStart().getTime() - appointmentStart.getTime()) < 60000) { // ±1 phút
+                            newBooking = b;
+                            break;
+                        }
+                    }
+                    
+                    if (newBooking != null) {
+                        // Tạo payment record với status 'pending'
+                        String description = "Thanh toan Spa #" + newBooking.getBookingId();
+                        int paymentId = payOSService.createPaymentRecord("spa", newBooking.getBookingId(), 
+                            customer.getCustomerId(), totalAmount.doubleValue(), 0, description);
+                        if (paymentId > 0) {
+                            // Cập nhật payment method và status
+                            try (java.sql.Connection conn = utils.DBConnection.getConnection();
+                                 java.sql.PreparedStatement ps = conn.prepareStatement(
+                                     "UPDATE dbo.Payment SET payment_method = 'CASH', payment_status = 'pending' " +
+                                     "WHERE payment_id = ?")) {
+                                ps.setInt(1, paymentId);
+                                ps.executeUpdate();
+                                logger.info("✅ Payment record created for spa booking #" + newBooking.getBookingId());
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.warning("Could not create payment record for spa booking: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                
                 // Xóa giỏ hàng Spa sau khi đặt lịch thành công
                 HttpSession session = request.getSession(true);
                 session.removeAttribute("spaCart");
@@ -1157,6 +1203,56 @@ public class SpaBookingServlet extends HttpServlet {
             
             if (success) {
                 logger.info("Cancel booking ID " + bookingId + " successful");
+                
+                // Cập nhật hoặc tạo payment record với status 'cancelled'
+                try {
+                    // Tìm payment record theo booking_id
+                    try (java.sql.Connection conn = utils.DBConnection.getConnection();
+                         java.sql.PreparedStatement ps = conn.prepareStatement(
+                             "SELECT payment_id FROM dbo.Payment WHERE payment_type = 'spa' AND reference_id = ?")) {
+                        ps.setInt(1, bookingId);
+                        try (java.sql.ResultSet rs = ps.executeQuery()) {
+                            if (rs.next()) {
+                                // Cập nhật payment record hiện có
+                                int paymentId = rs.getInt("payment_id");
+                                try (java.sql.PreparedStatement ps2 = conn.prepareStatement(
+                                    "UPDATE dbo.Payment SET payment_status = 'cancelled' WHERE payment_id = ?")) {
+                                    ps2.setInt(1, paymentId);
+                                    ps2.executeUpdate();
+                                    logger.info("✅ Updated payment record #" + paymentId + " to cancelled");
+                                }
+                            } else {
+                                // Tạo payment record mới với status 'cancelled'
+                                // Tính tổng tiền từ booking services
+                                BigDecimal totalAmount = BigDecimal.ZERO;
+                                List<BookingServiceItem> services = spaBookingService.getSpaBookingDetails(bookingId);
+                                for (BookingServiceItem item : services) {
+                                    if (item.getPrice() != null) {
+                                        totalAmount = totalAmount.add(
+                                            item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+                                    }
+                                }
+                                
+                                String description = "Thanh toan Spa #" + bookingId + " (da huy)";
+                                int paymentId = payOSService.createPaymentRecord("spa", bookingId, 
+                                    customer.getCustomerId(), totalAmount.doubleValue(), 0, description);
+                                if (paymentId > 0) {
+                                    try (java.sql.PreparedStatement ps3 = conn.prepareStatement(
+                                        "UPDATE dbo.Payment SET payment_method = 'CASH', payment_status = 'cancelled' " +
+                                        "WHERE payment_id = ?")) {
+                                        ps3.setInt(1, paymentId);
+                                        ps3.executeUpdate();
+                                        logger.info("✅ Created payment record #" + paymentId + " with cancelled status");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.warning("Could not update/create payment record for cancelled spa booking: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                
                 // Thêm flag để hiển thị popup hoàn tiền
                 session.setAttribute("showRefundPopup", "true");
                 session.setAttribute("successMessage", "Đã hủy đặt lịch Spa thành công. Vui lòng đến cửa hàng để được hoàn tiền.");

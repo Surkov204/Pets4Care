@@ -3,12 +3,13 @@ package service;
 import dao.BookingDAO;
 import dao.BookingServiceDAO;
 import dao.PetServiceDAO;
+import dao.DoctorDAO;
 import model.Booking;
 import model.BookingServiceItem;
 import model.Customer;
 import model.Pet;
+import model.Doctor;
 
-import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class HealthCheckBookingService {
     private PetServiceDAO petServiceDAO;
     private PetService petService;
     private dao.PetDAO petDAO;
+    private DoctorDAO doctorDAO;
 
     public HealthCheckBookingService() {
         this.bookingDAO = new BookingDAO();
@@ -37,6 +39,7 @@ public class HealthCheckBookingService {
         this.petServiceDAO = new PetServiceDAO();
         this.petService = new PetService();
         this.petDAO = new dao.PetDAO();
+        this.doctorDAO = new DoctorDAO();
     }
     
     /**
@@ -130,11 +133,11 @@ public class HealthCheckBookingService {
             booking.setPetId(pet.getId());
             booking.setAppointmentStart(appointmentStart);
             booking.setAppointmentEnd(appointmentEnd);
-            booking.setStatus("pending"); // Changed to pending status
+            booking.setStatus("Hoàn thành"); // Status là "Hoàn thành" sau khi thanh toán thành công
             booking.setNote(note != null ? note.trim() : "");
             booking.setCreatedAt(new Timestamp(System.currentTimeMillis()));
             booking.setDoctorId(doctorId);
-            logger.info("✓ Booking object created with status: pending");
+            logger.info("✓ Booking object created with status: Hoàn thành");
 
             // 7. Lưu booking và chi tiết
             logger.info("Bước 7: Lưu booking vào database...");
@@ -383,5 +386,207 @@ public class HealthCheckBookingService {
             // Trong trường hợp lỗi, cho phép tạo booking để tránh block user
             return false;
         }
+    }
+
+    /**
+     * Tự động chọn bác sĩ phù hợp với dịch vụ khám dựa trên chuyên khoa
+     */
+    public Doctor getSuitableDoctorForService(int serviceId, Timestamp appointmentStart) {
+        try {
+            // Lấy thông tin dịch vụ
+            model.PetServiceModel service = petServiceDAO.getServiceById(serviceId);
+            if (service == null) {
+                logger.warning("Service not found: " + serviceId);
+                return getDefaultAvailableDoctor(appointmentStart);
+            }
+
+            // Lấy danh sách chuyên khoa ưu tiên cho dịch vụ này
+            List<String> prioritySpecializations = getPrioritySpecializationsForService(serviceId);
+            logger.info("Service ID: " + serviceId + " -> Priority specializations: " + prioritySpecializations);
+
+            // Duyệt qua từng chuyên khoa theo thứ tự ưu tiên
+            for (int priority = 0; priority < prioritySpecializations.size(); priority++) {
+                String targetSpecialization = prioritySpecializations.get(priority);
+                logger.info("Trying specialization (Priority " + (priority + 1) + "): " + targetSpecialization);
+                
+                // Tìm bác sĩ có chuyên khoa này
+                List<Doctor> suitableDoctors = doctorDAO.getDoctorsBySpecialization(targetSpecialization);
+                
+                if (suitableDoctors != null && !suitableDoctors.isEmpty()) {
+                    // Tìm bác sĩ có chuyên khoa phù hợp và không bận vào thời gian đặt
+                    for (Doctor doctor : suitableDoctors) {
+                        if (!hasConflictingAppointment(doctor.getDoctorId(), appointmentStart)) {
+                            logger.info("✅ Found suitable doctor (Priority " + (priority + 1) + "): " + doctor.getName() + 
+                                       " (ID: " + doctor.getDoctorId() + ", Specialization: " + doctor.getSpecialization() + ")");
+                            return doctor;
+                        }
+                    }
+                    logger.info("⚠️ All doctors with specialization '" + targetSpecialization + "' (Priority " + (priority + 1) + ") are busy");
+                } else {
+                    logger.info("ℹ️ No doctors found with specialization: " + targetSpecialization + " (Priority " + (priority + 1) + ")");
+                }
+            }
+            
+            // Nếu không tìm thấy bác sĩ nào từ các chuyên khoa ưu tiên, tìm bác sĩ khác đang rảnh
+            logger.warning("⚠️ All doctors from priority specializations are busy or not found, finding any available doctor");
+            Doctor availableDoctor = getDefaultAvailableDoctor(appointmentStart);
+            if (availableDoctor != null) {
+                logger.info("✅ Found alternative available doctor: " + availableDoctor.getName() + 
+                           " (ID: " + availableDoctor.getDoctorId() + ", Specialization: " + availableDoctor.getSpecialization() + ")");
+                return availableDoctor;
+            }
+
+            // Nếu không tìm thấy bác sĩ nào, trả về null để caller xử lý
+            logger.severe("❌ No available doctor found after trying all priority specializations");
+            return null;
+
+        } catch (Exception e) {
+            logger.severe("Error getting suitable doctor for service: " + e.getMessage());
+            e.printStackTrace();
+            return getDefaultAvailableDoctor(appointmentStart);
+        }
+    }
+
+    /**
+     * Lấy danh sách chuyên khoa ưu tiên cho dịch vụ (theo thứ tự ưu tiên 1, 2, 3...)
+     * @param serviceId ID của dịch vụ
+     * @return Danh sách chuyên khoa theo thứ tự ưu tiên
+     */
+    private List<String> getPrioritySpecializationsForService(int serviceId) {
+        List<String> specializations = new ArrayList<>();
+        
+        // Mapping dịch vụ cụ thể với chuyên khoa ưu tiên
+        switch (serviceId) {
+            case 1: // Khám sức khỏe tổng quát
+                specializations.add("Tim mạch & hô hấp"); // Ưu tiên 1: Kiểm tra tim mạch, hô hấp
+                specializations.add("Tiêu hóa & dinh dưỡng"); // Ưu tiên 2: Kiểm tra tiêu hóa
+                specializations.add("Da liễu & chăm sóc da"); // Ưu tiên 3: Kiểm tra da
+                break;
+                
+            case 2: // Khám chuyên sâu (xét nghiệm máu, nước tiểu, X-quang)
+                specializations.add("Thần kinh & hành vi"); // Ưu tiên 1: Chuyên sâu, cần chẩn đoán phức tạp
+                specializations.add("Tim mạch & hô hấp"); // Ưu tiên 2: Xét nghiệm tim mạch
+                specializations.add("Tiêu hóa & dinh dưỡng"); // Ưu tiên 3: Xét nghiệm tiêu hóa
+                break;
+                
+            case 3: // Khám định kỳ
+                specializations.add("Tiêu hóa & dinh dưỡng"); // Ưu tiên 1: Theo dõi sức khỏe định kỳ
+                specializations.add("Tim mạch & hô hấp"); // Ưu tiên 2: Kiểm tra tim mạch
+                specializations.add("Da liễu & chăm sóc da"); // Ưu tiên 3: Kiểm tra da
+                break;
+                
+            case 4: // Tiêm phòng cơ bản
+                specializations.add("Thần kinh & hành vi"); // Ưu tiên 1: Chuyên về tiêm phòng, vaccine
+                specializations.add("Tim mạch & hô hấp"); // Ưu tiên 2: Phòng bệnh hô hấp
+                specializations.add("Tiêu hóa & dinh dưỡng"); // Ưu tiên 3: Phòng bệnh tiêu hóa
+                break;
+                
+            case 5: // Tư vấn dinh dưỡng
+                specializations.add("Tiêu hóa & dinh dưỡng"); // Ưu tiên 1: Chuyên về dinh dưỡng
+                specializations.add("Tim mạch & hô hấp"); // Ưu tiên 2: Dinh dưỡng cho tim mạch
+                break;
+                
+            default:
+                // Fallback: Dựa vào tên và mô tả dịch vụ
+                model.PetServiceModel service = petServiceDAO.getServiceById(serviceId);
+                if (service != null) {
+                    String serviceName = service.getName().toLowerCase();
+                    String serviceDescription = service.getDescription() != null ? service.getDescription().toLowerCase() : "";
+                    String combinedText = serviceName + " " + serviceDescription;
+                    
+                    if (combinedText.contains("dinh dưỡng") || combinedText.contains("tiêu hóa") || combinedText.contains("ăn uống")) {
+                        specializations.add("Tiêu hóa & dinh dưỡng");
+                        specializations.add("Tim mạch & hô hấp");
+                    } else if (combinedText.contains("da liễu") || combinedText.contains("da") || combinedText.contains("lông")) {
+                        specializations.add("Da liễu & chăm sóc da");
+                        specializations.add("Tiêu hóa & dinh dưỡng");
+                    } else if (combinedText.contains("phẫu thuật") || combinedText.contains("chỉnh hình")) {
+                        specializations.add("Phẫu thuật & chỉnh hình");
+                        specializations.add("Tim mạch & hô hấp");
+                    } else if (combinedText.contains("tim mạch") || combinedText.contains("hô hấp") || combinedText.contains("tim") || combinedText.contains("phổi")) {
+                        specializations.add("Tim mạch & hô hấp");
+                        specializations.add("Tiêu hóa & dinh dưỡng");
+                    } else if (combinedText.contains("sản khoa") || combinedText.contains("sinh sản") || combinedText.contains("thai")) {
+                        specializations.add("Sản khoa & sinh sản");
+                        specializations.add("Tiêu hóa & dinh dưỡng");
+                    } else if (combinedText.contains("thần kinh") || combinedText.contains("hành vi") || combinedText.contains("tâm lý")) {
+                        specializations.add("Thần kinh & hành vi");
+                        specializations.add("Tim mạch & hô hấp");
+                    } else {
+                        // Default cho các dịch vụ khác
+                        specializations.add("Tiêu hóa & dinh dưỡng");
+                        specializations.add("Tim mạch & hô hấp");
+                    }
+                } else {
+                    // Fallback cuối cùng
+                    specializations.add("Tiêu hóa & dinh dưỡng");
+                }
+                break;
+        }
+        
+        return specializations;
+    }
+    
+    /**
+     * Xác định chuyên khoa dựa trên tên và mô tả dịch vụ (deprecated - sử dụng getPrioritySpecializationsForService)
+     * @deprecated Sử dụng getPrioritySpecializationsForService để có danh sách ưu tiên
+     */
+    @Deprecated
+    private String determineSpecializationFromService(String serviceText) {
+        // Giữ lại method này để tương thích với code cũ
+        if (serviceText.contains("dinh dưỡng") || serviceText.contains("tiêu hóa") || serviceText.contains("ăn uống")) {
+            return "Tiêu hóa & dinh dưỡng";
+        } else if (serviceText.contains("da liễu") || serviceText.contains("da") || serviceText.contains("lông")) {
+            return "Da liễu & chăm sóc da";
+        } else if (serviceText.contains("phẫu thuật") || serviceText.contains("chỉnh hình")) {
+            return "Phẫu thuật & chỉnh hình";
+        } else if (serviceText.contains("tim mạch") || serviceText.contains("hô hấp") || serviceText.contains("tim")) {
+            return "Tim mạch & hô hấp";
+        } else if (serviceText.contains("sản khoa") || serviceText.contains("sinh sản")) {
+            return "Sản khoa & sinh sản";
+        } else if (serviceText.contains("thần kinh") || serviceText.contains("hành vi")) {
+            return "Thần kinh & hành vi";
+        }
+        return "Tiêu hóa & dinh dưỡng";
+    }
+
+    /**
+     * Lấy bác sĩ có sẵn mặc định (không bận vào thời gian đặt)
+     */
+    private Doctor getDefaultAvailableDoctor(Timestamp appointmentStart) {
+        try {
+            List<Doctor> allDoctors = doctorDAO.getAllActiveDoctors();
+            
+            // Tìm bác sĩ có sẵn đầu tiên
+            for (Doctor doctor : allDoctors) {
+                if (!hasConflictingAppointment(doctor.getDoctorId(), appointmentStart)) {
+                    logger.info("✅ Found available doctor: " + doctor.getName() + " (ID: " + doctor.getDoctorId() + ")");
+                    return doctor;
+                }
+            }
+            
+            // Nếu tất cả đều bận, trả về bác sĩ đầu tiên
+            if (!allDoctors.isEmpty()) {
+                logger.warning("⚠️ All doctors are busy, selecting first doctor: " + allDoctors.get(0).getName());
+                return allDoctors.get(0);
+            }
+            
+            // Fallback: lấy bất kỳ bác sĩ nào
+            int doctorId = doctorDAO.getAnyActiveDoctorId();
+            if (doctorId > 0) {
+                Doctor doctor = doctorDAO.findById(doctorId);
+                if (doctor != null) {
+                    logger.warning("⚠️ Using fallback doctor: " + doctor.getName());
+                    return doctor;
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.severe("Error getting default available doctor: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        logger.severe("❌ No doctor available!");
+        return null;
     }
 }

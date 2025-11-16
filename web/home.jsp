@@ -355,10 +355,9 @@
                 <div class="category">
                     <h3>🐕 Shop cún cưng</h3>
                     <ul>
-                        <li><a href="search?categoryId=4">Thức ăn cho chó</a></li>
-                        <li><a href="search?categoryId=11">Áo Quần cho chó</a></li>
-                        <li><a href="search?categoryId=6">Chuồng cho chó</a></li>
-                        <li><a href="search?categoryId=9">Thuốc cho chó</a></li>
+                        <li><a href="search?categoryId=1">Đồ chơi cho chó</a></li>
+                        <li><a href="search?categoryId=4">Đồ chơi nhai</a></li>
+                        <li><a href="search?categoryId=5">Đồ chơi trí tuệ</a></li>
                     </ul>
                 </div>
 
@@ -367,17 +366,15 @@
                 <div class="category">
                     <h3>🐱 Shop mèo cưng</h3>
                     <ul>
-                        <li><a href="search?categoryId=5">Thức ăn cho mèo</a></li>
-                        <li><a href="search?categoryId=12">Áo Quần cho mèo</a></li>
-                        <li><a href="search?categoryId=7">Chuồng cho mèo</a></li>
-                        <li><a href="search?categoryId=10">Thuốc cho mèo</a></li>
+                        <li><a href="search?categoryId=2">Đồ chơi cho mèo</a></li>
+                        <li><a href="search?categoryId=5">Đồ chơi trí tuệ</a></li>
                     </ul>
                 </div>
 
                 <div class="category">
                     <h3>✨ Phụ Kiện Khác</h3>
                     <ul>
-                        <li><a href="search?categoryId=8">Trang sức</a></li>
+                        <li><a href="search?categoryId=3">Đồ chơi cho thú cưng khác</a></li>
                     </ul>
                 </div>
             </aside>
@@ -390,7 +387,14 @@
                             <div class="toy-item">
                                 <div class="toy-badge">✨ Mới</div>
                                 <a href="<c:url value='/toydetailservlet'/>?id=${product.productId}">
-                                    <img src="images/toy_${product.productId}.jpg" alt="${product.name}" onerror="this.src='images/default.jpg'" />
+                                    <c:choose>
+                                        <c:when test="${not empty product.imageUrl}">
+                                            <img src="${product.imageUrl}" alt="${product.name}" onerror="this.src='images/toy_${product.productId}.jpg'; this.onerror=function(){this.src='images/default.jpg';}" />
+                                        </c:when>
+                                        <c:otherwise>
+                                            <img src="images/toy_${product.productId}.jpg" alt="${product.name}" onerror="this.src='images/default.jpg'" />
+                                        </c:otherwise>
+                                    </c:choose>
                                     <p class="toy-name">${product.name}</p>
                                 </a>
                                 <p class="toy-price">${product.price}₫</p>

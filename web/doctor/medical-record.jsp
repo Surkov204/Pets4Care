@@ -213,50 +213,6 @@
             <p>Quản lý hồ sơ y tế và theo dõi tất cả lịch hẹn khám bệnh của các thú cưng</p>
     </section>
 
-        <!-- Pending Appointments - Waiting for Doctor Confirmation -->
-        <c:if test="${not empty pendingAppointments}">
-            <div class="search-filter" style="background: #fff3e0; border-left: 4px solid #ff9800;">
-                <h3 style="color: #e65100; margin-bottom: 15px;">
-                    <i class="fas fa-clock"></i> Lịch hẹn đang chờ xác nhận
-                </h3>
-                <p style="margin-bottom: 15px; color: #666;">
-                    Có <strong>${pendingAppointments.size()}</strong> lịch hẹn đang chờ bác sĩ xác nhận.
-                    Vui lòng xem chi tiết và cập nhật trạng thái:
-                </p>
-                <div style="max-height: 300px; overflow-y: auto;">
-                    <c:forEach var="appt" items="${pendingAppointments}" varStatus="status">
-                        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ffe0b2; display: flex; justify-content: space-between; align-items: center;">
-                            <div style="flex: 1;">
-                                <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                                    <span style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-right: 10px;">
-                                        ${status.index + 1}
-                                    </span>
-                                    <strong style="color: #e65100; font-size: 16px;">${appt.petName}</strong>
-                                    <span style="color: #666; margin-left: 8px;">(${appt.petType})</span>
-                                </div>
-                                <div style="color: #666; font-size: 14px;">
-                                    <i class="fas fa-user"></i> Chủ: <strong>${appt.customerName}</strong> |
-                                    <i class="fas fa-calendar"></i> <fmt:formatDate value="${appt.appointmentStart}" pattern="dd/MM/yyyy HH:mm"/> |
-                                    <i class="fas fa-stethoscope"></i> ${appt.serviceNames}
-                                </div>
-                                <c:if test="${not empty appt.note}">
-                                    <div style="color: #666; font-size: 13px; margin-top: 5px; font-style: italic;">
-                                        <i class="fas fa-sticky-note"></i> "${appt.note}"
-                                    </div>
-                                </c:if>
-                            </div>
-                            <div style="margin-left: 15px;">
-                                <a href="${pageContext.request.contextPath}/doctor/appointment-detail?id=${appt.bookingId}"
-                                   class="btn-primary" style="padding: 10px 20px; font-size: 14px; text-decoration: none;">
-                                    <i class="fas fa-eye"></i> Xem chi tiết
-                                </a>
-                            </div>
-                        </div>
-                    </c:forEach>
-                </div>
-            </div>
-        </c:if>
-
         <!-- Upcoming Confirmed Appointments -->
         <c:if test="${not empty upcomingAppointments}">
             <div class="search-filter" style="background: #e8f5e8; border-left: 4px solid #4CAF50;">
@@ -301,50 +257,110 @@
             </div>
         </c:if>
 
-        <!-- Completed Appointments - Create Medical Records -->
-        <c:if test="${not empty completedAppointments}">
+        <!-- Pending and Completed Appointments - Create Medical Records -->
+        <c:if test="${not empty pendingAppointments || not empty completedAppointments}">
             <div class="search-filter" style="background: #fff3e0; border-left: 4px solid #ff9800;">
                 <h3 style="color: #e65100; margin-bottom: 15px;">
-                    <i class="fas fa-clipboard-check"></i> Lịch hẹn hoàn thành - Tạo hồ sơ y tế
+                    <i class="fas fa-clipboard-check"></i> Lịch hẹn đã hoàn thành - Tạo hồ sơ y tế
                 </h3>
                 <p style="margin-bottom: 15px; color: #666;">
-                    Có <strong>${completedAppointments.size()}</strong> lịch hẹn đã hoàn thành nhưng chưa có hồ sơ y tế.
-                    Vui lòng tạo hồ sơ y tế để hoàn tất quá trình khám bệnh:
+                    <c:set var="totalAppointments" value="${pendingAppointments.size() + completedAppointments.size()}" />
+                    Có <strong>${totalAppointments}</strong> lịch hẹn cần xử lý:
+                    <c:if test="${not empty pendingAppointments}">
+                        <strong>${pendingAppointments.size()}</strong> lịch hẹn đang chờ xác nhận
+                    </c:if>
+                    <c:if test="${not empty pendingAppointments && not empty completedAppointments}"> và </c:if>
+                    <c:if test="${not empty completedAppointments}">
+                        <strong>${completedAppointments.size()}</strong> lịch hẹn đã hoàn thành nhưng chưa có hồ sơ y tế
+                    </c:if>.
+                    Vui lòng xem chi tiết, cập nhật trạng thái hoặc tạo hồ sơ y tế:
                 </p>
-                <div style="max-height: 300px; overflow-y: auto;">
-                    <c:forEach var="appt" items="${completedAppointments}" varStatus="status">
-                        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ffe0b2; display: flex; justify-content: space-between; align-items: center;">
-                            <div style="flex: 1;">
-                                <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                                    <span style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-right: 10px;">
-                                        ${status.index + 1}
-                                    </span>
-                                    <strong style="color: #e65100; font-size: 16px;">${appt.petName}</strong>
-                                    <span style="color: #666; margin-left: 8px;">(${appt.petType})</span>
-                                </div>
-                                <div style="color: #666; font-size: 14px;">
-                                    <i class="fas fa-user"></i> Chủ: <strong>${appt.customerName}</strong> |
-                                    <i class="fas fa-calendar"></i> <fmt:formatDate value="${appt.appointmentStart}" pattern="dd/MM/yyyy HH:mm"/> |
-                                    <i class="fas fa-stethoscope"></i> ${appt.serviceNames}
-                                </div>
-                                <c:if test="${not empty appt.note}">
-                                    <div style="color: #666; font-size: 13px; margin-top: 5px; font-style: italic;">
-                                        <i class="fas fa-sticky-note"></i> "${appt.note}"
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <c:set var="itemIndex" value="0" />
+                    
+                    <!-- Pending Appointments Section -->
+                    <c:if test="${not empty pendingAppointments}">
+                        <c:forEach var="appt" items="${pendingAppointments}" varStatus="status">
+                            <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ffe0b2; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                        <span style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-right: 10px;">
+                                            ${itemIndex + 1}
+                                        </span>
+                                        <span style="background: #ff6f00; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 8px; font-weight: bold;">
+                                            CHỜ XÁC NHẬN
+                                        </span>
+                                        <strong style="color: #e65100; font-size: 16px;">${appt.petName}</strong>
+                                        <span style="color: #666; margin-left: 8px;">(${appt.petType})</span>
                                     </div>
-                                </c:if>
+                                    <div style="color: #666; font-size: 14px;">
+                                        <i class="fas fa-user"></i> Chủ: <strong>${appt.customerName}</strong> |
+                                        <i class="fas fa-calendar"></i> <fmt:formatDate value="${appt.appointmentStart}" pattern="dd/MM/yyyy HH:mm"/> |
+                                        <i class="fas fa-stethoscope"></i> ${appt.serviceNames}
+                                    </div>
+                                    <c:if test="${not empty appt.note}">
+                                        <div style="color: #666; font-size: 13px; margin-top: 5px; font-style: italic;">
+                                            <i class="fas fa-sticky-note"></i> "${appt.note}"
+                                        </div>
+                                    </c:if>
+                                </div>
+                                <div style="margin-left: 15px;">
+                                    <a href="${pageContext.request.contextPath}/doctor/appointment-detail?id=${appt.bookingId}"
+                                       class="btn-primary" style="padding: 10px 20px; font-size: 14px; text-decoration: none;">
+                                        <i class="fas fa-eye"></i> Xem chi tiết
+                                    </a>
+                                </div>
                             </div>
-                            <div style="margin-left: 15px;">
-                                <a href="${pageContext.request.contextPath}/doctor/medical-records?action=create&bookingId=${appt.bookingId}"
-                                   class="btn-primary" style="padding: 10px 20px; font-size: 14px; text-decoration: none; display: inline-block;">
-                                    <i class="fas fa-plus"></i> Tạo hồ sơ y tế
-                                </a>
+                            <c:set var="itemIndex" value="${itemIndex + 1}" />
+                        </c:forEach>
+                    </c:if>
+                    
+                    <!-- Completed Appointments Section -->
+                    <c:if test="${not empty completedAppointments}">
+                        <c:forEach var="appt" items="${completedAppointments}" varStatus="status">
+                            <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ffe0b2; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                        <span style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-right: 10px;">
+                                            ${itemIndex + 1}
+                                        </span>
+                                        <span style="background: #4CAF50; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 8px; font-weight: bold;">
+                                            ĐÃ HOÀN THÀNH
+                                        </span>
+                                        <strong style="color: #e65100; font-size: 16px;">${appt.petName}</strong>
+                                        <span style="color: #666; margin-left: 8px;">(${appt.petType})</span>
+                                    </div>
+                                    <div style="color: #666; font-size: 14px;">
+                                        <i class="fas fa-user"></i> Chủ: <strong>${appt.customerName}</strong> |
+                                        <i class="fas fa-calendar"></i> <fmt:formatDate value="${appt.appointmentStart}" pattern="dd/MM/yyyy HH:mm"/> |
+                                        <i class="fas fa-stethoscope"></i> ${appt.serviceNames}
+                                    </div>
+                                    <c:if test="${not empty appt.note}">
+                                        <div style="color: #666; font-size: 13px; margin-top: 5px; font-style: italic;">
+                                            <i class="fas fa-sticky-note"></i> "${appt.note}"
+                                        </div>
+                                    </c:if>
+                                </div>
+                                <div style="margin-left: 15px;">
+                                    <a href="${pageContext.request.contextPath}/doctor/medical-records?action=create&bookingId=${appt.bookingId}"
+                                       class="btn-primary" style="padding: 10px 20px; font-size: 14px; text-decoration: none; display: inline-block;">
+                                        <i class="fas fa-plus"></i> Tạo hồ sơ y tế
+                                    </a>
+                                </div>
                             </div>
-                        </div>
-                    </c:forEach>
+                            <c:set var="itemIndex" value="${itemIndex + 1}" />
+                        </c:forEach>
+                    </c:if>
                 </div>
                 <div style="margin-top: 15px; padding: 10px; background: #fff8e1; border-radius: 5px; border: 1px solid #ffe082;">
                     <i class="fas fa-info-circle" style="color: #f57c00;"></i>
-                    <strong style="color: #e65100;">Lưu ý:</strong> Việc tạo hồ sơ y tế sẽ giúp theo dõi sức khỏe thú cưng và hỗ trợ các lần khám sau này.
+                    <strong style="color: #e65100;">Lưu ý:</strong> 
+                    <c:if test="${not empty pendingAppointments}">
+                        Đối với lịch hẹn đang chờ xác nhận, vui lòng xem chi tiết và cập nhật trạng thái. 
+                    </c:if>
+                    <c:if test="${not empty completedAppointments}">
+                        Đối với lịch hẹn đã hoàn thành, vui lòng tạo hồ sơ y tế để hoàn tất quá trình khám bệnh. Việc tạo hồ sơ y tế sẽ giúp theo dõi sức khỏe thú cưng và hỗ trợ các lần khám sau này.
+                    </c:if>
                 </div>
             </div>
         </c:if>

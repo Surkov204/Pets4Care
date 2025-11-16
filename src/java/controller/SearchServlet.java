@@ -61,20 +61,10 @@ public class SearchServlet extends HttpServlet {
         } else if (keyword != null && !keyword.trim().isEmpty()) {
             String inputKeyword = keyword.trim().toLowerCase();
 
-            for (Map.Entry<String, Integer> entry : keywordToCategory.entrySet()) {
-                if (inputKeyword.contains(entry.getKey())) {
-                    categoryId = entry.getValue();
-                    break;
-                }
-            }
-
-            if (categoryId == -1) {
-                searchResults = productDAO.searchProductsByKeyword(inputKeyword);
-                categoryName = "Tất cả sản phẩm";
-            } else {
-                searchResults = productDAO.searchProductsByKeywordAndCategory(inputKeyword, categoryId);
-                categoryName = categoryMap.getOrDefault(categoryId, "Danh mục không xác định");
-            }
+            // Tìm kiếm trong tất cả sản phẩm, không giới hạn theo category
+            // Để người dùng có thể tìm thấy tất cả sản phẩm liên quan đến từ khóa
+            searchResults = productDAO.searchProductsByKeyword(inputKeyword);
+            categoryName = "Tất cả sản phẩm";
 
             request.setAttribute("keyword", keyword);
         }

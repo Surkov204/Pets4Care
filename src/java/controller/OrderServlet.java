@@ -129,6 +129,40 @@ public class OrderServlet extends HttpServlet {
             System.out.println("============================");
 
             if (orderId > 0) {
+                // Tính tổng tiền từ cart
+                double totalAmount = 0;
+                for (CartItem item : cart.values()) {
+                    totalAmount += item.getQuantity() * item.getProduct().getPrice();
+                }
+                
+                // Tạo payment record cho tất cả các phương thức thanh toán
+                if ("PayOS".equals(paymentMethod)) {
+                    // PayOS sẽ tạo payment record trong PayOSController
+                } else {
+                    // Tạo payment record cho CASH hoặc BANK_TRANSFER
+                    try {
+                        service.PayOSService payOSService = new service.PayOSService();
+                        String description = "Thanh toan don hang #" + orderId;
+                        // Tạo payment record với payos_order_code = 0 cho CASH/BANK_TRANSFER
+                        int paymentId = payOSService.createPaymentRecord("order", orderId, customerId, totalAmount, 0, description);
+                        if (paymentId > 0) {
+                            // Cập nhật payment method và status
+                            try (Connection conn2 = DBConnection.getConnection();
+                                 java.sql.PreparedStatement ps2 = conn2.prepareStatement(
+                                     "UPDATE dbo.Payment SET payment_method = ?, payment_status = 'paid', paid_at = GETDATE() " +
+                                     "WHERE payment_id = ?")) {
+                                ps2.setString(1, paymentMethod);
+                                ps2.setInt(2, paymentId);
+                                ps2.executeUpdate();
+                                System.out.println("✅ Payment record created for order #" + orderId + " with method: " + paymentMethod);
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error creating payment record: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                }
+                
                 // Gửi email xác nhận
                 EmailUtils.sendOrderConfirmation(customer.getEmail(), orderId);
 

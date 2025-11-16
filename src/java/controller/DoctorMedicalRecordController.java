@@ -115,9 +115,10 @@ public class DoctorMedicalRecordController extends HttpServlet {
             logger.info("Total medical records: " + medicalRecords.size() + ", Bookings with records: " + bookingsWithRecords.size());
 
             // Get all appointments for this doctor (both pending and completed)
+            // Only get recent appointments (last 3 months and future) to avoid showing very old bookings
             List<Booking> allAppointments = bookingDAO.getBookingsByDoctorAndDateRange(
                 doctorId,
-                LocalDate.now().minusMonths(6),
+                LocalDate.now().minusMonths(3), // Only show last 3 months instead of 6
                 LocalDate.now().plusMonths(3) // Include future appointments
             );
 
@@ -141,15 +142,32 @@ public class DoctorMedicalRecordController extends HttpServlet {
                     status = removeDiacritics(status).toLowerCase();
                 }
 
+                // Show all completed appointments that don't have medical records yet
+                // Include both past and future appointments
+                boolean isFutureOrRecent = appointment.getAppointmentStart() != null && 
+                    appointment.getAppointmentStart().toLocalDateTime().isAfter(
+                        java.time.LocalDateTime.now().minusMonths(1)
+                    );
+
                 if (status != null && (status.contains("hoan thanh") || status.contains("completed"))) {
+                    // Show all completed appointments (both past and future) that need medical records
+                    // The date range filter (3 months past, 3 months future) already limits the scope
                     completedAppointments.add(appointment);
+                    logger.info("Adding completed booking ID " + appointment.getBookingId() + " - status: " + appointment.getStatus());
                 } else if (status != null && (status.contains("cho xac nhan") || status.contains("pending"))) {
+                    // Always show pending appointments regardless of date
                     pendingAppointments.add(appointment);
+                    logger.info("Adding pending booking ID " + appointment.getBookingId() + " - status: " + appointment.getStatus());
                 } else if (status != null && (status.contains("da xac nhan") || status.contains("confirmed"))) {
                     upcomingAppointments.add(appointment);
                 } else {
-                    // If status doesn't match any known pattern, assume it needs medical record creation
-                    completedAppointments.add(appointment);
+                    // If status doesn't match any known pattern, treat as completed if recent or future
+                    if (isFutureOrRecent) {
+                        completedAppointments.add(appointment);
+                        logger.info("Adding booking ID " + appointment.getBookingId() + " with unknown status: " + appointment.getStatus());
+                    } else {
+                        logger.info("Skipping booking ID " + appointment.getBookingId() + " with unknown status: " + appointment.getStatus());
+                    }
                 }
             }
             

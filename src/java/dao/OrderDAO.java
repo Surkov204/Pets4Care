@@ -77,7 +77,8 @@ public class OrderDAO implements IOrderDAO {
     @Override
     public List<Order> getOrdersByCustomerId(int customerId) {
         List<Order> orders = new ArrayList<>();
-        String sql = "SELECT * FROM [Order] WHERE customer_id = ?";
+        // Ẩn các đơn đã hủy khỏi danh sách lịch sử
+        String sql = "SELECT * FROM [Order] WHERE customer_id = ? AND status != N'Đã hủy'";
 
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 

@@ -74,8 +74,15 @@ public class PayOSController extends HttpServlet {
         // Original handleCreatePayment logic continues...
         
         try {
+            // Lấy customer từ session
+            jakarta.servlet.http.HttpSession session = request.getSession(false);
+            model.Customer customer = null;
+            if (session != null) {
+                customer = (model.Customer) session.getAttribute("currentUser");
+            }
+            
             int orderId = Integer.parseInt(request.getParameter("orderId"));
-            String type = request.getParameter("type"); // boarding | null
+            String type = request.getParameter("type"); // boarding | service | null (order)
             System.out.println("====== PayOS Create Payment ======");
             System.out.println("Order ID: " + orderId);
             System.out.println("Type: " + type);
@@ -85,9 +92,12 @@ public class PayOSController extends HttpServlet {
             String returnUrl;
             String cancelUrl;
             String paymentUrl = null; // Khai báo paymentUrl ở đây để dùng cho tất cả các loại
+            int customerId = 0;
+            String paymentType = "order"; // default
             
             if ("boarding".equalsIgnoreCase(type)) {
                 // Xử lý boarding booking
+                paymentType = "boarding";
                 System.out.println("Processing boarding payment for booking ID: " + orderId);
                 
                 // Lấy thông tin booking từ database
@@ -99,6 +109,8 @@ public class PayOSController extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/spa-booking?action=history");
                     return;
                 }
+                
+                customerId = booking.getCustomerId();
                 
                 // Lấy amount từ totalPrice hoặc tính toán lại
                 if (booking.getTotalPrice() != null && booking.getTotalPrice().compareTo(BigDecimal.ZERO) > 0) {
@@ -132,17 +144,18 @@ public class PayOSController extends HttpServlet {
                 
             } else if ("service".equalsIgnoreCase(type)) {
                 // Xử lý service booking
+                paymentType = "spa";
                 System.out.println("Processing service payment for booking ID: " + orderId);
                 
                 // Lấy thông tin booking từ database
                 try (Connection conn = DBConnection.getConnection();
                      PreparedStatement ps = conn.prepareStatement(
-                         "SELECT b.booking_id, b.order_id, b.status, " +
+                         "SELECT b.booking_id, b.order_id, b.status, b.customer_id, " +
                          "COALESCE(SUM(bs.unit_price * bs.quantity), 0) as total_amount " +
                          "FROM dbo.Booking b " +
                          "LEFT JOIN dbo.Booking_Service bs ON b.booking_id = bs.booking_id " +
                          "WHERE b.order_id = ? OR b.booking_id = ? " +
-                         "GROUP BY b.booking_id, b.order_id, b.status")) {
+                         "GROUP BY b.booking_id, b.order_id, b.status, b.customer_id")) {
                     
                     ps.setInt(1, orderId);
                     ps.setInt(2, orderId);
@@ -152,7 +165,9 @@ public class PayOSController extends HttpServlet {
                         if (rs.next()) {
                             // Lấy amount từ total_amount
                             calculatedAmount = rs.getDouble("total_amount");
+                            customerId = rs.getInt("customer_id");
                             System.out.println("Calculated amount from database: " + calculatedAmount);
+                            System.out.println("Customer ID: " + customerId);
                         }
                         
                         // Lấy amount từ nhiều nguồn (database > request param > service calculation)
@@ -241,6 +256,7 @@ public class PayOSController extends HttpServlet {
                 
             } else {
                 // Xử lý order thông thường (product)
+                paymentType = "order";
                 System.out.println("Processing regular order for order ID: " + orderId);
                 
                 // Lấy thông tin đơn hàng
@@ -254,6 +270,25 @@ public class PayOSController extends HttpServlet {
                 }
                 
                 amount = (Double) orderInfo.get("totalAmount");
+                customerId = (Integer) orderInfo.get("orderId"); // Lấy customer_id từ order
+                
+                // Lấy customer_id từ Order table
+                try (Connection conn = DBConnection.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(
+                         "SELECT customer_id FROM [Order] WHERE order_id = ?")) {
+                    ps.setInt(1, orderId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            customerId = rs.getInt("customer_id");
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error getting customer_id: " + e.getMessage());
+                    if (customer != null) {
+                        customerId = customer.getCustomerId();
+                    }
+                }
+                
                 // Giới hạn description <= 25 ký tự cho PayOS
                 description = "Thanh toan don hang #" + orderId;
                 if (description.length() > 25) {
@@ -276,6 +311,14 @@ public class PayOSController extends HttpServlet {
                 }
                 System.out.println("Generated PayOS orderCode: " + payosOrderCode + " (from timestamp: " + timestamp + ", orderId: " + orderId + ")");
                 
+                // Tạo payment record trước khi tạo PayOS link
+                if (customerId > 0) {
+                    int paymentId = payOSService.createPaymentRecord(paymentType, orderId, customerId, amount, payosOrderCode, description);
+                    if (paymentId > 0) {
+                        System.out.println("✅ Payment record created with ID: " + paymentId);
+                    }
+                }
+                
                 // Retry logic: nếu gặp lỗi 231 (orderCode đã tồn tại), thử lại với orderCode mới
                 int maxRetries = 3;
                 int retryCount = 0;
@@ -289,6 +332,19 @@ public class PayOSController extends HttpServlet {
                             payosOrderCode = Math.abs(payosOrderCode);
                         }
                         System.out.println("Retry #" + retryCount + " with new PayOS orderCode: " + payosOrderCode);
+                        
+                        // Cập nhật payment record với orderCode mới
+                        if (customerId > 0) {
+                            try (Connection conn = DBConnection.getConnection();
+                                 PreparedStatement ps = conn.prepareStatement(
+                                     "UPDATE dbo.Payment SET payos_order_code = ? WHERE reference_id = ? AND payment_type = 'order' AND payment_status = 'pending'")) {
+                                ps.setInt(1, payosOrderCode);
+                                ps.setInt(2, orderId);
+                                ps.executeUpdate();
+                            } catch (Exception e) {
+                                System.err.println("Error updating payment record: " + e.getMessage());
+                            }
+                        }
                     }
                     
                     paymentUrl = payOSService.createPaymentLink(payosOrderCode, amount, description, returnUrl, cancelUrl);
@@ -311,23 +367,6 @@ public class PayOSController extends HttpServlet {
                 System.out.println("Description: " + description);
                 System.out.println("Return URL: " + returnUrl);
                 System.out.println("Cancel URL: " + cancelUrl);
-                
-                // Lưu PayOS orderCode vào database để có thể tra cứu sau này
-                if (paymentUrl != null && payosOrderCode != orderId) {
-                    try (Connection conn = DBConnection.getConnection();
-                         PreparedStatement ps = conn.prepareStatement(
-                             "UPDATE [Order] SET note = ? WHERE order_id = ?")) {
-                        // Lưu PayOS orderCode vào note field hoặc tạo cột mới nếu cần
-                        String note = "PayOS OrderCode: " + payosOrderCode;
-                        ps.setString(1, note);
-                        ps.setInt(2, orderId);
-                        ps.executeUpdate();
-                        System.out.println("Saved PayOS orderCode " + payosOrderCode + " for order " + orderId);
-                    } catch (Exception e) {
-                        System.err.println("Failed to save PayOS orderCode: " + e.getMessage());
-                        // Không fail payment nếu không lưu được note
-                    }
-                }
             }
             
             // Với service hoặc boarding, tạo paymentUrl nếu chưa có
@@ -338,7 +377,22 @@ public class PayOSController extends HttpServlet {
                 System.out.println("Return URL: " + returnUrl);
                 System.out.println("Cancel URL: " + cancelUrl);
                 
-                paymentUrl = payOSService.createPaymentLink(orderId, amount, description, returnUrl, cancelUrl);
+                // Tạo PayOS orderCode
+                long timestamp = System.currentTimeMillis();
+                int payosOrderCode = (int) ((timestamp % 1000000000) * 1000 + (orderId % 1000));
+                if (payosOrderCode < 0) {
+                    payosOrderCode = Math.abs(payosOrderCode);
+                }
+                
+                // Tạo payment record trước khi tạo PayOS link
+                if (customerId > 0) {
+                    int paymentId = payOSService.createPaymentRecord(paymentType, orderId, customerId, amount, payosOrderCode, description);
+                    if (paymentId > 0) {
+                        System.out.println("✅ Payment record created with ID: " + paymentId);
+                    }
+                }
+                
+                paymentUrl = payOSService.createPaymentLink(payosOrderCode, amount, description, returnUrl, cancelUrl);
             }
             
             System.out.println("Payment URL: " + paymentUrl);
@@ -544,19 +598,71 @@ public class PayOSController extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/order/invoice.jsp?bookingId=" + orderId + "&type=boarding&method=PayOS");
                 return;
             } else if ("service".equalsIgnoreCase(type)) {
-                // Service: Chuyển đến trang lịch sử booking của customer
-                // PaymentStatusServlet sẽ xử lý việc tạo booking nếu thanh toán thành công
-                System.out.println("🔍 Redirecting to booking history for service orderId: " + orderId);
-                response.sendRedirect(request.getContextPath() + "/customer/booking?action=history&success=payment_completed");
+                // Service: Redirect về trang hóa đơn thành công
+                // Lấy thông tin payment để hiển thị trên hóa đơn
+                double amount = 0;
+                String serviceName = "Dịch vụ Spa";
+                try (Connection conn = DBConnection.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(
+                         "SELECT p.amount, ps.name AS service_name " +
+                         "FROM dbo.Payment p " +
+                         "LEFT JOIN dbo.Booking b ON p.payment_type = 'spa' AND p.reference_id = b.booking_id " +
+                         "LEFT JOIN dbo.Booking_Service bs ON b.booking_id = bs.booking_id " +
+                         "LEFT JOIN dbo.PetService ps ON bs.service_id = ps.service_id " +
+                         "WHERE p.payment_type = 'spa' AND p.reference_id = ? " +
+                         "ORDER BY p.created_at DESC")) {
+                    
+                    ps.setInt(1, orderId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            amount = rs.getDouble("amount");
+                            String name = rs.getString("service_name");
+                            if (name != null && !name.trim().isEmpty()) {
+                                serviceName = name;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error getting service payment info: " + e.getMessage());
+                }
+                
+                // Cập nhật payment status thành 'paid'
+                updatePaymentStatusByReference("spa", orderId, "paid");
+                
+                // Redirect về invoice với đầy đủ thông tin
+                StringBuilder invoiceUrl = new StringBuilder(request.getContextPath() + "/order/invoice.jsp");
+                invoiceUrl.append("?type=service");
+                invoiceUrl.append("&bookingId=").append(orderId);
+                invoiceUrl.append("&serviceName=").append(java.net.URLEncoder.encode(serviceName, "UTF-8"));
+                if (amount > 0) {
+                    invoiceUrl.append("&amount=").append(amount);
+                }
+                invoiceUrl.append("&method=PayOS");
+                
+                System.out.println("✅ Redirecting to invoice for service booking: " + invoiceUrl.toString());
+                response.sendRedirect(invoiceUrl.toString());
                 return;
             }
             
-            // Kiểm tra trạng thái thanh toán trong database (đơn hàng sản phẩm)
-            if (isPaymentCompleted(orderId)) {
-                response.sendRedirect(request.getContextPath() + "/order/invoice.jsp?orderId=" + orderId + "&type=product&method=PayOS");
-            } else {
-                response.sendRedirect(request.getContextPath() + "/order/order-success.jsp?orderId=" + orderId + "&method=PayOS&status=pending");
+            // Đơn hàng sản phẩm: Luôn redirect về invoice thành công
+            // Cập nhật payment status thành 'paid' nếu chưa
+            updatePaymentStatusByReference("order", orderId, "paid");
+            
+            // Cập nhật Order status thành 'Chờ giao hàng' khi thanh toán thành công online
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE [Order] SET status = N'Chờ giao hàng', payment_status = N'Đã thanh toán', paid_at = GETDATE() WHERE order_id = ?")) {
+                ps.setInt(1, orderId);
+                int rows = ps.executeUpdate();
+                if (rows > 0) {
+                    System.out.println("✅ Đã cập nhật Order status thành 'Chờ giao hàng' cho orderId: " + orderId);
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Lỗi khi cập nhật Order status: " + e.getMessage());
+                e.printStackTrace();
             }
+            
+            response.sendRedirect(request.getContextPath() + "/order/invoice.jsp?orderId=" + orderId + "&type=product&method=PayOS");
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -573,6 +679,54 @@ public class PayOSController extends HttpServlet {
         try {
             int orderId = Integer.parseInt(request.getParameter("orderId"));
             String type = request.getParameter("type");
+            
+            // Xác định payment_type
+            String paymentType = "order"; // default
+            if ("service".equalsIgnoreCase(type)) {
+                paymentType = "spa";
+            } else if ("boarding".equalsIgnoreCase(type)) {
+                paymentType = "boarding";
+            }
+            
+            // Cập nhật payment status trong bảng Payment thành 'cancelled'
+            updatePaymentStatusByReference(paymentType, orderId, "cancelled");
+            
+            // Cập nhật Order status thành 'Đã hủy' nếu là đơn hàng sản phẩm
+            if ("order".equalsIgnoreCase(paymentType)) {
+                try (Connection conn = DBConnection.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(
+                         "UPDATE [Order] SET status = N'Đã hủy' WHERE order_id = ?")) {
+                    ps.setInt(1, orderId);
+                    int rows = ps.executeUpdate();
+                    if (rows > 0) {
+                        System.out.println("✅ Đã cập nhật Order status thành 'Đã hủy' cho orderId: " + orderId);
+                    }
+                } catch (Exception e) {
+                    System.err.println("❌ Lỗi khi cập nhật Order status: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+            
+            // Lấy thông tin payment để hiển thị trên hóa đơn
+            double amount = 0;
+            String description = "";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(
+                     "SELECT amount, note FROM dbo.Payment " +
+                     "WHERE payment_type = ? AND reference_id = ? AND payment_status = 'cancelled' " +
+                     "ORDER BY created_at DESC")) {
+                
+                ps.setString(1, paymentType);
+                ps.setInt(2, orderId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        amount = rs.getDouble("amount");
+                        description = rs.getString("note");
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Error getting payment info: " + e.getMessage());
+            }
             
             if ("service".equalsIgnoreCase(type)) {
                 // Cập nhật status booking thành "Hủy" nếu là service booking
@@ -612,8 +766,13 @@ public class PayOSController extends HttpServlet {
                     e.printStackTrace();
                 }
                 
-                // Service: chuyển đến trang lịch sử booking của customer
-                response.sendRedirect(request.getContextPath() + "/customer/booking?action=history&error=payment_cancelled");
+                // Service: chuyển đến trang hóa đơn hủy
+                String redirectUrl = request.getContextPath() + "/order/invoice-cancelled.jsp?orderId=" + orderId + 
+                    "&type=service&method=PayOS";
+                if (amount > 0) {
+                    redirectUrl += "&amount=" + amount;
+                }
+                response.sendRedirect(redirectUrl);
             } else if ("boarding".equalsIgnoreCase(type)) {
                 response.sendRedirect(request.getContextPath() + "/order/invoice-cancelled.jsp?bookingId=" + orderId + "&type=boarding&method=PayOS");
             } else {
@@ -623,6 +782,49 @@ public class PayOSController extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
             response.sendRedirect(request.getContextPath() + "/order/confirm-failed.jsp");
+        }
+    }
+    
+    /**
+     * Cập nhật payment status trong bảng Payment theo reference_id và payment_type
+     * Nếu status là 'cancelled', sẽ cập nhật bất kể status hiện tại là gì
+     * Nếu status là 'paid', sẽ cập nhật paid_at
+     */
+    private void updatePaymentStatusByReference(String paymentType, int referenceId, String status) {
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps;
+            
+            // Nếu hủy thanh toán, cập nhật bất kể status hiện tại
+            if ("cancelled".equalsIgnoreCase(status)) {
+                ps = conn.prepareStatement(
+                    "UPDATE dbo.Payment SET payment_status = ? " +
+                    "WHERE payment_type = ? AND reference_id = ?");
+            } else if ("paid".equalsIgnoreCase(status)) {
+                // Khi thanh toán thành công, cập nhật status và paid_at
+                ps = conn.prepareStatement(
+                    "UPDATE dbo.Payment SET payment_status = ?, paid_at = GETDATE() " +
+                    "WHERE payment_type = ? AND reference_id = ?");
+            } else {
+                // Các status khác chỉ cập nhật khi đang ở trạng thái pending
+                ps = conn.prepareStatement(
+                    "UPDATE dbo.Payment SET payment_status = ? " +
+                    "WHERE payment_type = ? AND reference_id = ? AND payment_status = 'pending'");
+            }
+            
+            ps.setString(1, status);
+            ps.setString(2, paymentType);
+            ps.setInt(3, referenceId);
+            int rows = ps.executeUpdate();
+            
+            if (rows > 0) {
+                System.out.println("✅ Đã cập nhật payment status thành '" + status + "' cho " + paymentType + " #" + referenceId);
+            } else {
+                System.out.println("⚠️ Không tìm thấy payment record hoặc đã được cập nhật: " + paymentType + " #" + referenceId);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi khi cập nhật payment status: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     

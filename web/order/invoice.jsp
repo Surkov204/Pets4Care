@@ -1,19 +1,20 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="model.Customer, model.Order, model.BoardingBooking, dao.OrderDAO, dao.BoardingBookingDAO" %>
+<%@ page import="model.Customer, model.Order, model.BoardingBooking, model.Booking, dao.OrderDAO, dao.BoardingBookingDAO, dao.BookingDAO" %>
 <%@ page session="true" %>
 <%
     Customer currentUser = (Customer) session.getAttribute("currentUser");
     String orderIdParam = request.getParameter("orderId");
     String bookingIdParam = request.getParameter("bookingId");
     String method = request.getParameter("method");
-    String type = request.getParameter("type"); // product | boarding | service
+    String type = request.getParameter("type"); // product | boarding | service | health_check
     String serviceIdParam = request.getParameter("serviceId");
     String serviceNameParam = request.getParameter("serviceName");
     String quantityParam = request.getParameter("quantity");
     String amountParam = request.getParameter("amount");
     
     Order order = null;
-    BoardingBooking booking = null;
+    BoardingBooking boardingBooking = null;
+    Booking healthCheckBooking = null;
     String orderCode = "";
     String orderDate = "";
     double totalAmount = 0;
@@ -25,16 +26,55 @@
     int serviceQuantity = 1;
     
     try {
-        if ("boarding".equals(type) && bookingIdParam != null) {
+        if ("health_check".equals(type)) {
+            // Hoá đơn khám sức khỏe
+            invoiceTitle = "🏥 Hoá đơn khám sức khỏe";
+            paymentStatus = "Đã thanh toán";
+            status = "completed";
+            
+            if (bookingIdParam != null && !bookingIdParam.trim().isEmpty()) {
+                // Có booking_id, lấy thông tin từ database
+                try {
+                    int id = Integer.parseInt(bookingIdParam);
+                    healthCheckBooking = new BookingDAO().getBookingById(id);
+                    if (healthCheckBooking != null) {
+                        orderCode = String.valueOf(healthCheckBooking.getBookingId());
+                        orderDate = healthCheckBooking.getCreatedAt() != null ? healthCheckBooking.getCreatedAt().toString() : "";
+                        status = healthCheckBooking.getStatus() != null ? healthCheckBooking.getStatus() : "pending";
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            // Lấy thông tin từ query params nếu không có từ database
+            if (orderCode.isEmpty() && serviceIdParam != null) {
+                orderCode = "HC-" + serviceIdParam;
+            }
+            if (orderDate.isEmpty()) {
+                java.util.Date now = new java.util.Date();
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                orderDate = sdf.format(now);
+            }
+            
+            // Lấy số tiền từ query param
+            try {
+                if (amountParam != null && !amountParam.trim().isEmpty()) {
+                    totalAmount = Double.parseDouble(amountParam);
+                }
+            } catch (Exception ignore) {}
+            
+            itemName = serviceName + (serviceIdParam != null ? (" #" + serviceIdParam) : "");
+        } else if ("boarding".equals(type) && bookingIdParam != null) {
             int id = Integer.parseInt(bookingIdParam);
-            booking = new BoardingBookingDAO().getBoardingBookingById(id);
-            if (booking != null) {
-                orderCode = String.valueOf(booking.getBookingId());
-                orderDate = booking.getCreatedAt() != null ? booking.getCreatedAt().toString() : "";
-                totalAmount = booking.getTotalPrice() != null ? booking.getTotalPrice().doubleValue() : 0;
-                paymentStatus = booking.getStatus();
-                status = booking.getStatus();
-                itemName = booking.getServiceName();
+            boardingBooking = new BoardingBookingDAO().getBoardingBookingById(id);
+            if (boardingBooking != null) {
+                orderCode = String.valueOf(boardingBooking.getBookingId());
+                orderDate = boardingBooking.getCreatedAt() != null ? boardingBooking.getCreatedAt().toString() : "";
+                totalAmount = boardingBooking.getTotalPrice() != null ? boardingBooking.getTotalPrice().doubleValue() : 0;
+                paymentStatus = boardingBooking.getStatus();
+                status = boardingBooking.getStatus();
+                itemName = boardingBooking.getServiceName();
                 invoiceTitle = "🏠 Hoá đơn lưu trú thú cưng";
             }
         } else if ("service".equals(type)) {
@@ -42,13 +82,46 @@
             invoiceTitle = "💆 Hoá đơn dịch vụ";
             paymentStatus = "Đã thanh toán";
             status = "completed";
+            
+            // Nếu có bookingId, lấy thông tin từ database
+            if (bookingIdParam != null && !bookingIdParam.trim().isEmpty()) {
+                try {
+                    int id = Integer.parseInt(bookingIdParam);
+                    Booking spaBooking = new BookingDAO().getBookingById(id);
+                    if (spaBooking != null) {
+                        orderCode = String.valueOf(spaBooking.getBookingId());
+                        orderDate = spaBooking.getCreatedAt() != null ? spaBooking.getCreatedAt().toString() : "";
+                        status = spaBooking.getStatus() != null ? spaBooking.getStatus() : "completed";
+                        
+                        // Lấy thông tin dịch vụ từ booking
+                        if (spaBooking.getServiceNames() != null && !spaBooking.getServiceNames().isEmpty()) {
+                            serviceName = spaBooking.getServiceNames();
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            // Lấy thông tin từ query params nếu không có từ database
+            if (orderCode.isEmpty() && bookingIdParam != null) {
+                orderCode = bookingIdParam;
+            }
+            if (orderDate.isEmpty()) {
+                java.util.Date now = new java.util.Date();
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                orderDate = sdf.format(now);
+            }
+            
             try {
                 if (quantityParam != null) serviceQuantity = Integer.parseInt(quantityParam);
             } catch (Exception ignore) {}
             try {
-                if (amountParam != null) totalAmount = Double.parseDouble(amountParam);
+                if (amountParam != null && !amountParam.trim().isEmpty()) {
+                    totalAmount = Double.parseDouble(amountParam);
+                }
             } catch (Exception ignore) {}
-            itemName = serviceName + (serviceIdParam != null ? (" #" + serviceIdParam) : "");
+            itemName = serviceName + (bookingIdParam != null ? (" #" + bookingIdParam) : "");
         } else if (orderIdParam != null) {
             int id = Integer.parseInt(orderIdParam);
             order = new OrderDAO().getOrderById(id);
@@ -137,21 +210,56 @@
             <i class="fas fa-list text-green-600"></i> Chi tiết đơn hàng
         </h2>
         
-        <% if ("boarding".equals(type) && booking != null) { %>
+        <% if ("health_check".equals(type)) { %>
+            <!-- Health Check Invoice -->
+            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-600">Dịch vụ:</p>
+                        <p class="font-semibold text-gray-800"><%= itemName %></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Trạng thái:</p>
+                        <p class="font-semibold text-green-600"><%= paymentStatus %></p>
+                    </div>
+                    <% if (healthCheckBooking != null) { %>
+                        <div>
+                            <p class="text-sm text-gray-600">Ngày hẹn:</p>
+                            <p class="font-semibold text-gray-800">
+                                <%= healthCheckBooking.getAppointmentStart() != null ? 
+                                    new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(healthCheckBooking.getAppointmentStart()) : "" %>
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Bác sĩ:</p>
+                            <p class="font-semibold text-gray-800">
+                                <%= (healthCheckBooking.getDoctorName() != null && !healthCheckBooking.getDoctorName().trim().isEmpty()) 
+                                    ? healthCheckBooking.getDoctorName() 
+                                    : (healthCheckBooking.getDoctorId() > 0 ? "BS #" + healthCheckBooking.getDoctorId() : "Chưa xác định") %>
+                            </p>
+                        </div>
+                    <% } %>
+                    <div class="col-span-2">
+                        <p class="text-sm text-gray-600">Tổng tiền:</p>
+                        <p class="font-semibold text-green-600 text-lg"><%= String.format("%,.0f", totalAmount) %> ₫</p>
+                    </div>
+                </div>
+            </div>
+        <% } else if ("boarding".equals(type) && boardingBooking != null) { %>
             <!-- Boarding Invoice -->
             <div class="bg-gray-50 rounded-lg p-4 mb-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <p class="text-sm text-gray-600">Loại phòng:</p>
-                        <p class="font-semibold text-gray-800"><%= booking.getRoomType() %></p>
+                        <p class="font-semibold text-gray-800"><%= boardingBooking.getRoomType() %></p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Giá/ngày:</p>
-                        <p class="font-semibold text-gray-800"><%= String.format("%,.0f", booking.getPricePerDay().doubleValue()) %> ₫</p>
+                        <p class="font-semibold text-gray-800"><%= String.format("%,.0f", boardingBooking.getPricePerDay().doubleValue()) %> ₫</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Số ngày:</p>
-                        <p class="font-semibold text-gray-800"><%= booking.getBoardingDays() %> ngày</p>
+                        <p class="font-semibold text-gray-800"><%= boardingBooking.getBoardingDays() %> ngày</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Tổng tiền:</p>
@@ -159,16 +267,16 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Ngày nhận:</p>
-                        <p class="font-semibold text-gray-800"><%= booking.getCheckInDate() != null ? booking.getCheckInDate().toString().substring(0, 10) : "" %></p>
+                        <p class="font-semibold text-gray-800"><%= boardingBooking.getCheckInDate() != null ? boardingBooking.getCheckInDate().toString().substring(0, 10) : "" %></p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-600">Ngày trả:</p>
-                        <p class="font-semibold text-gray-800"><%= booking.getCheckOutDate() != null ? booking.getCheckOutDate().toString().substring(0, 10) : "" %></p>
+                        <p class="font-semibold text-gray-800"><%= boardingBooking.getCheckOutDate() != null ? boardingBooking.getCheckOutDate().toString().substring(0, 10) : "" %></p>
                     </div>
-                    <% if (booking.getSpecialNotes() != null && !booking.getSpecialNotes().isEmpty()) { %>
+                    <% if (boardingBooking.getSpecialNotes() != null && !boardingBooking.getSpecialNotes().isEmpty()) { %>
                         <div class="col-span-2">
                             <p class="text-sm text-gray-600">Ghi chú:</p>
-                            <p class="font-semibold text-gray-800"><%= booking.getSpecialNotes() %></p>
+                            <p class="font-semibold text-gray-800"><%= boardingBooking.getSpecialNotes() %></p>
                         </div>
                     <% } %>
                 </div>
@@ -235,7 +343,12 @@
         <i class="fas fa-home"></i> Về trang chủ
     </a>
     
-    <% if ("boarding".equals(type) || "service".equals(type)) { %>
+    <% if ("health_check".equals(type)) { %>
+        <a href="<%= request.getContextPath() %>/health-check-booking?action=history" 
+           class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition shadow-md">
+            <i class="fas fa-history"></i> Lịch sử khám sức khỏe
+        </a>
+    <% } else if ("boarding".equals(type) || "service".equals(type)) { %>
         <a href="<%= request.getContextPath() %>/spa-booking?action=history" 
            class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition shadow-md">
             <i class="fas fa-history"></i> Lịch sử đặt phòng

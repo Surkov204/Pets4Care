@@ -238,4 +238,117 @@ public class EmailUtils {
             e.printStackTrace();
         }
     }
+
+    // ====================== GỬI EMAIL BIÊN LAI HOÀN TIỀN ĐƠN HÀNG ======================
+    public static void sendOrderRefundInvoice(String recipientEmail, String customerName, int orderId, 
+                                             Order order, List<OrderDetail> orderDetails, double totalAmount) {
+        System.out.println("📧 ===== BẮT ĐẦU GỬI EMAIL HOÀN TIỀN ĐƠN HÀNG =====");
+        System.out.println("📧 Email người nhận: " + recipientEmail);
+        System.out.println("📧 Tên khách hàng: " + customerName);
+        System.out.println("📧 Mã đơn hàng: " + orderId);
+        System.out.println("📧 Tổng tiền: " + totalAmount);
+        
+        try {
+            ProductDAO productDAO = new ProductDAO();
+            
+            // Nội dung email HTML
+            StringBuilder content = new StringBuilder();
+            content.append("<div style='font-family:Arial,sans-serif; max-width:600px; margin:auto; border:2px solid #E74C3C; border-radius:8px; padding:20px;'>")
+                    .append("<h2 style='color:#E74C3C;'>💰 BIÊN LAI HOÀN TIỀN - ĐƠN HÀNG</h2>")
+                    .append("<p>Xin chào <strong>").append(customerName != null ? customerName : "Khách hàng").append("</strong>,</p>")
+                    .append("<p>Chúng tôi xác nhận đã nhận được yêu cầu hủy đơn hàng của bạn.</p>")
+                    .append("<hr>")
+                    .append("<h3 style='color:#2E8B57;'>📋 Thông tin đơn hàng:</h3>")
+                    .append("<p><strong>Mã đơn hàng:</strong> #").append(orderId).append("</p>")
+                    .append("<p><strong>Ngày đặt:</strong> ").append(order.getOrderDate() != null ? order.getOrderDate() : "N/A").append("</p>")
+                    .append("<p><strong>Phương thức thanh toán:</strong> ").append(order.getPaymentMethod() != null ? order.getPaymentMethod() : "N/A").append("</p>")
+                    .append("<p><strong>Trạng thái:</strong> <span style='color:#E74C3C; font-weight:bold;'>Đã hủy - Đã hoàn tiền</span></p>")
+                    .append("<hr>")
+                    .append("<h3 style='color:#2E8B57;'>🧾 Chi tiết sản phẩm đã hủy:</h3>")
+                    .append("<table border='1' cellpadding='10' cellspacing='0' style='border-collapse:collapse; width:100%;'>")
+                    .append("<thead style='background-color:#f2f2f2;'>")
+                    .append("<tr><th>Tên sản phẩm</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th></tr>")
+                    .append("</thead><tbody>");
+
+            for (OrderDetail detail : orderDetails) {
+                String productName = productDAO.getProductNameById(detail.getProductId());
+                double itemTotal = detail.getUnitPrice() * detail.getQuantity();
+                
+                content.append("<tr>")
+                        .append("<td>").append(productName != null ? productName : "Sản phẩm #" + detail.getProductId()).append("</td>")
+                        .append("<td>").append(detail.getQuantity()).append("</td>")
+                        .append("<td>").append(String.format("%.0f", detail.getUnitPrice())).append(" ₫</td>")
+                        .append("<td><strong>").append(String.format("%.0f", itemTotal)).append(" ₫</strong></td>")
+                        .append("</tr>");
+            }
+
+            content.append("</tbody></table>")
+                    .append("<p style='margin-top:16px; font-size:18px; text-align:right;'><strong style='color:#E74C3C;'>💰 Tổng tiền hoàn lại: ")
+                    .append(String.format("%.0f", totalAmount)).append(" ₫</strong></p>")
+                    .append("<hr>")
+                    .append("<p style='background-color:#D4EDDA; padding:15px; border-left:4px solid #28A745; border-radius:4px;'>")
+                    .append("<strong>✅ Thông tin hoàn tiền:</strong><br>")
+                    .append("• Đơn hàng đã được hủy thành công.<br>")
+                    .append("• Tiền hoàn lại sẽ được chuyển về tài khoản của bạn trong vòng 3-5 ngày làm việc.<br>")
+                    .append("• Nếu bạn có thắc mắc, vui lòng liên hệ hotline: <strong>0912 345 678</strong>")
+                    .append("</p>")
+                    .append("<hr>")
+                    .append("<p style='color:gray; font-size:13px;'>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</p>")
+                    .append("</div>");
+
+            // Gửi email
+            System.out.println("📧 Đang tạo message email...");
+            Message message = new MimeMessage(getMailSession());
+            message.setFrom(new InternetAddress(SENDER_EMAIL, "Pets4Care", "UTF-8"));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipientEmail));
+            String subject = MimeUtility.encodeText("💰 Biên lai hoàn tiền - Đơn hàng #" + orderId, "UTF-8", "B");
+            message.setSubject(subject);
+            message.setContent(content.toString(), "text/html; charset=UTF-8");
+
+            System.out.println("📧 Đang gửi email qua SMTP...");
+            System.out.println("📧 SMTP Host: " + SMTP_HOST);
+            System.out.println("📧 SMTP Port: " + SMTP_PORT);
+            System.out.println("📧 From: " + SENDER_EMAIL);
+            System.out.println("📧 To: " + recipientEmail);
+            
+            Transport.send(message);
+            System.out.println("✅ Đã gửi email biên lai hoàn tiền đơn hàng đến: " + recipientEmail);
+            System.out.println("📧 ===== KẾT THÚC GỬI EMAIL HOÀN TIỀN ĐƠN HÀNG =====");
+
+        } catch (MessagingException e) {
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "";
+            System.err.println("❌ Lỗi MessagingException khi gửi email biên lai hoàn tiền đơn hàng:");
+            System.err.println("   - Message: " + errorMsg);
+            System.err.println("   - Cause: " + (e.getCause() != null ? e.getCause().getMessage() : "N/A"));
+            
+            // Kiểm tra nếu là lỗi Gmail limit
+            if (errorMsg.contains("Daily user sending limit exceeded") || 
+                errorMsg.contains("550-5.4.5")) {
+                System.err.println("⚠️ ===== GMAIL ĐÃ ĐẠT GIỚI HẠN GỬI EMAIL ===== ");
+                System.err.println("⚠️ Email không thể gửi do Gmail đã đạt giới hạn gửi trong ngày.");
+                System.err.println("⚠️ Giới hạn Gmail: 500 email/ngày cho tài khoản miễn phí, 2000 email/ngày cho Google Workspace");
+                System.err.println("⚠️ Giải pháp:");
+                System.err.println("   1. Đợi đến ngày mai (giới hạn reset mỗi ngày)");
+                System.err.println("   2. Sử dụng dịch vụ email khác (SendGrid, Mailgun, AWS SES)");
+                System.err.println("   3. Nâng cấp lên Google Workspace");
+                System.err.println("⚠️ ============================================");
+                
+                // Throw RuntimeException để caller biết và có thể xử lý (không cần declare throws)
+                throw new RuntimeException("Gmail daily sending limit exceeded", e);
+            }
+            e.printStackTrace();
+            // Wrap trong RuntimeException để không cần declare throws
+            throw new RuntimeException("Email sending failed", e);
+        } catch (RuntimeException e) {
+            // Re-throw RuntimeException (bao gồm các exception đã wrap)
+            throw e;
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi Exception khi gửi email biên lai hoàn tiền đơn hàng:");
+            System.err.println("   - Message: " + e.getMessage());
+            System.err.println("   - Type: " + e.getClass().getName());
+            e.printStackTrace();
+            // Wrap trong RuntimeException để không cần declare throws
+            throw new RuntimeException("Email sending failed", e);
+        }
+    }
 }

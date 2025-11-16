@@ -291,10 +291,13 @@ public class PayOSService {
                 System.out.println("📊 Status: " + status);
                 
                 if (status != null && ("PAID".equals(status) || "00".equals(status))) {
-                    System.out.println("✅ Payment confirmed, updating order status...");
+                    System.out.println("✅ Payment confirmed, updating payment status...");
+                    
+                    // Cập nhật payment status trong bảng Payment trước
+                    boolean paymentUpdated = updatePaymentStatusByPayOSCode(orderCode, "paid");
                     
                     // Kiểm tra xem order có tồn tại không trước khi update
-                    boolean updated;
+                    boolean updated = false;
                     if (orderExists(orderCode)) {
                         // Cập nhật trạng thái thanh toán trong [Order]
                         updated = updatePaymentStatus(orderCode, "Da thanh toan", new Timestamp(System.currentTimeMillis()));
@@ -308,7 +311,7 @@ public class PayOSService {
                         updated = updateBoardingPaymentStatus(orderCode, "Đã thanh toán");
                     }
                     
-                    if (updated) {
+                    if (paymentUpdated || updated) {
                         System.out.println("✅ Payment status updated for code #" + orderCode);
                         System.out.println("🔍 ===== WEBHOOK PROCESSING COMPLETE =====");
                         return true;
@@ -540,6 +543,96 @@ public class PayOSService {
             }
         } catch (Exception e) {
             System.err.println("❌ Error getting payment status from PayOS: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
+    /**
+     * Tạo payment record trong bảng Payment
+     * @param paymentType Loại payment: 'health_check', 'spa', 'boarding', 'order'
+     * @param referenceId ID tham chiếu (service_id, booking_id, order_id)
+     * @param customerId ID khách hàng
+     * @param amount Số tiền
+     * @param payosOrderCode Mã đơn hàng PayOS
+     * @param note Ghi chú
+     * @return payment_id nếu thành công, 0 nếu thất bại
+     */
+    public int createPaymentRecord(String paymentType, int referenceId, int customerId, double amount, 
+                                   int payosOrderCode, String note) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "INSERT INTO dbo.Payment (payment_type, reference_id, customer_id, amount, payment_status, " +
+                 "payment_method, payos_order_code, note, created_at) " +
+                 "OUTPUT INSERTED.payment_id VALUES (?, ?, ?, ?, 'pending', 'PayOS', ?, ?, GETDATE())")) {
+            
+            ps.setString(1, paymentType);
+            ps.setInt(2, referenceId);
+            ps.setInt(3, customerId);
+            ps.setDouble(4, amount);
+            ps.setInt(5, payosOrderCode);
+            ps.setString(6, note != null ? note : "");
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int paymentId = rs.getInt(1);
+                    System.out.println("✅ Payment record created with ID: " + paymentId + " for type: " + paymentType);
+                    return paymentId;
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error creating payment record: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    
+    /**
+     * Cập nhật payment status trong bảng Payment theo payos_order_code
+     */
+    public boolean updatePaymentStatusByPayOSCode(int payosOrderCode, String status) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "UPDATE dbo.Payment SET payment_status = ?, paid_at = GETDATE() " +
+                 "WHERE payos_order_code = ? AND payment_status = 'pending'")) {
+            
+            ps.setString(1, status);
+            ps.setInt(2, payosOrderCode);
+            int rows = ps.executeUpdate();
+            
+            if (rows > 0) {
+                System.out.println("✅ Payment status updated for PayOS orderCode: " + payosOrderCode);
+                return true;
+            } else {
+                System.out.println("⚠️ No payment record found or already updated for PayOS orderCode: " + payosOrderCode);
+                return false;
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error updating payment status: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Lấy payment_id từ payos_order_code
+     */
+    public Integer getPaymentIdByPayOSCode(int payosOrderCode) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "SELECT payment_id FROM dbo.Payment WHERE payos_order_code = ?")) {
+            
+            ps.setInt(1, payosOrderCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("payment_id");
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error getting payment ID: " + e.getMessage());
             e.printStackTrace();
         }
         return null;

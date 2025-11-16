@@ -275,6 +275,19 @@
             align-items: center;
             gap: 0.5rem;
         }
+
+        .two-column-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .two-column-layout {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -355,8 +368,10 @@
         </div>
         <% } %>
         
-        <!-- A. Thông tin chung về thú cưng -->
-        <div class="card">
+        <!-- A & F: Thông tin thú cưng và Đặt lịch khám (song song) -->
+        <div class="two-column-layout">
+            <!-- A. Thông tin chung về thú cưng -->
+            <div class="card">
             <h2 class="section-title">
                 <i class="fas fa-paw"></i>
                 A. Thông tin chung về thú cưng
@@ -426,6 +441,116 @@
                 </div>
             </div>
             <% } %>
+            </div>
+
+            <!-- F. Đặt lịch khám mới -->
+            <div class="card">
+                <h2 class="section-title">
+                    <i class="fas fa-calendar-plus"></i>
+                    F. Đặt lịch khám mới
+                </h2>
+
+                <% if (currentUser == null) { %>
+                <div class="bg-yellow-50 border border-yellow-400 rounded p-4 mb-4">
+                    <p class="text-yellow-700 mb-2">⚠️ Bạn cần đăng nhập để đặt lịch khám</p>
+                    <a href="login.jsp" class="btn-primary">🔐 Đăng nhập ngay</a>
+                </div>
+                <% } else if (customerPets.isEmpty()) { %>
+                <div class="bg-blue-50 border border-blue-400 rounded p-4 mb-4">
+                    <p class="text-blue-700 mb-2">ℹ️ Bạn cần cập nhật thông tin thú cưng trước khi đặt lịch khám</p>
+                    <a href="<%= request.getContextPath()%>/petinfoservlet" class="btn-primary">🐾 Cập nhật thông tin thú cưng</a>
+                </div>
+                <% } else { %>
+
+                <form action="${pageContext.request.contextPath}/health-check-booking" method="post" class="max-w-2xl">
+                    <input type="hidden" name="action" value="create-booking">
+                    <input type="hidden" name="petId" id="selectedPetId" value="<%= pet != null ? pet.getId() : "" %>">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Chọn dịch vụ khám sức khỏe</label>
+                        <select class="form-select" name="serviceId" id="serviceIdSelect" required>
+                            <option value="">Chọn dịch vụ khám</option>
+                            <% for (PetServiceModel service : healthCheckServices) { %>
+                            <option value="<%= service.getServiceId() %>">
+                                <%= service.getName() %> - <fmt:formatNumber value="<%= service.getPrice() %>" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
+                            </option>
+                            <% } %>
+                        </select>
+                        <p class="text-sm text-gray-600 mt-1">* Chọn dịch vụ khám phù hợp với tình trạng của thú cưng</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Ngày khám mong muốn</label>
+                        <input type="date" class="form-input" name="appointmentDate" id="appointmentDateInput" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Giờ khám có sẵn</label>
+                        <select class="form-select" name="appointmentTime" id="appointmentTimeSelect" required>
+                            <option value="">Chọn giờ khám</option>
+                            <option value="08:00">08:00</option>
+                            <option value="09:00">09:00</option>
+                            <option value="10:00">10:00</option>
+                            <option value="11:00">11:00</option>
+                            <option value="14:00">14:00</option>
+                            <option value="15:00">15:00</option>
+                            <option value="16:00">16:00</option>
+                            <option value="17:00">17:00</option>
+                        </select>
+                        <p class="text-sm text-gray-600 mt-1">* Chỉ hiển thị các khung giờ còn trống</p>
+                    </div>
+                    
+                    <div id="doctorInfoContainer" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <!-- Default message -->
+                        <div id="defaultDoctorMessage">
+                            <p class="text-sm text-blue-800">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <strong>Lưu ý:</strong> Hệ thống sẽ tự động chọn bác sĩ có chuyên khoa phù hợp với dịch vụ khám bạn đã chọn. Bác sĩ sẽ được phân công dựa trên chuyên môn và lịch có sẵn.
+                            </p>
+                        </div>
+                        
+                        <!-- Loading state -->
+                        <div id="doctorLoadingInfo" style="display: none;">
+                            <p class="text-sm text-blue-800 text-center">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>
+                                Đang tìm bác sĩ phù hợp...
+                            </p>
+                        </div>
+                        
+                        <!-- Doctor info display -->
+                        <div id="selectedDoctorInfo" style="display: none;">
+                            <div class="flex items-start">
+                                <i class="fas fa-user-md text-blue-600 text-xl mr-3 mt-1"></i>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-blue-800 mb-2">Bác sĩ được phân công:</h4>
+                                    <div class="text-blue-700">
+                                        <p class="mb-1"><strong id="doctorNameDisplay"></strong></p>
+                                        <p class="text-sm"><span id="doctorSpecializationDisplay"></span></p>
+                                        <p id="doctorBusyWarning" class="text-sm text-orange-600 mt-2" style="display: none;">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            <em>Lưu ý: Bác sĩ này có thể đã có lịch vào thời gian này. Hệ thống sẽ kiểm tra lại khi đặt lịch.</em>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Mô tả triệu chứng (tùy chọn)</label>
+                        <textarea class="form-textarea" name="note" rows="4" 
+                                  placeholder="Mô tả chi tiết các triệu chứng bạn quan sát được..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-calendar-check mr-2"></i>
+                            Đặt lịch khám
+                        </button>
+                    </div>
+                </form>
+                <% } %>
+            </div>
         </div>
 
         <!-- B. Thông tin sức khỏe hiện tại -->
@@ -435,35 +560,97 @@
                 B. Thông tin sức khỏe hiện tại
             </h2>
             
-            <% if (pet != null) { %>
+            <% if (pet != null) { 
+                // Lấy bệnh án mới nhất của thú cưng hiện tại
+                MedicalRecord latestRecord = null;
+                List<MedicalRecord> petRecords = petsMedicalRecords.get(pet.getId());
+                if (petRecords != null && !petRecords.isEmpty()) {
+                    // Sắp xếp theo ngày khám mới nhất (nếu có nhiều bệnh án)
+                    petRecords.sort((r1, r2) -> {
+                        if (r1.getExaminationDate() == null && r2.getExaminationDate() == null) return 0;
+                        if (r1.getExaminationDate() == null) return 1;
+                        if (r2.getExaminationDate() == null) return -1;
+                        return r2.getExaminationDate().compareTo(r1.getExaminationDate());
+                    });
+                    latestRecord = petRecords.get(0);
+                }
+            %>
             <table class="info-table">
                 <tr>
                     <th>Cân nặng</th>
-                    <td>Chưa có thông tin <span class="text-gray-500 text-sm">(Cần cập nhật)</span></td>
+                    <td>
+                        <% if (latestRecord != null && latestRecord.getWeight() != null) { %>
+                            <%= latestRecord.getWeight() %> kg
+                        <% } else { %>
+                            Chưa có thông tin <span class="text-gray-500 text-sm">(Cần cập nhật)</span>
+                        <% } %>
+                    </td>
                 </tr>
                 <tr>
                     <th>Tình trạng chung</th>
-                    <td><span class="status-badge status-normal">Cần khám định kỳ</span></td>
+                    <td>
+                        <% if (latestRecord != null && latestRecord.getDiagnosis() != null && !latestRecord.getDiagnosis().trim().isEmpty()) { %>
+                            <span class="status-badge status-normal">Đã có chẩn đoán</span>
+                            <span class="text-gray-600 text-sm ml-2">(<%= latestRecord.getDiagnosis() %>)</span>
+                        <% } else { %>
+                            <span class="status-badge status-normal">Cần khám định kỳ</span>
+                        <% } %>
+                    </td>
                 </tr>
                 <tr>
                     <th>Nhiệt độ</th>
-                    <td>Chưa có thông tin</td>
+                    <td>
+                        <% if (latestRecord != null && latestRecord.getTemperature() != null) { %>
+                            <%= latestRecord.getTemperature() %>°C
+                        <% } else { %>
+                            Chưa có thông tin
+                        <% } %>
+                    </td>
                 </tr>
                 <tr>
                     <th>Mạch</th>
-                    <td>Chưa có thông tin</td>
+                    <td>
+                        <% if (latestRecord != null && latestRecord.getHeartRate() != null) { %>
+                            <%= latestRecord.getHeartRate() %> bpm
+                        <% } else { %>
+                            Chưa có thông tin
+                        <% } %>
+                    </td>
                 </tr>
                 <tr>
                     <th>Nhịp thở</th>
-                    <td>Chưa có thông tin</td>
+                    <td>
+                        <% if (latestRecord != null && latestRecord.getBloodPressure() != null && !latestRecord.getBloodPressure().trim().isEmpty()) { %>
+                            <%= latestRecord.getBloodPressure() %>
+                        <% } else { %>
+                            Chưa có thông tin
+                        <% } %>
+                    </td>
                 </tr>
                 <tr>
                     <th>Triệu chứng</th>
-                    <td>Chưa có triệu chứng nào được ghi nhận</td>
+                    <td>
+                        <% if (latestRecord != null && latestRecord.getSymptoms() != null && !latestRecord.getSymptoms().trim().isEmpty()) { %>
+                            <%= latestRecord.getSymptoms() %>
+                        <% } else { %>
+                            Chưa có triệu chứng nào được ghi nhận
+                        <% } %>
+                    </td>
                 </tr>
                 <tr>
                     <th>Ghi chú bác sĩ</th>
-                    <td>Chưa có ghi chú từ bác sĩ</td>
+                    <td>
+                        <% if (latestRecord != null && latestRecord.getNotes() != null && !latestRecord.getNotes().trim().isEmpty()) { %>
+                            <%= latestRecord.getNotes() %>
+                            <% if (latestRecord.getExaminationDate() != null) { %>
+                                <span class="text-gray-500 text-sm ml-2">
+                                    (Cập nhật: <%= new SimpleDateFormat("dd/MM/yyyy").format(latestRecord.getExaminationDate()) %>)
+                                </span>
+                            <% } %>
+                        <% } else { %>
+                            Chưa có ghi chú từ bác sĩ
+                        <% } %>
+                    </td>
                 </tr>
             </table>
             <% } else { %>
@@ -684,106 +871,135 @@
             </div>
             <% } %>
         </div>
-
-        <!-- F. Đặt lịch khám mới -->
-        <div class="card">
-            <h2 class="section-title">
-                <i class="fas fa-calendar-plus"></i>
-                F. Đặt lịch khám mới
-            </h2>
-
-            <% if (currentUser == null) { %>
-            <div class="bg-yellow-50 border border-yellow-400 rounded p-4 mb-4">
-                <p class="text-yellow-700 mb-2">⚠️ Bạn cần đăng nhập để đặt lịch khám</p>
-                <a href="login.jsp" class="btn-primary">🔐 Đăng nhập ngay</a>
-            </div>
-            <% } else if (customerPets.isEmpty()) { %>
-            <div class="bg-blue-50 border border-blue-400 rounded p-4 mb-4">
-                <p class="text-blue-700 mb-2">ℹ️ Bạn cần cập nhật thông tin thú cưng trước khi đặt lịch khám</p>
-                <a href="<%= request.getContextPath()%>/petinfoservlet" class="btn-primary">🐾 Cập nhật thông tin thú cưng</a>
-            </div>
-            <% } else { %>
-
-            <form action="${pageContext.request.contextPath}/health-check-booking" method="post" class="max-w-2xl">
-                <input type="hidden" name="action" value="create-booking">
-                <input type="hidden" name="petId" id="selectedPetId" value="<%= pet != null ? pet.getId() : "" %>">
-                
-                <div class="form-group">
-                    <label class="form-label">Chọn dịch vụ khám sức khỏe</label>
-                    <select class="form-select" name="serviceId" required>
-                        <option value="">Chọn dịch vụ khám</option>
-                        <% for (PetServiceModel service : healthCheckServices) { %>
-                        <option value="<%= service.getServiceId() %>">
-                            <%= service.getName() %> - <fmt:formatNumber value="<%= service.getPrice() %>" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
-                        </option>
-                        <% } %>
-                    </select>
-                    <p class="text-sm text-gray-600 mt-1">* Chọn dịch vụ khám phù hợp với tình trạng của thú cưng</p>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Ngày khám mong muốn</label>
-                    <input type="date" class="form-input" name="appointmentDate" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Giờ khám có sẵn</label>
-                    <select class="form-select" name="appointmentTime" required>
-                        <option value="">Chọn giờ khám</option>
-                        <option value="08:00">08:00</option>
-                        <option value="09:00">09:00</option>
-                        <option value="10:00">10:00</option>
-                        <option value="11:00">11:00</option>
-                        <option value="14:00">14:00</option>
-                        <option value="15:00">15:00</option>
-                        <option value="16:00">16:00</option>
-                        <option value="17:00">17:00</option>
-                    </select>
-                    <p class="text-sm text-gray-600 mt-1">* Chỉ hiển thị các khung giờ còn trống</p>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Chọn bác sĩ</label>
-                    <select class="form-select" name="doctorId" required>
-                        <option value="">Chọn bác sĩ</option>
-                        <option value="1">BS. Nguyễn Minh Anh - Da liễu & chăm sóc lông</option>
-                        <option value="2">BS. Trần Văn Cường - Phẫu thuật & chỉnh hình</option>
-                        <option value="3">BS. Lê Thị Mai - Tim mạch & hô hấp</option>
-                        <option value="4">BS. Phạm Đức Minh - Tiêu hóa & dinh dưỡng</option>
-                        <option value="5">BS. Võ Thị Hương - Sản khoa & sinh sản</option>
-                        <option value="6">BS. Đặng Văn Tùng - Thần kinh & hành vi</option>
-                    </select>
-                    <p class="text-sm text-gray-600 mt-1">* Bác sĩ bận sẽ không hiển thị trong danh sách</p>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Mô tả triệu chứng (tùy chọn)</label>
-                    <textarea class="form-textarea" name="note" rows="4" 
-                              placeholder="Mô tả chi tiết các triệu chứng bạn quan sát được..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-calendar-check mr-2"></i>
-                        Đặt lịch khám
-                    </button>
-                </div>
-            </form>
-            <% } %>
-        </div>
     </div>
 
     <script>
         // Set minimum date to today
         document.addEventListener('DOMContentLoaded', function() {
-            const dateInput = document.querySelector('input[name="appointmentDate"]');
-            const today = new Date().toISOString().split('T')[0];
-            dateInput.min = today;
+            console.log('DOMContentLoaded - Initializing doctor info loader...');
             
-            // Set default date to tomorrow
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            dateInput.value = tomorrow.toISOString().split('T')[0];
+            const dateInput = document.querySelector('input[name="appointmentDate"]');
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.min = today;
+                
+                // Set default date to tomorrow
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                dateInput.value = tomorrow.toISOString().split('T')[0];
+            }
+            
+            // Load doctor info when service, date, or time changes
+            const serviceSelect = document.getElementById('serviceIdSelect') || document.querySelector('select[name="serviceId"]');
+            const appointmentDateInput = document.getElementById('appointmentDateInput') || document.querySelector('input[name="appointmentDate"]');
+            const appointmentTimeSelect = document.getElementById('appointmentTimeSelect') || document.querySelector('select[name="appointmentTime"]');
+            
+            console.log('Elements found:', {
+                serviceSelect: !!serviceSelect,
+                appointmentDateInput: !!appointmentDateInput,
+                appointmentTimeSelect: !!appointmentTimeSelect
+            });
+            
+            function loadDoctorInfo() {
+                const serviceId = serviceSelect ? serviceSelect.value : '';
+                const appointmentDate = appointmentDateInput ? appointmentDateInput.value : '';
+                const appointmentTime = appointmentTimeSelect ? appointmentTimeSelect.value : '';
+                
+                console.log('loadDoctorInfo called:', { serviceId, appointmentDate, appointmentTime });
+                
+                const defaultMessage = document.getElementById('defaultDoctorMessage');
+                const doctorInfoDiv = document.getElementById('selectedDoctorInfo');
+                const doctorLoadingDiv = document.getElementById('doctorLoadingInfo');
+                
+                if (!serviceId || !appointmentDate || !appointmentTime) {
+                    // Show default message, hide others
+                    if (defaultMessage) defaultMessage.style.display = 'block';
+                    if (doctorInfoDiv) doctorInfoDiv.style.display = 'none';
+                    if (doctorLoadingDiv) doctorLoadingDiv.style.display = 'none';
+                    console.log('Missing required fields, showing default message');
+                    return;
+                }
+                
+                // Show loading, hide default message and doctor info
+                defaultMessage.style.display = 'none';
+                doctorLoadingDiv.style.display = 'block';
+                doctorInfoDiv.style.display = 'none';
+                
+                // Fetch doctor info
+                const url = '<%= request.getContextPath()%>/health-check-booking?action=get-suitable-doctor&serviceId=' + 
+                           encodeURIComponent(serviceId) + 
+                           '&appointmentDate=' + encodeURIComponent(appointmentDate) +
+                           '&appointmentTime=' + encodeURIComponent(appointmentTime);
+                
+                console.log('Fetching doctor info:', url);
+                
+                fetch(url)
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Doctor data received:', data);
+                        doctorLoadingDiv.style.display = 'none';
+                        
+                        if (data.success) {
+                            document.getElementById('doctorNameDisplay').textContent = data.doctorName;
+                            document.getElementById('doctorSpecializationDisplay').textContent = '🩺 ' + data.specialization;
+                            
+                            const busyWarning = document.getElementById('doctorBusyWarning');
+                            if (data.isBusy) {
+                                busyWarning.style.display = 'block';
+                            } else {
+                                busyWarning.style.display = 'none';
+                            }
+                            
+                            // Show doctor info, hide default message
+                            defaultMessage.style.display = 'none';
+                            doctorInfoDiv.style.display = 'block';
+                            console.log('Doctor info displayed successfully');
+                        } else {
+                            // Show default message on error
+                            defaultMessage.style.display = 'block';
+                            doctorInfoDiv.style.display = 'none';
+                            if (data.error) {
+                                console.error('Error loading doctor:', data.error);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading doctor info:', error);
+                        // Show default message on error
+                        defaultMessage.style.display = 'block';
+                        doctorLoadingDiv.style.display = 'none';
+                        doctorInfoDiv.style.display = 'none';
+                    });
+            }
+            
+            // Add event listeners
+            if (serviceSelect) {
+                serviceSelect.addEventListener('change', loadDoctorInfo);
+            }
+            if (appointmentDateInput) {
+                appointmentDateInput.addEventListener('change', loadDoctorInfo);
+            }
+            if (appointmentTimeSelect) {
+                appointmentTimeSelect.addEventListener('change', loadDoctorInfo);
+            }
+            
+            // Also trigger on input for date field (for date picker)
+            if (appointmentDateInput) {
+                appointmentDateInput.addEventListener('input', loadDoctorInfo);
+            }
+            
+            // Debug: Log when elements are found
+            console.log('Doctor info loader initialized:', {
+                serviceSelect: !!serviceSelect,
+                appointmentDateInput: !!appointmentDateInput,
+                appointmentTimeSelect: !!appointmentTimeSelect
+            });
         });
 
         // Form submission handler - removed preventDefault to allow form submission

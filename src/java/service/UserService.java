@@ -13,27 +13,27 @@ public class UserService implements IUserService {
     public Customer loginCustomer(String email, String password) {
         Customer customer = userDao.findByEmail(email);
         if (customer != null) {
-            // Kiểm tra status - chỉ cho phép đăng nhập nếu status = "active"
-            String status = customer.getStatus();
-            if (status == null || !"active".equals(status)) {
-                System.err.println("Login blocked: Account is not active. Status: " + status);
-                return null;
-            }
-            
             String stored = customer.getPassword();
 
             try {
+                boolean passwordCorrect = false;
                 if (stored != null && stored.startsWith("$2")) {
                     if (BCrypt.checkpw(password, stored)) {
-                        return customer;
+                        passwordCorrect = true;
                     }
                 } else {
                     if (password.equals(stored)) {
+                        passwordCorrect = true;
                         String hashed = BCrypt.hashpw(password, BCrypt.gensalt(12));
                         userDao.resetPassword(customer.getEmail(), hashed);
                         customer.setPassword(hashed);
-                        return customer;
                     }
+                }
+                
+                // Nếu mật khẩu đúng, trả về customer (kể cả khi status không active)
+                // LoginServlet sẽ kiểm tra status và hiển thị thông báo phù hợp
+                if (passwordCorrect) {
+                    return customer;
                 }
             } catch (Exception e) {
                 System.err.println("Password check error: " + e.getMessage());

@@ -267,6 +267,10 @@
                             <i class="fas fa-calendar-check"></i>
                             <span>Đặt lịch khám</span>
                         </a>
+                        <a href="<%= request.getContextPath()%>/user/payment-history.jsp" class="sidebar-nav-item">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Lịch sử thanh toán</span>
+                        </a>
                         <a href="<%= request.getContextPath()%>/home" class="sidebar-nav-item">
                             <i class="fas fa-home"></i>
                             <span>Về trang chủ</span>

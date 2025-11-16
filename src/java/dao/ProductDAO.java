@@ -15,7 +15,7 @@ public class ProductDAO implements IProductDAO {
     @Override
     public List<Product> getAllProducts() {
         List<Product> products = new ArrayList<>();
-        String sql = "SELECT p.product_id, p.name, p.price, p.category_id, p.stock_quantity, p.supplier_id, p.description, p.admin_id, " +
+        String sql = "SELECT p.product_id, p.name, p.price, p.category_id, p.stock_quantity, p.supplier_id, p.description, p.admin_id, p.image_url, " +
                     "pc.name as category_name, s.name_Company as supplier_name " +
                     "FROM Products p " +
                     "LEFT JOIN ProductCategory pc ON p.category_id = pc.category_id " +
@@ -41,7 +41,7 @@ public class ProductDAO implements IProductDAO {
     @Override
     public List<Product> getProductsByPage(int offset, int limit) {
         List<Product> products = new ArrayList<>();
-        String sql = "SELECT p.product_id, p.name, p.price, p.category_id, p.stock_quantity, p.supplier_id, p.description, p.admin_id, " +
+        String sql = "SELECT p.product_id, p.name, p.price, p.category_id, p.stock_quantity, p.supplier_id, p.description, p.admin_id, p.image_url, " +
                     "pc.name as category_name, s.name_Company as supplier_name " +
                     "FROM Products p " +
                     "LEFT JOIN ProductCategory pc ON p.category_id = pc.category_id " +
@@ -77,7 +77,7 @@ public class ProductDAO implements IProductDAO {
 
     @Override
     public Product getProductById(int productId) {
-        String sql = "SELECT p.product_id, p.name, p.price, p.category_id, p.stock_quantity, p.supplier_id, p.description, p.admin_id, " +
+        String sql = "SELECT p.product_id, p.name, p.price, p.category_id, p.stock_quantity, p.supplier_id, p.description, p.admin_id, p.image_url, " +
                     "pc.name as category_name, s.name_Company as supplier_name " +
                     "FROM Products p " +
                     "LEFT JOIN ProductCategory pc ON p.category_id = pc.category_id " +
@@ -105,18 +105,29 @@ public class ProductDAO implements IProductDAO {
     @Override
     public List<Product> searchProducts(String keyword) {
         List<Product> products = new ArrayList<>();
-        String sql = "SELECT p.product_id, p.name, p.price, p.category_id, p.stock_quantity, p.supplier_id, p.description, p.admin_id, " +
+        // Sử dụng LOWER() để tìm kiếm không phân biệt hoa thường
+        // Ưu tiên sản phẩm có keyword trong tên (ORDER BY CASE) - sản phẩm có keyword trong name sẽ được ưu tiên
+        String sql = "SELECT p.product_id, p.name, p.price, p.category_id, p.stock_quantity, p.supplier_id, p.description, p.admin_id, p.image_url, " +
                     "pc.name as category_name, s.name_Company as supplier_name " +
                     "FROM Products p " +
                     "LEFT JOIN ProductCategory pc ON p.category_id = pc.category_id " +
                     "LEFT JOIN Supplier s ON p.supplier_id = s.supplier_id " +
-                    "WHERE p.name LIKE ?";
+                    "WHERE LOWER(p.name) LIKE ? OR LOWER(p.description) LIKE ? " +
+                    "ORDER BY CASE " +
+                    "  WHEN LOWER(p.name) LIKE ? THEN 1 " +
+                    "  WHEN LOWER(p.description) LIKE ? THEN 2 " +
+                    "  ELSE 3 " +
+                    "END, p.name";
 
         try (Connection con = DBConnection.getConnection(); 
              PreparedStatement ps = con.prepareStatement(sql)) {
             
-            String searchPattern = "%" + keyword + "%";
+            // Chuyển keyword sang chữ thường để tìm kiếm không phân biệt hoa thường
+            String searchPattern = "%" + keyword.toLowerCase() + "%";
             ps.setString(1, searchPattern);
+            ps.setString(2, searchPattern);
+            ps.setString(3, searchPattern); // Cho ORDER BY CASE
+            ps.setString(4, searchPattern); // Cho ORDER BY CASE
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -359,7 +370,7 @@ public class ProductDAO implements IProductDAO {
     @Override
     public List<Product> getProductsByCategory(int categoryId) {
         List<Product> products = new ArrayList<>();
-        String sql = "SELECT * FROM Products WHERE category_id = ?";
+        String sql = "SELECT p.*, pc.name as category_name FROM Products p LEFT JOIN ProductCategory pc ON p.category_id = pc.category_id WHERE p.category_id = ?";
 
         try (Connection con = DBConnection.getConnection(); 
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -388,19 +399,34 @@ public class ProductDAO implements IProductDAO {
     @Override
     public List<Product> searchProductsByKeywordAndCategory(String keyword, int categoryId) {
         List<Product> products = new ArrayList<>();
-        String sql = "SELECT * FROM Products WHERE (name LIKE ? OR description LIKE ?) AND category_id = ?";
+        // Sử dụng LOWER() để tìm kiếm không phân biệt hoa thường
+        // Ưu tiên sản phẩm có keyword trong tên
+        String sql = "SELECT p.product_id, p.name, p.price, p.category_id, p.stock_quantity, p.supplier_id, p.description, p.admin_id, p.image_url, " +
+                    "pc.name as category_name, s.name_Company as supplier_name " +
+                    "FROM Products p " +
+                    "LEFT JOIN ProductCategory pc ON p.category_id = pc.category_id " +
+                    "LEFT JOIN Supplier s ON p.supplier_id = s.supplier_id " +
+                    "WHERE (LOWER(p.name) LIKE ? OR LOWER(p.description) LIKE ?) AND p.category_id = ? " +
+                    "ORDER BY CASE " +
+                    "  WHEN LOWER(p.name) LIKE ? THEN 1 " +
+                    "  WHEN LOWER(p.description) LIKE ? THEN 2 " +
+                    "  ELSE 3 " +
+                    "END, p.name";
 
         try (Connection con = DBConnection.getConnection(); 
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            String searchPattern = "%" + keyword + "%";
+            // Chuyển keyword sang chữ thường để tìm kiếm không phân biệt hoa thường
+            String searchPattern = "%" + keyword.toLowerCase() + "%";
             ps.setString(1, searchPattern);
             ps.setString(2, searchPattern);
             ps.setInt(3, categoryId);
+            ps.setString(4, searchPattern); // Cho ORDER BY CASE
+            ps.setString(5, searchPattern); // Cho ORDER BY CASE
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Product product = mapProductFromResultSet(rs);
+                    Product product = mapProductWithDetailsFromResultSet(rs);
                     products.add(product);
                 }
             }
@@ -653,7 +679,13 @@ public class ProductDAO implements IProductDAO {
         product.setSupplierId(rs.getInt("supplier_id"));
         product.setDescription(rs.getString("description"));
         product.setAdminId(rs.getInt("admin_id"));
-        // Không có image_url trong database
+        // Lấy image_url nếu có
+        try {
+            product.setImageUrl(rs.getString("image_url"));
+        } catch (SQLException e) {
+            // Nếu cột không tồn tại, set null
+            product.setImageUrl(null);
+        }
         return product;
     }
     
@@ -667,6 +699,14 @@ public class ProductDAO implements IProductDAO {
         product.setSupplierId(rs.getInt("supplier_id"));
         product.setDescription(rs.getString("description"));
         product.setAdminId(rs.getInt("admin_id"));
+        
+        // Lấy image_url nếu có
+        try {
+            product.setImageUrl(rs.getString("image_url"));
+        } catch (SQLException e) {
+            // Nếu cột không tồn tại, set null
+            product.setImageUrl(null);
+        }
         
         // Set additional fields for display
         String categoryName = rs.getString("category_name");

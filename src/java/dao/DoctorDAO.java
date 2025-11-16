@@ -142,4 +142,44 @@ public class DoctorDAO {
         }
         return 0;
     }
+
+    /**
+     * Get doctors by specialization
+     */
+    public List<Doctor> getDoctorsBySpecialization(String specialization) {
+        List<Doctor> doctors = new ArrayList<>();
+        String sql = "SELECT * FROM Doctor WHERE specialization = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, specialization);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    doctors.add(mapDoctorFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("Error fetching doctors by specialization: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return doctors;
+    }
+
+    /**
+     * Get all active doctors
+     */
+    public List<Doctor> getAllActiveDoctors() {
+        List<Doctor> doctors = new ArrayList<>();
+        String sql = "SELECT * FROM Doctor ORDER BY doctor_id";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                doctors.add(mapDoctorFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            logger.severe("Error fetching all doctors: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return doctors;
+    }
 }

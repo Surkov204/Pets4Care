@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="model.Customer, model.Order, model.BoardingBooking, dao.OrderDAO, dao.BoardingBookingDAO" %>
+<%@ page import="model.Customer, model.Order, model.BoardingBooking, dao.OrderDAO, dao.BoardingBookingDAO, utils.DBConnection" %>
 <%@ page session="true" %>
 <%
     Customer currentUser = (Customer) session.getAttribute("currentUser");
@@ -36,12 +36,44 @@
         } else if ("service".equals(type)) {
             // Huỷ thanh toán dịch vụ: hiển thị thông tin cơ bản từ query param (nếu có)
             invoiceTitle = "❌ Hoá đơn hủy dịch vụ";
+            orderCode = orderIdParam != null ? orderIdParam : "";
             try {
                 if (quantityParam != null) serviceQuantity = Integer.parseInt(quantityParam);
             } catch (Exception ignore) {}
             try {
                 if (amountParam != null) totalAmount = Double.parseDouble(amountParam);
             } catch (Exception ignore) {}
+            
+            // Lấy thông tin booking nếu có orderId
+            if (orderIdParam != null) {
+                try {
+                    int bookingId = Integer.parseInt(orderIdParam);
+                    try (java.sql.Connection conn = utils.DBConnection.getConnection();
+                         java.sql.PreparedStatement ps = conn.prepareStatement(
+                             "SELECT b.booking_id, b.customer_id, b.created_at, " +
+                             "COALESCE(SUM(bs.unit_price * bs.quantity), 0) as total_amount " +
+                             "FROM dbo.Booking b " +
+                             "LEFT JOIN dbo.Booking_Service bs ON b.booking_id = bs.booking_id " +
+                             "WHERE b.order_id = ? OR b.booking_id = ? " +
+                             "GROUP BY b.booking_id, b.customer_id, b.created_at")) {
+                        ps.setInt(1, bookingId);
+                        ps.setInt(2, bookingId);
+                        try (java.sql.ResultSet rs = ps.executeQuery()) {
+                            if (rs.next()) {
+                                orderCode = String.valueOf(rs.getInt("booking_id"));
+                                if (rs.getTimestamp("created_at") != null) {
+                                    orderDate = rs.getTimestamp("created_at").toString();
+                                }
+                                if (totalAmount == 0) {
+                                    totalAmount = rs.getDouble("total_amount");
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         } else if (orderIdParam != null) {
             int id = Integer.parseInt(orderIdParam);
             order = new OrderDAO().getOrderById(id);

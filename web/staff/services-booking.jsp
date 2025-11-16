@@ -145,7 +145,7 @@
 
                     <!-- Search and Filter -->
                     <div class="filter-section" style="background-color: #f8f9fa; border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem;">
-                        <form method="GET" action="${pageContext.request.contextPath}/staff/services-booking">
+                        <form method="GET" action="${pageContext.request.contextPath}/staff/servicesbooking">
                             <div class="search-form" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center;">
                                 <input type="text" class="search-input" name="keyword" 
                                        placeholder="Tìm kiếm theo tên, SĐT, email, loại dịch vụ..." 

@@ -692,8 +692,8 @@
 
                         Swal.fire({
                             icon: "warning",
-                            title: "Sai Wi-Fi!",
-                            text: "Vui lòng dùng Wi-Fi 'Dung' để check-in/check-out."
+                            title: "Incorrect Network",
+                            text: "Vui lòng dùng đúng mạng để check-in/check-out."
                         });
 
                         return false;

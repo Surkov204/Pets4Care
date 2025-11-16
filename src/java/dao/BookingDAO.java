@@ -927,11 +927,43 @@ public List<Booking> getAllBookings() {
         }
     }
 
+
     @Override
     public List<Booking> getAllBookingsForStaffView() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
+        List<Booking> list = new ArrayList<>();
 
+        String sql = """
+        SELECT b.*, 
+               c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email,
+               p.pet_name AS pet_name, p.species AS pet_type,
+               s.name AS staff_name,
+               d.name AS doctor_name
+        FROM dbo.Booking b
+        LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id
+        LEFT JOIN dbo.Pet p ON b.pet_id = p.id
+        LEFT JOIN dbo.Staff s ON b.staff_id = s.staff_id
+        LEFT JOIN dbo.Doctor d ON b.doctor_id = d.doctor_id
+        ORDER BY b.appointment_start DESC
+        """;
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Booking booking = mapBookingFromResultSet(rs);
+
+                // 🔥 Load service theo booking_id
+                List<String> services = getServiceNamesByBookingId(booking.getBookingId());
+                booking.setServiceNames(String.join(", ", services));
+
+                list.add(booking);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
     /**
      * Get bookings by pet ID and date range
      */
@@ -1002,8 +1034,32 @@ public List<Booking> getAllBookings() {
         booking.setStaffName(rs.getString("staff_name"));
         booking.setDoctorName(rs.getString("doctor_name"));
         booking.setServiceNames(rs.getString("service_names"));
+        
+        try {
+            booking.setServiceNames(rs.getString("service_names"));
+        } catch (SQLException ignore) {
+        }
+
 
         return booking;
     }
+    public List<String> getServiceNamesByBookingId(int bookingId) {
+    List<String> services = new ArrayList<>();
+    String sql = "SELECT ps.name " +
+                 "FROM Booking_Service bs " +
+                 "JOIN PetService ps ON ps.service_id = bs.service_id " +
+                 "WHERE bs.booking_id = ?";
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, bookingId);
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            services.add(rs.getString("name"));
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return services;
+}
 }
 

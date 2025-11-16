@@ -78,5 +78,4 @@ public class WorkScheduleController extends HttpServlet {
         // 🔁 Quay lại danh sách
         response.sendRedirect(request.getContextPath() + "/schedule?action=list");
     }
-
 }

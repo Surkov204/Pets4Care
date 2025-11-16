@@ -1,3 +1,5 @@
+<%@page import="java.util.HashMap"%>
+<%@page import="java.util.Map"%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="model.Admin, model.Staff, model.ShiftRequest, java.util.List" %>
 <%@ page import="dao.ShiftRequestDAO" %>
@@ -7,6 +9,8 @@
 <%@ page import="dao.ShiftDAO" %>
 <%@ page import="model.Shift" %>
 <%@ page import="java.util.List" %>
+<%@ page import="dao.DoctorDAO" %>
+<%@ page import="model.Doctor" %>
 
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
@@ -29,12 +33,12 @@
     request.setAttribute("requestList", requestList);
 
     // Dữ liệu nhân viên (phần 1)
-    List<Staff> staffList = (List<Staff>) request.getAttribute("staffList");
-    if (staffList == null) {
-        response.sendRedirect("manage-staff");
-        return;
-    }
-
+    DoctorDAO doctorDAO = new DoctorDAO();
+    List<Doctor> doctorList = doctorDAO.getAllExcept(0);
+    request.setAttribute("doctorList", doctorList);
+    dao.StaffDAO sdao = new dao.StaffDAO();
+    List<Staff> staffList = sdao.getAllStaff();
+    request.setAttribute("staffList", staffList);
     Integer adminCount = (Integer) request.getAttribute("adminCount");
     Integer managerCount = (Integer) request.getAttribute("managerCount");
     Integer staffCount = (Integer) request.getAttribute("staffCount");
@@ -343,9 +347,9 @@
                                     <button class="btn approve"
                                             onclick="openSalaryModal(
                                             <%= s.getStaffId()%>,
-                                        '<%= base != null ? base : ""%>',
-                                        '<%= standardShifts != null ? standardShifts : ""%>'
-                                        )">
+                                                            '<%= base != null ? base : ""%>',
+                                                            '<%= standardShifts != null ? standardShifts : ""%>'
+                                                            )">
                                         💰 Lương tháng
                                     </button>
                                 </td>
@@ -523,7 +527,44 @@
                 </div>
                 <!-- Tab 5: Bảng làm việc -->
                 <div id="tab-worktable" class="tab-content">
+                    <%
+                        dao.WorkScheduleDAO wsDao = new dao.WorkScheduleDAO();
+                        dao.StaffDAO staffDAO = new dao.StaffDAO();
+                        Map<Integer, String> staffNameCache = new HashMap<>();
+                        for (model.Staff st : staffDAO.getAllStaff()) {
+                            staffNameCache.put(st.getStaffId(), st.getName());
+                        }
+                        Map<Integer, String> doctorNameCache = new HashMap<>();
+                        for (model.Doctor d : doctorDAO.getAllExcept(0)) {
+                            doctorNameCache.put(d.getDoctorId(), d.getName());
+                        }
+                        int weekOffset = 0;
+                        String offsetStr = request.getParameter("weekOffset");
+                        if (offsetStr != null) {
+                            try {
+                                weekOffset = Integer.parseInt(offsetStr);
+                            } catch (Exception e) {
+                            }
+                        }
 
+                        java.time.LocalDate today = java.time.LocalDate.now();
+                        java.time.LocalDate monday = today.with(java.time.DayOfWeek.MONDAY).plusWeeks(weekOffset);
+
+                        java.time.LocalDate startWeek = monday;
+                        java.time.LocalDate endWeek = monday.plusDays(6);
+
+                        // 🔥 load lịch tuần này
+                        List<model.WorkSchedule> allSchedules = wsDao.getSchedulesInRange(startWeek, endWeek);
+
+                        // 🔥 load ca làm (dịch lên đây)
+                        List<model.Shift> shifts = shiftDAO.getAllShifts();
+
+                        // 🔥 load 7 ngày
+                        java.util.List<java.time.LocalDate> days = new java.util.ArrayList<>();
+                        for (int i = 0; i < 7; i++) {
+                            days.add(monday.plusDays(i));
+                        }
+                    %>
                     <h2 style="color:#0077b6; margin-bottom:12px;">
                         📅 Lịch làm việc chung của toàn bộ nhân viên
                     </h2>
@@ -697,28 +738,7 @@
                         }
                     </style>
 
-                    <%
-                        dao.WorkScheduleDAO wsDao = new dao.WorkScheduleDAO();
-                        List<model.WorkSchedule> allSchedules = wsDao.getAllSchedules();
-                        dao.StaffDAO staffDAO = new dao.StaffDAO();
-                        List<model.Shift> shifts = shiftDAO.getAllShifts();
 
-                        int weekOffset = 0;
-                        String offsetStr = request.getParameter("weekOffset");
-                        if (offsetStr != null) {
-                            try {
-                                weekOffset = Integer.parseInt(offsetStr);
-                            } catch (NumberFormatException e) {
-                                weekOffset = 0;
-                            }
-                        }
-
-                        java.time.LocalDate today = java.time.LocalDate.now();
-                        java.time.LocalDate monday = today.with(java.time.DayOfWeek.MONDAY).plusWeeks(weekOffset);
-                        java.util.List<java.time.LocalDate> days = new java.util.ArrayList<>();
-                        for (int i = 0; i < 7; i++)
-                            days.add(monday.plusDays(i));
-                    %>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                         <form method="get" style="margin:0;">
                             <input type="hidden" name="weekOffset" value="<%= weekOffset - 1%>">
@@ -757,7 +777,8 @@
                                 <% for (java.time.LocalDate d : days) {
                                         java.util.List<model.WorkSchedule> schedulesForSlot = new java.util.ArrayList<>();
                                         for (model.WorkSchedule ws : allSchedules) {
-                                            if (ws.getWorkDate().toString().equals(d.toString())
+                                            if (ws.getWorkDate() != null
+                                                    && ws.getWorkDate().toLocalDate().equals(d)
                                                     && ws.getShiftId() == shift.getShiftID()) {
                                                 schedulesForSlot.add(ws);
                                             }
@@ -766,11 +787,19 @@
                                 <td>
                                     <% if (!schedulesForSlot.isEmpty()) {%>
                                     <span class="missing-info">Còn thiếu <%= 5 - schedulesForSlot.size()%> nhân viên</span>
-                                    <% for (model.WorkSchedule ws : schedulesForSlot) {
-                                            model.Staff st = staffDAO.findById(ws.getStaffId());
+                                    <% for (model.WorkSchedule ws : schedulesForSlot) {%>
+                                    <%
+                                        String displayName = "Không rõ";
+
+                                        if (ws.getStaffId() != null) {
+                                            displayName = staffNameCache.get(ws.getStaffId());
+                                        } else if (ws.getDoctorId() != null) {
+                                            displayName = doctorNameCache.get(ws.getDoctorId());
+                                        }
                                     %>
+
                                     <div class="shift-card">
-                                        👤 <%= st != null ? st.getName() : "N/A"%>
+                                        👤 <%= displayName%>
                                         <form method="post" action="${pageContext.request.contextPath}/admin/manageSchedule" style="display:inline;">
                                             <input type="hidden" name="action" value="unassign">
                                             <input type="hidden" name="scheduleId" value="<%= ws.getScheduleId()%>">
@@ -803,10 +832,23 @@
                                 <input type="hidden" name="weekOffset" value="<%= weekOffset%>">
 
                                 <label>Chọn nhân viên:</label>
-                                <select name="staffId" required>
-                                    <c:forEach var="s" items="${staffList}">
-                                        <option value="${s.staffId}">${s.name}</option>
-                                    </c:forEach>
+                                <label>Chọn người làm việc:</label>
+                                <select name="personId" required>
+
+                                    <!-- Nhân viên -->
+                                    <optgroup label="Nhân viên">
+                                        <c:forEach var="s" items="${staffList}">
+                                            <option value="staff-${s.staffId}">${s.name}</option>
+                                        </c:forEach>
+                                    </optgroup>
+
+                                    <!-- Bác sĩ -->
+                                    <optgroup label="Bác sĩ">
+                                        <c:forEach var="d" items="${doctorList}">
+                                            <option value="doctor-${d.doctorId}">BS. ${d.name}</option>
+                                        </c:forEach>
+                                    </optgroup>
+
                                 </select>
 
                                 <button type="submit" class="mini-btn" style="width:100%;margin-top:10px;">Xác nhận</button>

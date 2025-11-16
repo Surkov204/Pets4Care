@@ -10,7 +10,6 @@ import utils.DBConnection;
 
 public class WorkScheduleDAO {
 
-
     public List<WorkSchedule> getAllSchedules() {
         List<WorkSchedule> list = new ArrayList<>();
         String sql = "SELECT * FROM WorkSchedule ORDER BY work_date DESC";
@@ -378,8 +377,8 @@ public class WorkScheduleDAO {
     }
 
     public void swapShifts(int staffA, int staffB, int shiftId, LocalDate date) {
-        String sqlUpdateA = "UPDATE WorkSchedule SET StaffID = ? WHERE StaffID = ? AND ShiftID = ? AND WorkDate = ?";
-        String sqlUpdateB = "UPDATE WorkSchedule SET StaffID = ? WHERE StaffID = ? AND ShiftID = ? AND WorkDate = ?";
+        String sqlUpdateA = "UPDATE WorkSchedule SET staff_id = ? WHERE staff_id = ? AND shift_id = ? AND work_date = ?";
+        String sqlUpdateB = "UPDATE WorkSchedule SET staff_id = ? WHERE staff_id = ? AND shift_id = ? AND work_date = ?";
 
         try (Connection con = DBConnection.getConnection()) {
             con.setAutoCommit(false); // 🔒 bắt đầu transaction
@@ -422,8 +421,7 @@ public class WorkScheduleDAO {
 
         try (Connection con = DBConnection.getConnection()) {
             con.setAutoCommit(false);
-            try (PreparedStatement psA = con.prepareStatement(updateA);
-                 PreparedStatement psB = con.prepareStatement(updateB)) {
+            try (PreparedStatement psA = con.prepareStatement(updateA); PreparedStatement psB = con.prepareStatement(updateB)) {
 
                 psA.setInt(1, doctorB);
                 psA.setInt(2, doctorA);
@@ -578,8 +576,8 @@ public class WorkScheduleDAO {
         String sql = """
             SELECT TOP 1 ws.*, s.ShiftName, s.Location, s.StartTime, s.EndTime
             FROM WorkSchedule ws
-            JOIN Shifts s ON ws.Shift_ID = s.ShiftID
-            WHERE ws.Staff_ID = ? AND ws.Work_Date = CAST(GETDATE() AS DATE)
+        JOIN Shifts s ON ws.shift_id = s.ShiftID
+        WHERE ws.staff_id = ? AND ws.work_date = CAST(GETDATE() AS DATE)
             ORDER BY s.StartTime
         """;
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -594,16 +592,14 @@ public class WorkScheduleDAO {
                     long diffBefore = (start.getTime() - now.getTime()) / (1000 * 60);
                     if (now.after(start) && now.before(end) || (diffBefore <= 30 && diffBefore >= -30)) {
                         WorkSchedule ws = new WorkSchedule();
-                        ws.setScheduleId(rs.getInt("Schedule_ID"));
-                        ws.setShiftId(rs.getInt("Shift_ID"));
-                        ws.setShiftName(rs.getString("ShiftName"));
-                        ws.setWorkDate(rs.getDate("Work_Date"));
-                        ws.setStartTime(start);
-                        ws.setEndTime(end);
-                        ws.setStatus(rs.getString("Status"));
-                        ws.setNote(rs.getString("Note"));
-                        ws.setStaffId(rs.getInt("Staff_ID"));
-                        ws.setDoctorId((Integer) rs.getObject("Doctor_ID"));
+                        ws.setScheduleId(rs.getInt("schedule_id"));
+                        ws.setShiftId(rs.getInt("shift_id"));
+                        ws.setWorkDate(rs.getDate("work_date"));
+                        ws.setStatus(rs.getString("status"));
+                        ws.setNote(rs.getString("note"));
+                        ws.setStaffId(rs.getInt("staff_id"));
+                        ws.setDoctorId((Integer) rs.getObject("doctor_id"));
+
                         ws.setShiftName(rs.getString("ShiftName"));
                         ws.setNote(rs.getString("Location")); // Gắn location để JSP hiển thị
                         return ws;
@@ -870,12 +866,12 @@ public class WorkScheduleDAO {
           AND ws.work_date BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(DAY, ?, CAST(GETDATE() AS DATE))
         ORDER BY ws.work_date, s.StartTime
     """;
-        
+
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, doctorId);
             ps.setInt(2, days);
             ResultSet rs = ps.executeQuery();
-            
+
             while (rs.next()) {
                 WorkSchedule ws = new WorkSchedule();
                 ws.setScheduleId(rs.getInt("schedule_id"));
@@ -894,37 +890,107 @@ public class WorkScheduleDAO {
         }
         return list;
     }
-    
+
     public WorkSchedule getTodayShift(int staffId) {
         String sql = """
         SELECT TOP 1 *
         FROM WorkSchedule
-        WHERE StaffID = ?
-          AND WorkDate = CAST(GETDATE() AS DATE)
-        ORDER BY StartTime
+        WHERE staff_id = ?
+          AND work_date = CAST(GETDATE() AS DATE)
+          AND status IN ('Registered', 'Assigned')
+        ORDER BY start_time
     """;
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, staffId);
-            ResultSet rs = ps.executeQuery();
 
+            ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 WorkSchedule ws = new WorkSchedule();
-                ws.setScheduleId(rs.getInt("ScheduleID"));
-                ws.setStaffId(rs.getInt("StaffID"));
-                ws.setShiftId(rs.getInt("ShiftID"));
-                ws.setWorkDate(rs.getDate("WorkDate"));
-                ws.setStartTime(rs.getTime("StartTime"));
-                ws.setEndTime(rs.getTime("EndTime"));
-                ws.setStatus(rs.getString("Status"));
+                ws.setScheduleId(rs.getInt("schedule_id"));
+                ws.setStaffId((Integer) rs.getObject("staff_id"));
+                ws.setDoctorId((Integer) rs.getObject("doctor_id"));
+                ws.setShiftId((Integer) rs.getObject("shift_id"));
+                ws.setWorkDate(rs.getDate("work_date"));
+                ws.setStartTime(rs.getTime("start_time"));
+                ws.setEndTime(rs.getTime("end_time"));
+                ws.setStatus(rs.getString("status"));
+                ws.setNote(rs.getString("note"));
                 return ws;
             }
 
         } catch (SQLException e) {
-            System.err.println("[WorkScheduleDAO] ❌ Error in getTodayShift: " + e.getMessage());
+            System.err.println("[WorkScheduleDAO] ❌ getTodayShift() error: " + e.getMessage());
+            e.printStackTrace();
         }
-
         return null;
+    }
+    public List<WorkSchedule> getSchedulesInRange(LocalDate start, LocalDate end) {
+        List<WorkSchedule> list = new ArrayList<>();
+        String sql = "SELECT * FROM WorkSchedule WHERE work_date BETWEEN ? AND ?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setDate(1, Date.valueOf(start));
+            ps.setDate(2, Date.valueOf(end));
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                WorkSchedule ws = new WorkSchedule();
+                ws.setScheduleId(rs.getInt("schedule_id"));
+                ws.setDoctorId((Integer) rs.getObject("doctor_id"));
+                ws.setStaffId((Integer) rs.getObject("staff_id"));
+                ws.setShiftId((Integer) rs.getObject("shift_id"));
+                ws.setWorkDate(rs.getDate("work_date"));
+                ws.setStartTime(rs.getTime("start_time"));
+                ws.setEndTime(rs.getTime("end_time"));
+                ws.setStatus(rs.getString("status"));
+                ws.setNote(rs.getString("note"));
+                list.add(ws);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+    
+    public void assignShift(Integer staffId, Integer doctorId, String date, int shiftId) {
+
+        String sql = """
+        INSERT INTO WorkSchedule (staff_id, doctor_id, shift_id, work_date, start_time, end_time, status, note)
+        SELECT ?, ?, s.ShiftID, ?, s.StartTime, s.EndTime, 'Assigned', 'Gán trực tiếp bởi Admin'
+        FROM Shifts s
+        WHERE s.ShiftID = ?
+    """;
+
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            // staff_id
+            if (staffId != null) {
+                ps.setInt(1, staffId);
+            } else {
+                ps.setNull(1, Types.INTEGER);
+            }
+
+            // doctor_id
+            if (doctorId != null) {
+                ps.setInt(2, doctorId);
+            } else {
+                ps.setNull(2, Types.INTEGER);
+            }
+
+            // work_date
+            ps.setDate(3, java.sql.Date.valueOf(date));
+
+            // shiftId (for SELECT)
+            ps.setInt(4, shiftId);
+
+            int rows = ps.executeUpdate();
+            System.out.println("✅ assignShift() inserted " + rows + " row(s)");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("❌ assignShift ERROR: " + e.getMessage());
+        }
     }
 }

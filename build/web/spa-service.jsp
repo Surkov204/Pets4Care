@@ -427,133 +427,19 @@
 
         <!-- Health Check Services Section -->
         <section class="mb-16">
-            <h2 class="text-4xl font-bold mb-10 text-center text-blue-600">🏥 Dịch vụ Khám sức khỏe</h2>
-            
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Khám sức khỏe tổng quát -->
-                <div class="service-card bg-white">
-                    <div class="p-6 text-center">
-                        <div class="service-icon">
-                            🩺
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">Khám sức khỏe tổng quát</h3>
-                        <p class="text-gray-600 mb-4 leading-relaxed">Kiểm tra sức khỏe tổng quát: khám lâm sàng, đo nhiệt độ, nhịp tim</p>
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="price-tag">
-                                ₫200,000
-                            </span>
-                            <span class="duration-badge">30 phút</span>
-                        </div>
-                        <form method="POST" action="/Pets4Care/health-check-booking" style="display: inline;">
-                            <input type="hidden" name="action" value="add-to-cart">
-                            <input type="hidden" name="serviceId" value="1">
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="booking-btn">
-                                🛒 Thêm vào giỏ Khám
-                            </button>
-                        </form>
-                    </div>
+            <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-8 text-center">
+                <div class="service-icon mb-4">
+                    🏥
                 </div>
-
-                <!-- Khám chuyên sâu -->
-                <div class="service-card bg-white">
-                    <div class="p-6 text-center">
-                        <div class="service-icon">
-                            🔬
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">Khám chuyên sâu</h3>
-                        <p class="text-gray-600 mb-4 leading-relaxed">Khám chuyên sâu: xét nghiệm máu, nước tiểu, X-quang</p>
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="price-tag">
-                                ₫500,000
-                            </span>
-                            <span class="duration-badge">60 phút</span>
-                        </div>
-                        <form method="POST" action="/Pets4Care/health-check-booking" style="display: inline;">
-                            <input type="hidden" name="action" value="add-to-cart">
-                            <input type="hidden" name="serviceId" value="2">
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="booking-btn">
-                                🛒 Thêm vào giỏ Khám
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Khám định kỳ -->
-                <div class="service-card bg-white">
-                    <div class="p-6 text-center">
-                        <div class="service-icon">
-                            📅
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">Khám định kỳ</h3>
-                        <p class="text-gray-600 mb-4 leading-relaxed">Khám định kỳ 6 tháng/1 lần: kiểm tra cơ bản</p>
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="price-tag">
-                                ₫150,000
-                            </span>
-                            <span class="duration-badge">20 phút</span>
-                        </div>
-                        <form method="POST" action="/Pets4Care/health-check-booking" style="display: inline;">
-                            <input type="hidden" name="action" value="add-to-cart">
-                            <input type="hidden" name="serviceId" value="3">
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="booking-btn">
-                                🛒 Thêm vào giỏ Khám
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Tiêm phòng cơ bản -->
-                <div class="service-card bg-white">
-                    <div class="p-6 text-center">
-                        <div class="service-icon">
-                            💉
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">Tiêm phòng cơ bản</h3>
-                        <p class="text-gray-600 mb-4 leading-relaxed">Tiêm phòng: dại, viêm gan, parvo, distemper</p>
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="price-tag">
-                                ₫300,000
-                            </span>
-                            <span class="duration-badge">20 phút</span>
-                        </div>
-                        <form method="POST" action="/Pets4Care/health-check-booking" style="display: inline;">
-                            <input type="hidden" name="action" value="add-to-cart">
-                            <input type="hidden" name="serviceId" value="4">
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="booking-btn">
-                                🛒 Thêm vào giỏ Khám
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Tư vấn dinh dưỡng -->
-                <div class="service-card bg-white">
-                    <div class="p-6 text-center">
-                        <div class="service-icon">
-                            🥗
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">Tư vấn dinh dưỡng</h3>
-                        <p class="text-gray-600 mb-4 leading-relaxed">Tư vấn chế độ dinh dưỡng phù hợp</p>
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="price-tag">
-                                ₫100,000
-                            </span>
-                            <span class="duration-badge">30 phút</span>
-                        </div>
-                        <form method="POST" action="/Pets4Care/health-check-booking" style="display: inline;">
-                            <input type="hidden" name="action" value="add-to-cart">
-                            <input type="hidden" name="serviceId" value="5">
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="booking-btn">
-                                🛒 Thêm vào giỏ Khám
-                            </button>
-                        </form>
-                    </div>
-                </div>
+                <h2 class="text-4xl font-bold mb-6 text-blue-600">Dịch vụ Khám sức khỏe</h2>
+                <p class="text-lg text-gray-700 mb-6 max-w-3xl mx-auto leading-relaxed">
+                    Chúng tôi cung cấp các dịch vụ khám sức khỏe chuyên nghiệp cho thú cưng của bạn, 
+                    bao gồm khám tổng quát, khám chuyên sâu, tiêm phòng và tư vấn dinh dưỡng. 
+                    Đội ngũ bác sĩ thú y giàu kinh nghiệm sẽ chăm sóc và bảo vệ sức khỏe cho người bạn nhỏ của bạn.
+                </p>
+                <a href="<%= request.getContextPath()%>/dat-lich-kham.jsp" class="booking-btn inline-block text-lg px-8 py-4">
+                    📅 Đặt lịch khám ngay
+                </a>
             </div>
         </section>
 

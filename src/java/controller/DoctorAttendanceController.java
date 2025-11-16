@@ -9,9 +9,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Date;
 import java.time.LocalDate;
+
 import model.AttendanceRecord;
 import model.Doctor;
-import model.PayrollRecord;
+import model.DoctorPayrollRecord;   // 🔥 dùng model mới
 
 @WebServlet("/doctor/attendance")
 public class DoctorAttendanceController extends HttpServlet {
@@ -43,41 +44,36 @@ public class DoctorAttendanceController extends HttpServlet {
             AttendanceRecord last = attendanceDAO.getLatestRecord(doctorId);
 
             if (last != null && last.getCheckOut() == null) {
-                // Đang trong ca làm -> Check-out
                 success = attendanceDAO.doctorCheckOut(doctorId);
-                if (success) {
-                    session.setAttribute("isCheckedIn", false);
-                }
+                if (success) session.setAttribute("isCheckedIn", false);
+
                 out.write(success
                         ? "{\"status\":\"success\",\"message\":\"✅ Check-out thành công! Nghỉ ngơi nhé.\"}"
                         : "{\"status\":\"error\",\"message\":\"❌ Lỗi khi check-out.\"}");
-            } else {
-                // Chưa check-in hoặc đã check-out -> Check-in
+            } 
+            else {
                 success = attendanceDAO.doctorCheckIn(doctorId);
-                if (success) {
-                    session.setAttribute("isCheckedIn", true);
-                }
+                if (success) session.setAttribute("isCheckedIn", true);
+
                 out.write(success
                         ? "{\"status\":\"success\",\"message\":\"✅ Check-in thành công!\"}"
                         : "{\"status\":\"error\",\"message\":\"❌ Lỗi khi check-in.\"}");
             }
 
         } else if ("generate".equals(action)) {
-            // Tính lương tháng này
-            LocalDate nowDate = LocalDate.now();
-            LocalDate firstDay = nowDate.withDayOfMonth(1);
-            LocalDate lastDay = nowDate.withDayOfMonth(nowDate.lengthOfMonth());
 
-            System.out.println("[DEBUG] Generating payroll for doctorID = " + doctorId);
+            LocalDate today = LocalDate.now();
+            LocalDate firstDay = today.withDayOfMonth(1);
+            LocalDate lastDay = today.withDayOfMonth(today.lengthOfMonth());
+
             success = payrollDAO.generatePayroll(
                     doctorId,
                     Date.valueOf(firstDay),
                     Date.valueOf(lastDay)
             );
-            System.out.println("[DEBUG] Payroll generate success? " + success);
 
             if (success) {
-                PayrollRecord latest = payrollDAO.getLatestPayroll(doctorId);
+                DoctorPayrollRecord latest = payrollDAO.getLatestPayroll(doctorId);
                 session.setAttribute("latestPayroll", latest);
 
                 out.write("{\"status\":\"success\",\"message\":\"💰 Lương tháng này đã được tính thành công!\"}");
@@ -87,4 +83,3 @@ public class DoctorAttendanceController extends HttpServlet {
         }
     }
 }
-

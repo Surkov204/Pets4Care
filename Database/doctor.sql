@@ -323,7 +323,6 @@ BEGIN
 END;
 GO
 
--- Procedure tính lương cho Doctor
 CREATE OR ALTER PROCEDURE GenerateDoctorPayroll
     @p_doctor_id INT,
     @p_start DATE,
@@ -333,25 +332,38 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE 
-        @total_hours FLOAT = 0,
-        @rate DECIMAL(10,2) = 25000, -- Mức lương mặc định cho bác sĩ
-        @salary DECIMAL(12,2) = 0;
+        @daysWorked INT = 0,
+        @standardDays INT = 26,
+        @monthlyBase DECIMAL(12,2) = 15000000,  -- Default 15 triệu / tháng
+        @totalSalary DECIMAL(12,2);
 
-    -- ✅ Tính tổng số giờ làm việc
-    SELECT @total_hours = ISNULL(SUM(TotalHours), 0)
+    --------------------------------------------------------
+    -- 1️⃣ Tính số ngày làm việc (ngày nào có cả check-in + check-out)
+    --------------------------------------------------------
+    SELECT @daysWorked = COUNT(*)
     FROM DoctorAttendanceRecords
     WHERE DoctorID = @p_doctor_id
       AND CheckIn >= @p_start
-      AND CheckIn <= DATEADD(DAY, 1, @p_end);
+      AND CheckIn < DATEADD(DAY, 1, @p_end)
+      AND CheckOut IS NOT NULL;
 
-    -- ✅ Lấy mức lương/giờ riêng nếu có
-    SELECT @rate = ISNULL(HourlyRate, @rate)
+    --------------------------------------------------------
+    -- 2️⃣ Lấy lương tháng và số ngày công chuẩn trong DoctorSalary
+    --------------------------------------------------------
+    SELECT 
+        @monthlyBase = ISNULL(MonthlyBaseSalary, @monthlyBase),
+        @standardDays = ISNULL(StandardWorkingDays, @standardDays)
     FROM DoctorSalary
     WHERE DoctorID = @p_doctor_id;
 
-    SET @salary = ROUND(@total_hours * @rate, 2);
+    --------------------------------------------------------
+    -- 3️⃣ Tính tổng lương
+    --------------------------------------------------------
+    SET @totalSalary = ROUND(@monthlyBase * (@daysWorked * 1.0 / @standardDays), 0);
 
-    -- ✅ Kiểm tra xem tháng này đã có record chưa (theo tháng/năm)
+    --------------------------------------------------------
+    -- 4️⃣ Nếu tháng đó đã có phiếu lương → UPDATE
+    --------------------------------------------------------
     IF EXISTS (
         SELECT 1 FROM DoctorPayrollRecords
         WHERE DoctorID = @p_doctor_id
@@ -360,24 +372,39 @@ BEGIN
     )
     BEGIN
         UPDATE DoctorPayrollRecords
-        SET TotalHours = @total_hours,
-            HourlyRate = @rate,
-            TotalSalary = @salary,
+        SET 
             PeriodStart = @p_start,
             PeriodEnd = @p_end,
+            DaysWorked = @daysWorked,
+            StandardWorkingDays = @standardDays,
+            MonthlyBaseSalary = @monthlyBase,
+            TotalSalary = @totalSalary,
             CreatedAt = GETDATE()
         WHERE DoctorID = @p_doctor_id
           AND MONTH(PeriodStart) = MONTH(@p_start)
           AND YEAR(PeriodStart) = YEAR(@p_start);
 
-        PRINT N'🔁 Đã cập nhật phiếu lương tháng hiện tại cho bác sĩ ' + CAST(@p_doctor_id AS NVARCHAR);
+        PRINT N'🔄 Đã cập nhật bảng lương tháng cho bác sĩ ' + CAST(@p_doctor_id AS NVARCHAR);
     END
     ELSE
     BEGIN
-        INSERT INTO DoctorPayrollRecords (DoctorID, PeriodStart, PeriodEnd, TotalHours, HourlyRate, TotalSalary, CreatedAt)
-        VALUES (@p_doctor_id, @p_start, @p_end, @total_hours, @rate, @salary, GETDATE());
+        --------------------------------------------------------
+        -- 5️⃣ Nếu chưa có thì INSERT bản ghi mới
+        --------------------------------------------------------
+        INSERT INTO DoctorPayrollRecords
+        (
+            DoctorID, PeriodStart, PeriodEnd,
+            TotalSalary, CreatedAt,
+            DaysWorked, StandardWorkingDays, MonthlyBaseSalary
+        )
+        VALUES
+        (
+            @p_doctor_id, @p_start, @p_end,
+            @totalSalary, GETDATE(),
+            @daysWorked, @standardDays, @monthlyBase
+        );
 
-        PRINT N'💰 Đã tạo phiếu lương mới cho bác sĩ ' + CAST(@p_doctor_id AS NVARCHAR);
+        PRINT N'✅ Đã tạo phiếu lương tháng mới cho bác sĩ ' + CAST(@p_doctor_id AS NVARCHAR);
     END
 END;
 GO
@@ -480,3 +507,48 @@ GO
 
 PRINT N'✅ Doctor table updated - now using WorkSchedule system'
 GO
+
+ALTER TABLE DoctorSalary DROP COLUMN HourlyRate;
+
+ALTER TABLE DoctorSalary
+ADD MonthlyBaseSalary DECIMAL(12,2) DEFAULT 15000000,  -- ví dụ 15 triệu / tháng
+    StandardWorkingDays INT DEFAULT 26;
+
+	DECLARE @ConstraintName NVARCHAR(128);
+
+SELECT @ConstraintName = dc.name
+FROM sys.default_constraints dc
+JOIN sys.columns c 
+    ON c.default_object_id = dc.object_id
+WHERE dc.parent_object_id = OBJECT_ID('dbo.DoctorSalary')
+  AND c.name = 'HourlyRate';
+
+SELECT @ConstraintName AS ConstraintName;  -- xem thử tên
+
+ALTER TABLE DoctorSalary 
+DROP CONSTRAINT DF__DoctorSal__Hourl__4944D3CA;
+
+ALTER TABLE DoctorSalary DROP COLUMN HourlyRate;
+
+ALTER TABLE DoctorSalary
+ADD MonthlyBaseSalary DECIMAL(12,2) DEFAULT 15000000,  -- ví dụ 15 triệu / tháng
+    StandardWorkingDays INT DEFAULT 26;
+
+	IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('DoctorPayrollRecords') AND name = 'TotalHours')
+    ALTER TABLE DoctorPayrollRecords DROP COLUMN TotalHours;
+
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('DoctorPayrollRecords') AND name = 'HourlyRate')
+    ALTER TABLE DoctorPayrollRecords DROP COLUMN HourlyRate;
+
+
+ALTER TABLE DoctorPayrollRecords
+ADD 
+    DaysWorked INT NULL,
+    StandardWorkingDays INT NULL,
+    MonthlyBaseSalary DECIMAL(12,2) NULL;
+
+SELECT COLUMN_NAME 
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'DoctorPayrollRecords';
+
+EXEC GenerateDoctorPayroll 1, '2025-11-01', '2025-11-30';

@@ -10,7 +10,6 @@ import model.GoogleUser;
 import model.Order;
 import model.Product;
 import utils.DBConnection;
-import utils.PasswordUtil;
 
 public class UserDAO {
 

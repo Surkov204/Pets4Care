@@ -15,72 +15,71 @@ public class BookingDAO implements IBookingDAO {
     // LIST ALL
     // =========================
     @Override
+    public List<Booking> getAllBookings() {
+        List<Booking> bookings = new ArrayList<>();
 
-public List<Booking> getAllBookings() {
-    List<Booking> bookings = new ArrayList<>();
+        // 1) Có tên dịch vụ (nếu bảng/quan hệ tồn tại)
+        final String SQL_WITH_SERVICES =
+            "SELECT b.*, " +
+            "       c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, " +
+            "       p.name AS pet_name,      p.species AS pet_type, " +
+            "       s.name AS staff_name, " +
+            "       d.name AS doctor_name, " +
+            "       svc.service_names " +
+            "FROM dbo.Booking b " +
+            "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
+            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.id " +
+            "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
+            "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
+            "OUTER APPLY ( " +
+            "   SELECT STRING_AGG(CONVERT(nvarchar(200), ps.name), ', ') " +
+            "          WITHIN GROUP (ORDER BY ps.name) AS service_names " +
+            "   FROM dbo.Booking_Service bs " +
+            "   JOIN dbo.PetService ps ON ps.service_id = bs.service_id " +
+            "   WHERE bs.booking_id = b.booking_id " +
+            ") svc " +
+            "ORDER BY b.appointment_start DESC";
 
-    // 1) Có tên dịch vụ (nếu bảng/quan hệ tồn tại)
-    final String SQL_WITH_SERVICES =
-        "SELECT b.*, " +
-        "       c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, " +
-        "       p.name AS pet_name,      p.species AS pet_type, " +
-        "       s.name AS staff_name, " +
-        "       d.name AS doctor_name, " +
-        "       svc.service_names " +
-        "FROM dbo.Booking b " +
-        "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
-        "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.id " +
-        "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
-        "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
-        "OUTER APPLY ( " +
-        "   SELECT STRING_AGG(CONVERT(nvarchar(200), ps.name), ', ') " +
-        "          WITHIN GROUP (ORDER BY ps.name) AS service_names " +
-        "   FROM dbo.Booking_Service bs " +
-        "   JOIN dbo.PetService ps ON ps.service_id = bs.service_id " +
-        "   WHERE bs.booking_id = b.booking_id " +
-        ") svc " +
-        "ORDER BY b.appointment_start DESC";
+        // 2) Cơ bản (không tên dịch vụ) – dùng khi câu số 1 lỗi
+        final String SQL_BASE =
+            "SELECT b.*, " +
+            "       c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, " +
+            "       p.name AS pet_name,      p.species AS pet_type, " +
+            "       s.name AS staff_name, " +
+            "       d.name AS doctor_name " +
+            "FROM dbo.Booking b " +
+            "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
+            "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.id " +
+            "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
+            "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
+            "ORDER BY b.appointment_start DESC";
 
-    // 2) Cơ bản (không tên dịch vụ) – dùng khi câu số 1 lỗi
-    final String SQL_BASE =
-        "SELECT b.*, " +
-        "       c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, " +
-        "       p.name AS pet_name,      p.species AS pet_type, " +
-        "       s.name AS staff_name, " +
-        "       d.name AS doctor_name " +
-        "FROM dbo.Booking b " +
-        "LEFT JOIN dbo.Customer c ON b.customer_id = c.customer_id " +
-        "LEFT JOIN dbo.Pet      p ON b.pet_id      = p.id " +
-        "LEFT JOIN dbo.Staff    s ON b.staff_id    = s.staff_id " +
-        "LEFT JOIN dbo.Doctor   d ON b.doctor_id   = d.doctor_id " +
-        "ORDER BY b.appointment_start DESC";
+        // Helper chạy query
+        java.util.function.Function<String, List<Booking>> exec = (sql) -> {
+            List<Booking> out = new ArrayList<>();
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) out.add(mapBookingFromResultSet(rs));
+            } catch (SQLException e) {
+                logger.severe("getAllBookings SQL error with query:\n" + sql + "\n=> " + e.getMessage());
+                throw new RuntimeException(e);
+            }
+            return out;
+        };
 
-    // Helper chạy query
-    java.util.function.Function<String, List<Booking>> exec = (sql) -> {
-        List<Booking> out = new ArrayList<>();
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) out.add(mapBookingFromResultSet(rs));
-        } catch (SQLException e) {
-            logger.severe("getAllBookings SQL error with query:\n" + sql + "\n=> " + e.getMessage());
-            throw new RuntimeException(e);
+        try {
+            // Thử câu đầy đủ
+            bookings = exec.apply(SQL_WITH_SERVICES);
+        } catch (RuntimeException ex) {
+            // Fallback sang câu cơ bản
+            logger.warning("Falling back to base query without service_names due to: " + ex.getCause().getMessage());
+            bookings = exec.apply(SQL_BASE);
         }
-        return out;
-    };
 
-    try {
-        // Thử câu đầy đủ
-        bookings = exec.apply(SQL_WITH_SERVICES);
-    } catch (RuntimeException ex) {
-        // Fallback sang câu cơ bản
-        logger.warning("Falling back to base query without service_names due to: " + ex.getCause().getMessage());
-        bookings = exec.apply(SQL_BASE);
+        System.out.println("DEBUG >>> getAllBookings(): " + bookings.size());
+        return bookings;
     }
-
-    System.out.println("DEBUG >>> getAllBookings(): " + bookings.size());
-    return bookings;
-}
 
 
     // =========================
@@ -533,25 +532,25 @@ public List<Booking> getAllBookings() {
             }
             ps.setTimestamp(10, booking.getCreatedAt());
 
-logger.info("BookingDAO.addBooking - About to execute INSERT INTO Booking with status: " + statusToSet);
-int rows = ps.executeUpdate();
-logger.info("BookingDAO.addBooking - Insert executed, rows affected: " + rows);
+            logger.info("BookingDAO.addBooking - About to execute INSERT INTO Booking with status: " + statusToSet);
+            int rows = ps.executeUpdate();
+            logger.info("BookingDAO.addBooking - Insert executed, rows affected: " + rows);
 
-if (rows > 0) {
-    try (ResultSet keys = ps.getGeneratedKeys()) {
-        if (keys.next()) {
-            int bookingId = keys.getInt(1);
-            booking.setBookingId(bookingId);
-            logger.info("=== addBooking SUCCESS ===");
-            logger.info("Booking created with ID: " + bookingId);
-            return true;
-        } else {
-            logger.warning("No generated keys returned");
-        }
-    }
-} else {
-    logger.warning("INSERT executed but no rows affected");
-}
+            if (rows > 0) {
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        int bookingId = keys.getInt(1);
+                        booking.setBookingId(bookingId);
+                        logger.info("=== addBooking SUCCESS ===");
+                        logger.info("Booking created with ID: " + bookingId);
+                        return true;
+                    } else {
+                        logger.warning("No generated keys returned");
+                    }
+                }
+            } else {
+                logger.warning("INSERT executed but no rows affected");
+            }
             }
         } catch (SQLException e) {
             logger.severe("=== addBooking SQL EXCEPTION ===");
@@ -790,32 +789,32 @@ if (rows > 0) {
     // MAP ROW
     // =========================
     private Booking mapBookingFromResultSet(ResultSet rs) throws SQLException {
-    Booking booking = new Booking();
-    booking.setBookingId(rs.getInt("booking_id"));
-    booking.setCustomerId(rs.getInt("customer_id"));
-    booking.setPetId(rs.getInt("pet_id"));
-    booking.setAppointmentStart(rs.getTimestamp("appointment_start"));
-    booking.setAppointmentEnd(rs.getTimestamp("appointment_end"));
-    booking.setStatus(rs.getString("status"));
-    booking.setNote(rs.getString("note"));
-    booking.setCreatedAt(rs.getTimestamp("created_at"));
-    booking.setDoctorId(rs.getInt("doctor_id"));
-    booking.setStaffId(rs.getInt("staff_id"));
-    booking.setOrderId(rs.getInt("order_id"));
+        Booking booking = new Booking();
+        booking.setBookingId(rs.getInt("booking_id"));
+        booking.setCustomerId(rs.getInt("customer_id"));
+        booking.setPetId(rs.getInt("pet_id"));
+        booking.setAppointmentStart(rs.getTimestamp("appointment_start"));
+        booking.setAppointmentEnd(rs.getTimestamp("appointment_end"));
+        booking.setStatus(rs.getString("status"));
+        booking.setNote(rs.getString("note"));
+        booking.setCreatedAt(rs.getTimestamp("created_at"));
+        booking.setDoctorId(rs.getInt("doctor_id"));
+        booking.setStaffId(rs.getInt("staff_id"));
+        booking.setOrderId(rs.getInt("order_id"));
 
-    booking.setCustomerName(rs.getString("customer_name"));
-    booking.setCustomerPhone(rs.getString("customer_phone"));
-    booking.setCustomerEmail(rs.getString("customer_email"));
-    booking.setPetName(rs.getString("pet_name"));
-    booking.setPetType(rs.getString("pet_type"));
-    booking.setStaffName(rs.getString("staff_name"));
-    booking.setDoctorName(rs.getString("doctor_name"));
+        booking.setCustomerName(rs.getString("customer_name"));
+        booking.setCustomerPhone(rs.getString("customer_phone"));
+        booking.setCustomerEmail(rs.getString("customer_email"));
+        booking.setPetName(rs.getString("pet_name"));
+        booking.setPetType(rs.getString("pet_type"));
+        booking.setStaffName(rs.getString("staff_name"));
+        booking.setDoctorName(rs.getString("doctor_name"));
 
-    // cột này chỉ có khi dùng SQL_WITH_SERVICES
-    try { booking.setServiceNames(rs.getString("service_names")); } catch (SQLException ignore) {}
+        // cột này chỉ có khi dùng SQL_WITH_SERVICES
+        try { booking.setServiceNames(rs.getString("service_names")); } catch (SQLException ignore) {}
 
-    return booking;
-}
+        return booking;
+    }
 
     // =========================
     // AUTO CANCEL EXPIRED DEPOSIT BOOKINGS

@@ -26,24 +26,14 @@ public class DoctorPayrollDAO {
     // ✅ Lấy danh sách phiếu lương
     public List<PayrollRecord> getPayrollHistory(int doctorId) {
         List<PayrollRecord> list = new ArrayList<>();
-<<<<<<< HEAD
-        String sql = "SELECT * FROM PayrollRecords WHERE doctor_id = ? ORDER BY CreatedAt DESC";
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-=======
         String sql = "SELECT * FROM DoctorPayrollRecords WHERE DoctorID = ? ORDER BY CreatedAt DESC";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
->>>>>>> origin/master
             ps.setInt(1, doctorId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 PayrollRecord p = new PayrollRecord(
                         rs.getInt("PayrollID"),
-<<<<<<< HEAD
-                        rs.getInt("doctor_id"),
-=======
                         rs.getInt("StaffID"),
->>>>>>> origin/master
                         rs.getDate("PeriodStart"),
                         rs.getDate("PeriodEnd"),
                         rs.getInt("ActualShifts"),
@@ -61,24 +51,14 @@ public class DoctorPayrollDAO {
 
     // ✅ Lấy phiếu lương mới nhất
     public PayrollRecord getLatestPayroll(int doctorId) {
-<<<<<<< HEAD
-        String sql = "SELECT TOP 1 * FROM PayrollRecords WHERE doctor_id = ? ORDER BY CreatedAt DESC";
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-=======
         String sql = "SELECT TOP 1 * FROM DoctorPayrollRecords WHERE DoctorID = ? ORDER BY CreatedAt DESC";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
->>>>>>> origin/master
             ps.setInt(1, doctorId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return new PayrollRecord(
                         rs.getInt("PayrollID"),
-<<<<<<< HEAD
-                        rs.getInt("doctor_id"),
-=======
                         rs.getInt("StaffID"),
->>>>>>> origin/master
                         rs.getDate("PeriodStart"),
                         rs.getDate("PeriodEnd"),
                         rs.getInt("ActualShifts"),

@@ -12,11 +12,13 @@ public class StaffDAO {
     private static final Logger logger = Logger.getLogger(StaffDAO.class.getName());
 
     public Staff findByEmail(String email) {
-        String sql = "SELECT * FROM Staff WHERE email = ?";
+        // Sử dụng LOWER để so sánh case-insensitive và TRIM để loại bỏ khoảng trắng
+        String sql = "SELECT * FROM Staff WHERE LOWER(LTRIM(RTRIM(email))) = LOWER(LTRIM(RTRIM(?)))";
 
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, email);
+            String trimmedEmail = email != null ? email.trim() : "";
+            ps.setString(1, trimmedEmail);
+            
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return mapStaffFromResultSet(rs);
@@ -48,14 +50,40 @@ public class StaffDAO {
     }
 
     public boolean authenticateStaff(String email, String password) {
-        String sql = "SELECT * FROM Staff WHERE email = ? AND password = ?";
+        // Sử dụng LOWER để so sánh case-insensitive và TRIM để loại bỏ khoảng trắng
+        String sql = "SELECT * FROM Staff WHERE LOWER(LTRIM(RTRIM(email))) = LOWER(LTRIM(RTRIM(?))) AND password = ?";
 
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, email);
-            ps.setString(2, password);
+            String trimmedEmail = email != null ? email.trim() : "";
+            String trimmedPassword = password != null ? password.trim() : "";
+            
+            logger.info("Authenticating staff - Email: [" + trimmedEmail + "], Password length: " + trimmedPassword.length());
+            
+            ps.setString(1, trimmedEmail);
+            ps.setString(2, trimmedPassword);
+            
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
+                boolean found = rs.next();
+                if (found) {
+                    logger.info("Staff authentication successful for email: " + trimmedEmail);
+                } else {
+                    logger.warning("Staff authentication failed for email: " + trimmedEmail);
+                    // Debug: Kiểm tra xem email có tồn tại không
+                    String checkEmailSql = "SELECT email, password FROM Staff WHERE LOWER(LTRIM(RTRIM(email))) = LOWER(LTRIM(RTRIM(?)))";
+                    try (PreparedStatement checkPs = conn.prepareStatement(checkEmailSql)) {
+                        checkPs.setString(1, trimmedEmail);
+                        try (ResultSet checkRs = checkPs.executeQuery()) {
+                            if (checkRs.next()) {
+                                String dbEmail = checkRs.getString("email");
+                                String dbPassword = checkRs.getString("password");
+                                logger.warning("Email exists but password mismatch. DB email: [" + dbEmail + "], DB password: [" + dbPassword + "]");
+                            } else {
+                                logger.warning("Email does not exist in database: " + trimmedEmail);
+                            }
+                        }
+                    }
+                }
+                return found;
             }
         } catch (SQLException e) {
             logger.severe("Error authenticating staff: " + e.getMessage());
@@ -102,7 +130,14 @@ public class StaffDAO {
         staff.setPhone(rs.getString("phone"));
         staff.setPassword(rs.getString("password"));
         staff.setPosition(rs.getString("position"));
-        staff.setAvatar(rs.getString("Avatar"));
+        // Avatar column không tồn tại trong bảng Staff, kiểm tra metadata trước khi đọc
+        try {
+            rs.findColumn("Avatar");
+            staff.setAvatar(rs.getString("Avatar"));
+        } catch (SQLException e) {
+            // Cột Avatar không tồn tại, set null
+            staff.setAvatar(null);
+        }
         return staff;
     }
 
@@ -239,15 +274,15 @@ public class StaffDAO {
         return 0;
     }
     public boolean updateProfile(Staff staff) {
-        String sql = "UPDATE Staff SET name=?, email=?, phone=?, password=?, Avatar=? WHERE staff_id=?";
+        // Avatar column không tồn tại trong bảng Staff, không update cột này
+        String sql = "UPDATE Staff SET name=?, email=?, phone=?, password=? WHERE staff_id=?";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, staff.getName());
             ps.setString(2, staff.getEmail());
             ps.setString(3, staff.getPhone());
             ps.setString(4, staff.getPassword());
-            ps.setString(5, staff.getAvatar());
-            ps.setInt(6, staff.getStaffId());
+            ps.setInt(5, staff.getStaffId());
 
             int rows = ps.executeUpdate();
             System.out.println("[StaffDAO] ✅ Updated rows: " + rows);

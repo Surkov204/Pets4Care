@@ -138,7 +138,6 @@ public class BoardingRoomDAO {
      * Kiểm tra phòng có sẵn trong khoảng thời gian
      */
     public boolean isRoomAvailable(int roomId, Timestamp checkInDate, Timestamp checkOutDate) {
-<<<<<<< HEAD
         // Lấy room type từ room_id
         String roomType = null;
         String getRoomTypeSql = "SELECT room_type FROM BoardingRoom WHERE room_id = ?";
@@ -146,13 +145,6 @@ public class BoardingRoomDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(getRoomTypeSql)) {
             
-=======
-        // Đơn giản hóa: chỉ kiểm tra phòng có tồn tại và status = 'available'
-        String sql = "SELECT COUNT(*) FROM BoardingRoom WHERE room_id = ? AND status = 'available'";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-
->>>>>>> origin/master
             stmt.setInt(1, roomId);
             ResultSet rs = stmt.executeQuery();
 
@@ -166,48 +158,22 @@ public class BoardingRoomDAO {
             logger.severe("Error getting room type: " + e.getMessage());
             return false;
         }
-<<<<<<< HEAD
         
         // Kiểm tra số phòng còn lại
         int availableCount = getAvailableRoomsCountByType(roomType);
         return availableCount > 0;
-=======
-
-        return false;
->>>>>>> origin/master
     }
 
     /**
      * Lấy số lượng phòng có sẵn theo loại (deprecated - dùng getAvailableRoomsCountByType)
      */
     public int getAvailableRoomCountByType(String roomType) {
-<<<<<<< HEAD
         return getAvailableRoomsCountByType(roomType);
-=======
-        String sql = "SELECT COUNT(*) FROM BoardingRoom WHERE room_type = ? AND status = 'available'";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, roomType);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-
-        } catch (SQLException e) {
-            logger.severe("Error getting available room count by type: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        return 0;
->>>>>>> origin/master
     }
 
     /**
      * Cập nhật số phòng (rooms) - được gọi khi có booking được xác nhận
      */
-<<<<<<< HEAD
     public boolean updateRoomsCount(int roomId, int newRoomsCount) {
         String sql = "UPDATE BoardingRoom SET rooms = ?, updated_at = ? WHERE room_id = ?";
         
@@ -215,14 +181,6 @@ public class BoardingRoomDAO {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, newRoomsCount);
-=======
-    public boolean updateRoomStatus(int roomId, String status) {
-        String sql = "UPDATE BoardingRoom SET status = ?, updated_at = ? WHERE room_id = ?";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, status);
->>>>>>> origin/master
             stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
             stmt.setInt(3, roomId);
 
@@ -245,7 +203,6 @@ public class BoardingRoomDAO {
      * Tạo phòng mới
      */
     public boolean createRoom(BoardingRoom room) {
-<<<<<<< HEAD
         String sql = "INSERT INTO BoardingRoom (room_name, room_type, rooms, price_per_day, " +
                     "description, created_at, updated_at) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -253,14 +210,6 @@ public class BoardingRoomDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
-=======
-        String sql = "INSERT INTO BoardingRoom (room_name, room_type, capacity, price_per_day, "
-                + "description, status, created_at, updated_at) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
->>>>>>> origin/master
             stmt.setString(1, room.getRoomName());
             stmt.setString(2, room.getRoomType());
             stmt.setInt(3, room.getCapacity());
@@ -268,12 +217,6 @@ public class BoardingRoomDAO {
             stmt.setString(5, room.getDescription());
             stmt.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
             stmt.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
-<<<<<<< HEAD
-            
-=======
-            stmt.setTimestamp(8, new Timestamp(System.currentTimeMillis()));
-
->>>>>>> origin/master
             int rowsAffected = stmt.executeUpdate();
 
             if (rowsAffected > 0) {
@@ -297,7 +240,6 @@ public class BoardingRoomDAO {
      * Cập nhật thông tin phòng
      */
     public boolean updateRoom(BoardingRoom room) {
-<<<<<<< HEAD
         String sql = "UPDATE BoardingRoom SET room_name = ?, room_type = ?, rooms = ?, " +
                     "price_per_day = ?, description = ?, " +
                     "updated_at = ? WHERE room_id = ?";
@@ -305,29 +247,13 @@ public class BoardingRoomDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-=======
-        String sql = "UPDATE BoardingRoom SET room_name = ?, room_type = ?, capacity = ?, "
-                + "price_per_day = ?, description = ?, status = ?, "
-                + "updated_at = ? WHERE room_id = ?";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-
->>>>>>> origin/master
             stmt.setString(1, room.getRoomName());
             stmt.setString(2, room.getRoomType());
             stmt.setInt(3, room.getCapacity());
             stmt.setDouble(4, room.getPricePerDay());
             stmt.setString(5, room.getDescription());
-<<<<<<< HEAD
             stmt.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
             stmt.setInt(7, room.getRoomId());
-            
-=======
-            stmt.setString(6, room.getStatus());
-            stmt.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
-            stmt.setInt(8, room.getRoomId());
-
->>>>>>> origin/master
             int rowsAffected = stmt.executeUpdate();
 
             if (rowsAffected > 0) {
@@ -347,18 +273,11 @@ public class BoardingRoomDAO {
      * Xóa phòng (hard delete hoặc set rooms = 0)
      */
     public boolean deleteRoom(int roomId) {
-<<<<<<< HEAD
         String sql = "UPDATE BoardingRoom SET rooms = 0, updated_at = ? WHERE room_id = ?";
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-=======
-        String sql = "UPDATE BoardingRoom SET status = 'unavailable', updated_at = ? WHERE room_id = ?";
-
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-
->>>>>>> origin/master
             stmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
             stmt.setInt(2, roomId);
 

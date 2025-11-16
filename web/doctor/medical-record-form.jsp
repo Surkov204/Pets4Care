@@ -142,24 +142,9 @@
 
 <header class="staff-header">
     <div class="user-section">
-        <div class="avatar-dropdown">
-            <div class="avatar" onclick="toggleDropdown()">
-                <img src="${pageContext.request.contextPath}/images/doctor-avatar.png" alt="Doctor">
-                <span>${sessionScope.doctor.name}</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="dropdown-menu" id="dropdownMenu">
-                <a href="${pageContext.request.contextPath}/home.jsp">
-                    <i class="fas fa-home"></i> Trang chủ
-                </a>
-                <a href="${pageContext.request.contextPath}/doctor/profile">
-                    <i class="fas fa-user-edit"></i> Chỉnh sửa thông tin
-                </a>
-                <a href="${pageContext.request.contextPath}/logout">
-                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                </a>
-            </div>
-        </div>
+        <a href="${pageContext.request.contextPath}/logout.jsp" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </a>
     </div>
 </header>
 
@@ -304,23 +289,6 @@
 </div>
 
 <script>
-function toggleDropdown() {
-    const dropdown = document.getElementById('dropdownMenu');
-    dropdown.classList.toggle('show');
-}
-
-// Close dropdown when clicking outside
-window.onclick = function(event) {
-    if (!event.target.matches('.avatar') && !event.target.matches('.avatar *')) {
-        const dropdowns = document.getElementsByClassName('dropdown-menu');
-        for (let i = 0; i < dropdowns.length; i++) {
-            const openDropdown = dropdowns[i];
-            if (openDropdown.classList.contains('show')) {
-                openDropdown.classList.remove('show');
-            }
-        }
-    }
-}
 </script>
 
 </body>

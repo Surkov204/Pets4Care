@@ -178,91 +178,15 @@
             background: #0056b3;
         }
         
-        /* Dropdown Menu Styles */
-        .avatar-dropdown {
-            position: relative;
-            display: inline-block;
-            transform: translateX(50px);
-        }
-        
-        .avatar {
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            transition: background-color 0.3s;
-        }
-        
-        .avatar:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        .avatar i {
-            font-size: 12px;
-            transition: transform 0.3s;
-        }
-        
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            min-width: 200px;
-            z-index: 1000;
-            display: none;
-            overflow: hidden;
-        }
-        
-        .dropdown-menu.show {
-            display: block;
-        }
-        
-        .dropdown-menu a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 16px;
-            color: #333;
-            text-decoration: none;
-            transition: background-color 0.3s;
-        }
-        
-        .dropdown-menu a:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .dropdown-menu a i {
-            width: 16px;
-            text-align: center;
-        }
     </style>
 </head>
 <body>
 
 <header class="staff-header">
     <div class="user-section">
-        <div class="avatar-dropdown">
-            <div class="avatar" onclick="toggleDropdown()">
-                <img src="${pageContext.request.contextPath}/images/doctor-avatar.png" alt="Doctor">
-                <span>${fullDoctorInfo.name}</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="dropdown-menu" id="dropdownMenu">
-                <a href="${pageContext.request.contextPath}/home.jsp">
-                    <i class="fas fa-home"></i> Trang chủ
-                </a>
-                <a href="${pageContext.request.contextPath}/doctor/profile">
-                    <i class="fas fa-user-edit"></i> Chỉnh sửa thông tin
-                </a>
-                <a href="${pageContext.request.contextPath}/logout">
-                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                </a>
-            </div>
-        </div>
+        <a href="${pageContext.request.contextPath}/logout.jsp" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </a>
     </div>
 </header>
 
@@ -489,20 +413,6 @@ function showReplyForm() {
     alert('Chức năng trả lời đánh giá sẽ được phát triển trong phiên bản tiếp theo!\n\nHiện tại, bác sĩ có thể tương tác với khách hàng qua các kênh khác.');
 }
 
-function toggleDropdown() {
-    const dropdown = document.getElementById('dropdownMenu');
-    dropdown.classList.toggle('show');
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(event) {
-    const dropdown = document.getElementById('dropdownMenu');
-    const avatar = document.querySelector('.avatar');
-    
-    if (!avatar.contains(event.target)) {
-        dropdown.classList.remove('show');
-    }
-});
 </script>
 
 </body>

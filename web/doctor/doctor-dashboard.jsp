@@ -26,34 +26,37 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .schedule-info {
-            background: #e3f2fd;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f0f9ff 100%);
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
             border-left: 4px solid #2196F3;
+            font-size: 14px;
+            line-height: 1.6;
         }
 
         /* Attendance & Payroll Styles */
         .attendance-section {
             display: flex;
             flex-wrap: wrap;
-            gap: 24px;
-            margin-top: 25px;
-            margin-bottom: 25px;
+            gap: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
         }
 
         .attendance-card, .salary-card {
             flex: 1;
             background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-            padding: 30px 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 24px;
             transition: all 0.3s ease;
+            min-width: 280px;
         }
 
         .attendance-card:hover, .salary-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
         }
 
         .attendance-card {
@@ -61,54 +64,56 @@
         }
 
         .attendance-card h3, .salary-card h3 {
-            color: #334155;
+            color: #2c3e50;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin: 0 0 8px 0;
+            font-size: 15px;
         }
 
         .attendance-subtext {
-            color: #64748b;
-            font-size: 14px;
-            margin-bottom: 20px;
+            color: #7f8c8d;
+            font-size: 13px;
+            margin: 12px 0 16px 0;
         }
 
         .btn-checkin, .btn-checkout {
             border: none;
-            border-radius: 40px;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
-            padding: 14px 40px;
-            font-size: 18px;
+            padding: 12px 36px;
+            font-size: 16px;
             transition: all 0.3s ease;
         }
 
         .btn-checkin {
             background: linear-gradient(135deg, #22c55e, #16a34a);
             color: #fff;
-            box-shadow: 0 5px 12px rgba(34,197,94,0.4);
+            box-shadow: 0 4px 10px rgba(34,197,94,0.3);
         }
 
         .btn-checkin:hover {
             background: linear-gradient(135deg, #16a34a, #15803d);
-            transform: scale(1.03);
+            transform: translateY(-2px);
         }
 
         .btn-checkout {
             background: linear-gradient(135deg, #facc15, #eab308);
             color: #333;
-            box-shadow: 0 5px 12px rgba(250,204,21,0.4);
+            box-shadow: 0 4px 10px rgba(250,204,21,0.3);
         }
 
         .btn-checkout:hover {
             background: linear-gradient(135deg, #eab308, #ca8a04);
-            transform: scale(1.03);
+            transform: translateY(-2px);
         }
 
         .salary-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            gap: 12px;
         }
 
         .btn-calc-salary {
@@ -116,124 +121,320 @@
             color: #fff;
             font-size: 13px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             font-weight: 600;
             cursor: pointer;
-            padding: 10px 20px;
+            padding: 8px 16px;
             transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
         .btn-calc-salary:hover {
             background: #2563eb;
+            transform: translateY(-2px);
         }
 
         .salary-table {
             width: 100%;
             border-collapse: collapse;
             text-align: center;
+            font-size: 13px;
         }
 
         .salary-table th {
-            background: #f1f5f9;
+            background: #f8fafc;
             color: #475569;
             padding: 10px;
             font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
         }
 
         .salary-table td {
             padding: 10px;
-            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
             color: #334155;
-            font-size: 14px;
         }
 
         .salary-table .empty-msg {
             color: #94a3b8;
             font-style: italic;
-            text-align: center;
+            padding: 16px;
         }
         
         .status {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
         }
         
-        .status-confirmed { background: #e8f5e8; color: #2e7d32; }
-        .status-pending { background: #fff3e0; color: #f57c00; }
-        .status-cancelled { background: #ffebee; color: #c62828; }
-        .status-completed { background: #e3f2fd; color: #1565c0; }
+        .status-confirmed { background: #d4edda; color: #155724; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+        .status-completed { background: #d1ecf1; color: #0c5460; }
         
         .btn-small {
-            background: #4CAF50;
+            background: #6FD5DD;
             color: white;
-            padding: 4px 8px;
-            border-radius: 3px;
+            padding: 6px 12px;
+            border-radius: 6px;
             text-decoration: none;
             font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-block;
         }
         
         .btn-small:hover {
-            background: #45a049;
+            background: #5ac5cd;
+            transform: translateY(-1px);
         }
         
         .no-data {
             text-align: center;
-            padding: 40px;
-            color: #666;
+            padding: 40px 20px;
+            color: #95a5a6;
         }
         
         .no-data i {
             font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
+            margin-bottom: 12px;
+            opacity: 0.4;
         }
         
-        .avatar small {
+        .no-data p {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .dashboard-card {
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+        
+        .dashboard-card i {
+            font-size: 28px;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+        
+        .dashboard-card h3 {
+            margin: 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+        
+        .dashboard-card p {
+            margin: 4px 0;
+            font-size: 13px;
+        }
+        
+        .dashboard-card strong {
+            font-size: 24px;
             display: block;
+            margin: 8px 0;
+        }
+        
+        .btn-dashboard {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 6px;
+            text-decoration: none;
             font-size: 12px;
-            color: #666;
-            margin-top: 2px;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        
+        .btn-dashboard:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+        
+        .welcome-card {
+            background: linear-gradient(135deg, rgba(111, 213, 221, 0.08), rgba(255, 214, 192, 0.08));
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border-left: 4px solid #6FD5DD;
+        }
+        
+        .welcome-card h2 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+        
+        .welcome-card p {
+            margin: 4px 0;
+            color: #555;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .recent-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        
+        .recent-section h2 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+        
+        .recent-section h3 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+        
+        .recent-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .recent-table thead {
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .recent-table th {
+            padding: 10px 12px;
+            text-align: left;
+            color: #475569;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .recent-table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+            transition: background-color 0.2s;
+        }
+        
+        .recent-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        .recent-table td {
+            padding: 10px 12px;
+            color: #334155;
+        }
+        
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        
+        .stat-box {
+            padding: 12px 14px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .stat-box div:first-child {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            opacity: 0.85;
+        }
+        
+        .stat-box div:last-child {
+            font-size: 20px;
+            font-weight: 700;
         }
         
         /* Dropdown Menu Styles */
         .avatar-dropdown {
             position: relative;
             display: inline-block;
-            transform: translateX(50px);
         }
         
         .avatar {
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            transition: background-color 0.3s;
+            gap: 10px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .avatar img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
         }
         
         .avatar:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.15);
         }
         
         .avatar i {
-            font-size: 12px;
+            font-size: 13px;
             transition: transform 0.3s;
+        }
+        
+        .avatar:hover i {
+            transform: rotate(180deg);
         }
         
         .dropdown-menu {
             position: absolute;
-            top: 100%;
+            top: calc(100% + 8px);
             right: 0;
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            min-width: 200px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            min-width: 220px;
             z-index: 1000;
             display: none;
             overflow: hidden;
+            border: 1px solid #f0f0f0;
+            animation: slideDown 0.2s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .dropdown-menu.show {
@@ -243,20 +444,27 @@
         .dropdown-menu a {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             padding: 12px 16px;
             color: #333;
             text-decoration: none;
-            transition: background-color 0.3s;
+            transition: all 0.2s;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        
+        .dropdown-menu a:last-child {
+            border-bottom: none;
         }
         
         .dropdown-menu a:hover {
             background-color: #f8f9fa;
+            padding-left: 20px;
         }
         
         .dropdown-menu a i {
             width: 16px;
             text-align: center;
+            color: #6FD5DD;
         }
     </style>
 </head>
@@ -264,24 +472,9 @@
 
 <header class="staff-header">
     <div class="user-section">
-        <div class="avatar-dropdown">
-            <div class="avatar" onclick="toggleDropdown()">
-                <img src="${pageContext.request.contextPath}/images/doctor-avatar.png" alt="Doctor">
-                <span>${fullDoctorInfo.name}</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="dropdown-menu" id="dropdownMenu">
-                <a href="${pageContext.request.contextPath}/home.jsp">
-                    <i class="fas fa-home"></i> Trang chủ
-                </a>
-                <a href="${pageContext.request.contextPath}/doctor/profile">
-                    <i class="fas fa-user-edit"></i> Chỉnh sửa thông tin
-                </a>
-                <a href="${pageContext.request.contextPath}/logout">
-                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                </a>
-            </div>
-        </div>
+        <a href="${pageContext.request.contextPath}/logout.jsp" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </a>
     </div>
 </header>
 
@@ -406,20 +599,20 @@
         </section>
 
         <!-- Quick Stats -->
-        <section class="recent-section" style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-            <h3 style="margin-bottom: 15px;"><i class="fas fa-chart-pie"></i> Thống kê nhanh</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
-                    <div style="font-size: 0.9rem; color: #856404;">Đang chờ</div>
-                    <div style="font-size: 1.5rem; font-weight: bold; color: #856404;">${pendingCount}</div>
+        <section class="recent-section">
+            <h2><i class="fas fa-chart-pie"></i> Thống kê nhanh</h2>
+            <div class="quick-stats">
+                <div class="stat-box" style="background: #fff3cd; border-left-color: #ffc107; color: #856404;">
+                    <div>Đang chờ</div>
+                    <div>${pendingCount}</div>
                 </div>
-                <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8;">
-                    <div style="font-size: 0.9rem; color: #0c5460;">Đang khám</div>
-                    <div style="font-size: 1.5rem; font-weight: bold; color: #0c5460;">${inProgressCount}</div>
+                <div class="stat-box" style="background: #d1ecf1; border-left-color: #17a2b8; color: #0c5460;">
+                    <div>Đang khám</div>
+                    <div>${inProgressCount}</div>
                 </div>
-                <div style="background: #d4edda; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
-                    <div style="font-size: 0.9rem; color: #155724;">Hoàn thành tháng này</div>
-                    <div style="font-size: 1.5rem; font-weight: bold; color: #155724;">${completedCount}</div>
+                <div class="stat-box" style="background: #d4edda; border-left-color: #28a745; color: #155724;">
+                    <div>Hoàn thành tháng này</div>
+                    <div>${completedCount}</div>
                 </div>
             </div>
         </section>

@@ -47,8 +47,7 @@ public class PayrollDAO {
 
                         // === CHUẨN CHO NULLABLE ===
                         (Integer) rs.getObject("ActualShifts"),
-                        (Double) rs.getObject("BaseSalary"),
-
+                        rs.getDouble("BaseSalary"),
                         rs.getDouble("TotalSalary"),
                         rs.getTimestamp("CreatedAt")
                 );
@@ -87,8 +86,7 @@ public class PayrollDAO {
                         rs.getDate("PeriodEnd"),
 
                         (Integer) rs.getObject("ActualShifts"),
-                        (Double) rs.getObject("BaseSalary"),
-
+                        rs.getDouble("BaseSalary"),
                         rs.getDouble("TotalSalary"),
                         rs.getTimestamp("CreatedAt")
                 );

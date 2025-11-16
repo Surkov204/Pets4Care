@@ -11,7 +11,6 @@ import java.io.PrintWriter;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
 import model.AttendanceRecord;
 import model.PayrollRecord;
 import model.Staff;
@@ -27,11 +26,12 @@ public class StaffAttendanceController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
         HttpSession session = request.getSession();
-        Staff staff = (Staff) session.getAttribute("staff");
 
+        Staff staff = (Staff) session.getAttribute("staff");
         if (staff == null) {
             out.write("{\"status\":\"error\",\"message\":\"Bạn chưa đăng nhập.\"}");
             return;
@@ -39,7 +39,17 @@ public class StaffAttendanceController extends HttpServlet {
 
         int staffId = staff.getStaffId();
         String action = request.getParameter("action");
-        boolean success = false;
+
+        // ========== FIX QUAN TRỌNG ==========
+        if (action == null || action.trim().isEmpty()) {
+            out.write("{\"status\":\"error\",\"message\":\"Thiếu action trong request.\"}");
+            return;
+        }
+        // ====================================
+
+        boolean success;
+
+        // ========================== CHECK-IN / CHECK-OUT ==========================
         if ("toggle".equals(action)) {
 
             WorkSchedule shift = workDAO.getTodayShift(staffId);
@@ -56,70 +66,71 @@ public class StaffAttendanceController extends HttpServlet {
             LocalTime earlyAllowed = start.minusMinutes(15);
             LocalTime lateAllowed = start.plusMinutes(15);
 
-// Quá sớm
             if (now.isBefore(earlyAllowed)) {
                 out.write("{\"status\":\"error\",\"message\":\"⏰ Bạn đến quá sớm. Ca làm bắt đầu lúc " + start + "\"}");
                 return;
             }
 
-// Đi muộn
-            boolean isLate = false;
-            if (now.isAfter(lateAllowed) && now.isBefore(end)) {
-                isLate = true;
-            }
+            boolean isLate = now.isAfter(lateAllowed) && now.isBefore(end);
 
-// Hết ca
             if (now.isAfter(end)) {
                 out.write("{\"status\":\"error\",\"message\":\"⏰ Ca làm đã kết thúc.\"}");
                 return;
             }
 
-// Lấy record hôm nay
             AttendanceRecord today = attendanceDAO.getTodayRecord(staffId);
 
-// CHECK-OUT
+            // CHECK-OUT
             if (today != null && today.getCheckOut() == null) {
+
                 success = attendanceDAO.staffCheckOut(staffId);
+
                 if (success) {
                     session.setAttribute("isCheckedIn", false);
+                    out.write("{\"status\":\"success\",\"message\":\"✅ Checkout thành công!\"}");
+                } else {
+                    out.write("{\"status\":\"error\",\"message\":\"❌ Lỗi khi checkout.\"}");
                 }
-
-                out.write(success
-                        ? "{\"status\":\"success\",\"message\":\"✅ Checkout thành công!\"}"
-                        : "{\"status\":\"error\",\"message\":\"❌ Lỗi khi checkout.\"}");
                 return;
             }
 
-// Không cho check-in lại trong ngày
+            // Đã check-out rồi
             if (today != null && today.getCheckOut() != null) {
                 out.write("{\"status\":\"error\",\"message\":\"Bạn đã hoàn thành ca hôm nay.\"}");
                 return;
             }
 
-// CHECK-IN
+            // CHECK-IN
             success = attendanceDAO.staffCheckIn(staffId, isLate);
 
             if (success) {
                 session.setAttribute("isCheckedIn", true);
+                if (isLate) {
+                    out.write("{\"status\":\"success\",\"message\":\"⏰ Đi muộn! Đã check-in.\"}");
+                } else {
+                    out.write("{\"status\":\"success\",\"message\":\"✅ Check-in thành công!\"}");
+                }
+            } else {
+                out.write("{\"status\":\"error\",\"message\":\"❌ Lỗi khi check-in.\"}");
             }
+            return;
+        }
 
-            out.write(success
-                    ? (isLate
-                            ? "{\"status\":\"success\",\"message\":\"⏰ Đi muộn! Đã check-in.\"}"
-                            : "{\"status\":\"success\",\"message\":\"✅ Check-in thành công!\"}")
-                    : "{\"status\":\"error\",\"message\":\"❌ Lỗi khi check-in.\"}");
-        } else if ("generate".equals(action)) {
-            // ✅ KHÔNG kiểm tra shift hiện tại — chỉ cần tính lương theo tháng
+        // ========================== GENERATE PAYROLL ==========================
+        if ("generate".equals(action)) {
+
             LocalDate nowDate = LocalDate.now();
             LocalDate firstDay = nowDate.withDayOfMonth(1);
-            LocalDate lastDay = nowDate.withDayOfMonth(nowDate.lengthOfMonth()); // 👈 ngày cuối tháng
+            LocalDate lastDay = nowDate.withDayOfMonth(nowDate.lengthOfMonth());
 
             System.out.println("[DEBUG] Generating payroll for staffID = " + staffId);
+
             success = payrollDAO.generatePayroll(
                     staffId,
                     Date.valueOf(firstDay),
-                    Date.valueOf(lastDay) // 👈 truyền ngày cuối tháng
+                    Date.valueOf(lastDay)
             );
+
             System.out.println("[DEBUG] Payroll generate success? " + success);
 
             if (success) {
@@ -130,6 +141,10 @@ public class StaffAttendanceController extends HttpServlet {
             } else {
                 out.write("{\"status\":\"error\",\"message\":\"⚠️ Có lỗi khi tính lương.\"}");
             }
+            return;
         }
+
+        // ==================== ACTION KHÔNG HỢP LỆ — TRẢ JSON =====================
+        out.write("{\"status\":\"error\",\"message\":\"Invalid action: " + action + "\"}");
     }
 }

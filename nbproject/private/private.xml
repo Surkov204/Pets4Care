@@ -260,6 +260,22 @@
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/MedicalRecord.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/model/Doctor.java</file>
             <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/DoctorPayrollDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/DoctorAttendanceDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/DoctorDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IAdminDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IFeedbackDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/IPetDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/CustomerBookingServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/CustomerPetMedicalRecordServlet.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/DoctorAppointmentDetailController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/DoctorAttendanceController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/DoctorAppointmentsController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/controller/DoctorDashboardController.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/dao/BoardingHistoryDAO.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/doctor/doctor-dashboard.jsp</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/ICustomerService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/src/java/service/IProductCategoryService.java</file>
+            <file>file:/E:/Project/PET4CARE_SWP_sum5/Pets4Care/web/order/order-detail.jsp</file>
         </group>
     </open-files>
 </project-private>

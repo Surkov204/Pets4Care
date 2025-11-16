@@ -36,15 +36,15 @@ public class BoardingActionServlet extends HttpServlet {
                 break;
 
             case "checkout":
-                String date = req.getParameter("actualCheckoutDate");
-                Timestamp actualDate = Timestamp.valueOf(date + " 12:00:00");
+                Timestamp actualDate = Timestamp.valueOf(LocalDateTime.now());
                 success = dao.checkoutEarly(bookingId, actualDate);
                 break;
         }
 
-        if (success)
+        if (success) {
             resp.sendRedirect(req.getContextPath() + "/staff/boarding-management?success=1");
-        else
+        } else {
             resp.sendRedirect(req.getContextPath() + "/staff/boarding-management?error=1");
+        }
     }
 }

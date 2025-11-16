@@ -553,21 +553,16 @@
                 dropdown.classList.toggle('show');
             }
 
-            // Close dropdown when clicking outside
             document.addEventListener('click', function (event) {
                 const dropdown = document.getElementById('dropdownMenu');
                 const avatar = document.querySelector('.avatar');
-                if (!avatar.contains(event.target)) {
+                if (!avatar.contains(event.target))
                     dropdown.classList.remove('show');
-                }
             });
+
             function updateChatBadge() {
                 fetch("${pageContext.request.contextPath}/chat?action=getUnread")
-                        .then(res => {
-                            if (!res.ok)
-                                throw new Error('Network response was not ok');
-                            return res.json();
-                        })
+                        .then(res => res.json())
                         .then(data => {
                             const badge = document.getElementById("chatBadge");
                             if (!badge)
@@ -576,11 +571,7 @@
                             badge.textContent = count > 9 ? "9+" : count;
                             badge.style.display = count > 0 ? "flex" : "none";
                         })
-                        .catch(err => {
-                            console.error("⚠️ Lỗi load badge:", err);
-                            const badge = document.getElementById("chatBadge");
-                            if (badge)
-                                badge.style.display = "none";
+                        .catch(() => {
                         });
             }
 
@@ -593,221 +584,190 @@
                             badge.textContent = count > 9 ? "9+" : count;
                             badge.style.display = count > 0 ? "flex" : "none";
                         })
-                        .catch(console.error);
+                        .catch(() => {
+                        });
             }
+
             function toggleNotifications() {
                 const popup = document.getElementById("notifyPopup");
                 popup.classList.toggle("show");
 
-                if (popup.classList.contains("show")) {
-                    // Gọi API lấy danh sách thông báo
-                    fetch("${pageContext.request.contextPath}/notification?action=list")
-                            .then(res => res.json())
-                            .then(list => {
-                                const container = document.getElementById("notifyList");
-                                if (!list || list.length === 0) {
-                                    container.innerHTML = "<p style='text-align:center;color:#888;'>Không có thông báo mới.</p>";
-                                    // Cập nhật lại badge (nếu cần)
-                                    updateNotifyBadge();
-                                    return;
+                if (!popup.classList.contains("show"))
+                    return;
+
+                fetch("${pageContext.request.contextPath}/notification?action=list")
+                        .then(res => res.json())
+                        .then(list => {
+                            const container = document.getElementById("notifyList");
+
+                            if (!list || list.length === 0) {
+                                container.innerHTML =
+                                        "<p style='text-align:center;color:#888;'>Không có thông báo mới.</p>";
+                                updateNotifyBadge();
+                                return;
+                            }
+
+                            container.innerHTML = list.map(n => {
+                                const time = n.createdAt
+                                        ? new Date(n.createdAt).toLocaleString('vi-VN', {
+                                    day: "2-digit", month: "2-digit", year: "numeric",
+                                    hour: "2-digit", minute: "2-digit"
+                                })
+                                        : "";
+
+                                let actionButtons = "";
+
+                                if (n.title === "Yêu cầu đổi ca mới" || n.title === "Yêu cầu làm thay") {
+                                    actionButtons = `
+                            <div style="display:flex; gap:10px; margin-top:10px;">
+                                <form action="${pageContext.request.contextPath}/staff/acceptShiftRequest" method="post">
+                                    <input type="hidden" name="requestId" value="${n.relatedRequestID}">
+                                    <input type="hidden" name="notificationId" value="${n.notificationID}">
+                                    <button type="submit" style="background:#28a745;color:#fff;padding:5px 10px;border-radius:5px;">
+                                        Chấp nhận
+                                    </button>
+                                </form>
+                                <form action="${pageContext.request.contextPath}/staff/rejectShiftRequest" method="post">
+                                    <input type="hidden" name="requestId" value="${n.relatedRequestID}">
+                                    <input type="hidden" name="notificationId" value="${n.notificationID}">
+                                    <button type="submit" style="background:#dc3545;color:#fff;padding:5px 10px;border-radius:5px;">
+                                        Từ chối
+                                    </button>
+                                </form>
+                            </div>`;
                                 }
 
-                                container.innerHTML = list.map(function (n) {
-                                    // Định dạng thời gian cho dễ đọc
-                                    const time = n.createdAt ? new Date(n.createdAt).toLocaleString('vi-VN', {
-                                        day: '2-digit', month: '2-digit', year: 'numeric',
-                                        hour: '2-digit', minute: '2-digit'
-                                    }) : "";
+                                return `
+                        <div style="padding:10px 14px;border-bottom:1px solid #eee;">
+                            <strong>${n.title || "Thông báo"}</strong><br>
+                            <small>${n.message || ""}</small><br>
+                            <span style="color:#999;font-size:0.8em;">${time}</span>
+            ${actionButtons}
+                        </div>`;
+                            }).join("");
 
-                                    let actionButtons = '';
-
-                                    // 👉 LOGIC HIỂN THỊ NÚT CHẤP NHẬN/TỪ CHỐI
-                                    // Dựa trên hình ảnh, ta dùng tiêu đề "Yêu cầu đổi ca mới" để nhận diện
-                                    // (Tốt nhất là dùng một trường 'type' hoặc 'status' từ API, nhưng ta tạm dùng 'title')
-
-                                    if (n.title === 'Yêu cầu đổi ca mới' || n.title === 'Yêu cầu làm thay') {
-                                        actionButtons = `
-                                                <div style="display:flex; gap:10px; margin-top:10px;">
-                                                    <form action="${pageContext.request.contextPath}/staff/acceptShiftRequest" method="post" style="margin:0;">
-                                                      <input type="hidden" name="requestId" value="\${n.relatedRequestID}">
-                                                      <input type="hidden" name="notificationId" value="\${n.notificationID}">
-                                                        <button type="submit" style="background:#28a745; color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">
-                                                            Chấp nhận
-                                                        </button>
-                                                    </form>
-                                                    <form action="${pageContext.request.contextPath}/staff/rejectShiftRequest" method="post" style="margin:0;">
-                                                        <input type="hidden" name="requestId" value="${n.relatedRequestID || ''}">
-                                                        <input type="hidden" name="notificationId" value="${n.notificationID}">
-                                                        <button type="submit" style="background:#dc3545; color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">
-                                                            Từ chối
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            `;
-                                    }
-
-                                    return ''
-                                            + '<div style="padding:10px 14px;border-bottom:1px solid #eee;">'
-                                            + '<strong>' + (n.title || 'Thông báo') + '</strong><br>'
-                                            + '<small>' + (n.message || '') + '</small><br>'
-                                            + '<span style="color:#999;font-size:0.8em;">' + time + '</span>'
-                                            + actionButtons // THÊM NÚT HÀNH ĐỘNG VÀO ĐÂY
-                                            + '</div>';
-                                }).join('');
-
-                                // Sau khi hiển thị, hãy gọi API để đánh dấu tất cả thông báo là đã đọc
-                                fetch("${pageContext.request.contextPath}/notification?action=markAllRead").then(updateNotifyBadge);
-
-                            })
-                            .catch(err => {
-                                console.error("Lỗi khi tải thông báo:", err);
-                                document.getElementById("notifyList").innerHTML = "<p style='text-align:center;color:#dc3545;'>Lỗi tải thông báo.</p>";
-                            });
-                }
+                            fetch("${pageContext.request.contextPath}/notification?action=markAllRead")
+                                    .then(updateNotifyBadge);
+                        });
             }
+
             document.addEventListener("submit", function (e) {
                 const form = e.target;
-                if (form.action.includes("acceptShiftRequest") || form.action.includes("rejectShiftRequest")) {
-                    e.preventDefault();
-                    const formData = new FormData(form);
-                    const parentDiv = form.closest("div");
 
-                    fetch(form.action, {method: "POST", body: formData})
-                            .then(res => {
-                                if (!res.ok)
-                                    throw new Error("Network error");
-                                parentDiv.innerHTML = `<p style="color:#28a745;font-size:13px;">✅ Cảm ơn bạn! Phản hồi đã được gửi.</p>`;
-                                updateNotifyBadge();
-                            })
-                            .catch(err => console.error("❌ Lỗi gửi phản hồi:", err));
-                }
+                if (!form.action.includes("acceptShiftRequest") &&
+                        !form.action.includes("rejectShiftRequest"))
+                    return;
+
+                e.preventDefault();
+                const formData = new FormData(form);
+                const parentDiv = form.closest("div");
+
+                fetch(form.action, {method: "POST", body: formData})
+                        .then(() => {
+                            parentDiv.innerHTML =
+                                    "<p style='color:#28a745;font-size:13px;'>✅ Cảm ơn bạn! Phản hồi đã được gửi.</p>";
+                            updateNotifyBadge();
+                        })
+                        .catch(() => {
+                        });
             });
+
+            // ======================================================
+            //                 NEW FIXED VERSION (IMPORTANT)
+            // ======================================================
+
             document.addEventListener("DOMContentLoaded", () => {
-                const btn = document.getElementById("attendanceButton");
+
+                const attendanceBtn = document.getElementById("attendanceButton");
                 const generateBtn = document.getElementById("generatePayrollBtn");
 
+                // ----------- WIFI CHECK ONLY FOR ATTENDANCE -----------
                 async function verifyCompanyNetwork() {
                     try {
                         const res = await fetch("${pageContext.request.contextPath}/staff/verifyNetwork");
                         const data = await res.json();
 
-                        if (data.isCompanyNetwork)
+                        if (data.isCompanyNetwork === true)
                             return true;
 
                         Swal.fire({
                             icon: "warning",
                             title: "Sai Wi-Fi!",
-                            text: "Vui lòng kết nối với Wi-Fi công ty 'Dung' trước khi check-in/check-out.",
-                            confirmButtonText: "OK"
+                            text: "Vui lòng dùng Wi-Fi 'Dung' để check-in/check-out."
                         });
+
                         return false;
+
                     } catch (err) {
                         Swal.fire({
                             icon: "error",
                             title: "Không xác định được mạng!",
-                            text: "Hãy thử lại khi có kết nối Internet ổn định.",
-                            confirmButtonText: "OK"
+                            text: "Hãy thử lại khi mạng ổn định."
                         });
                         return false;
                     }
                 }
 
-                btn.addEventListener("click", async () => {
+                // ----------- CHECK-IN / CHECK-OUT BUTTON -----------
+                attendanceBtn.addEventListener("click", async () => {
+
                     const inCompanyWifi = await verifyCompanyNetwork();
                     if (!inCompanyWifi)
-                        return; // ❌ dừng nếu sai Wi-Fi{
+                        return;
 
                     try {
-                        const formData = new URLSearchParams();
-                        formData.append("action", "toggle");
-
                         const res = await fetch("${pageContext.request.contextPath}/staff/attendance", {
                             method: "POST",
                             headers: {"Content-Type": "application/x-www-form-urlencoded"},
-                            body: formData.toString()
+                            body: "action=toggle"
                         });
 
                         const data = await res.json();
 
-                        if (data.status === "error") {
-                            Swal.fire({
-                                icon: "warning",
-                                title: "Thông báo",
-                                text: data.message,
-                                confirmButtonText: "OK"
-                            });
-                        } else {
-                            Swal.fire({
-                                icon: "success",
-                                title: "Thành công!",
-                                text: data.message,
-                                confirmButtonText: "OK"
-                            }).then(() => {
-                                const btn = document.getElementById("attendanceButton");
-                                const status = document.getElementById("attendanceStatus");
+                        Swal.fire({
+                            icon: data.status === "success" ? "success" : "warning",
+                            title: data.status === "success" ? "Thành công!" : "Thông báo",
+                            text: data.message
+                        }).then(() => window.location.reload());
 
-                                if (btn.classList.contains("btn-checkin")) {
-                                    // Đổi từ check-in sang check-out (xanh → vàng)
-                                    btn.classList.remove("btn-checkin");
-                                    btn.classList.add("btn-checkout");
-                                    btn.textContent = "Check-out";
-                                    status.textContent = "Bạn đang trong ca làm.";
-                                } else {
-                                    // Đổi từ check-out sang check-in (vàng → xanh)
-                                    btn.classList.remove("btn-checkout");
-                                    btn.classList.add("btn-checkin");
-                                    btn.textContent = "Check-in";
-                                    status.textContent = "Bạn chưa bắt đầu ca làm.";
-                                }
-                            });
-                        }
                     } catch (err) {
                         Swal.fire({
                             icon: "error",
                             title: "Lỗi hệ thống",
-                            text: "Không thể kết nối máy chủ. Hãy thử lại sau.",
-                            confirmButtonText: "OK"
+                            text: "Không thể kết nối máy chủ."
                         });
                     }
                 });
 
+                // ----------- PAYROLL BUTTON — NO WIFI CHECK -----------
                 generateBtn.addEventListener("click", async () => {
-                    try {
-                        const formData = new URLSearchParams();
-                        formData.append("action", "generate");
 
+                    try {
                         const res = await fetch("${pageContext.request.contextPath}/staff/attendance", {
                             method: "POST",
                             headers: {"Content-Type": "application/x-www-form-urlencoded"},
-                            body: formData.toString()
+                            body: "action=generate"
                         });
 
                         const data = await res.json();
-                        if (data.status === "success") {
-                            Swal.fire({
-                                icon: "success",
-                                title: "Thành công!",
-                                text: data.message,
-                                confirmButtonText: "OK"
-                            }).then(() => window.location.reload());
-                        } else {
-                            Swal.fire({
-                                icon: "warning",
-                                title: "Không thành công",
-                                text: data.message,
-                                confirmButtonText: "OK"
-                            });
-                        }
+
+                        Swal.fire({
+                            icon: data.status === "success" ? "success" : "warning",
+                            title: data.status === "success" ? "Thành công!" : "Không thành công",
+                            text: data.message
+                        }).then(() => window.location.reload());
+
                     } catch (err) {
                         Swal.fire({
                             icon: "error",
                             title: "Lỗi hệ thống",
-                            text: "Không thể kết nối máy chủ.",
-                            confirmButtonText: "OK"
+                            text: "Không thể kết nối máy chủ."
                         });
                     }
                 });
+
             });
+
             updateNotifyBadge();
             updateChatBadge();
             setInterval(updateChatBadge, 5000);

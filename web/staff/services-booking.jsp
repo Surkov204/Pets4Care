@@ -70,6 +70,46 @@
                 color: #6c757d;
                 width: 16px;
             }
+            .status-select {
+                padding: 6px 10px;
+                border-radius: 6px;
+                border: 1px solid #ddd;
+                font-size: 13px;
+                cursor: pointer;
+                background-color: #fff;
+                transition: 0.2s;
+            }
+
+            /* Hiệu ứng hover */
+            .status-select:hover {
+                border-color: #999;
+            }
+
+            /* Màu theo từng trạng thái */
+            .status-select option[value="pending"] {
+                background: #fff3cd;
+                color: #856404;
+            }
+
+            .status-select option[value="confirmed"] {
+                background: #cfe2ff;
+                color: #084298;
+            }
+
+            .status-select option[value="completed"] {
+                background: #d4edda;
+                color: #155724;
+            }
+
+            .status-select option[value="cancelled"] {
+                background: #f8d7da;
+                color: #721c24;
+            }
+
+            /* Bo lại cho phù hợp table */
+            table td {
+                vertical-align: middle !important;
+            }
         </style>
     </head>
     <body>
@@ -192,7 +232,19 @@
                                     <td>
                                         <fmt:formatDate value="${b.appointmentStart}" pattern="dd/MM/yyyy HH:mm" />
                                     </td>
-                                    <td>${b.status}</td>
+                                    <td>
+                                        <form method="post" action="${pageContext.request.contextPath}/staff/services-booking" style="display:inline;">
+                                            <input type="hidden" name="action" value="update_status">
+                                            <input type="hidden" name="bookingId" value="${b.bookingId}">
+
+                                            <select name="status" class="status-select" onchange="this.form.submit()">
+                                                <option value="pending"   ${b.status == 'pending' ? 'selected' : ''}>Pending</option>
+                                                <option value="confirmed" ${b.status == 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                                                <option value="completed" ${b.status == 'completed' ? 'selected' : ''}>Completed</option>
+                                                <option value="cancelled" ${b.status == 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                                            </select>
+                                        </form>
+                                    </td>
                                 </tr>
                             </c:forEach>
 
